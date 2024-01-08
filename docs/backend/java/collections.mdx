@@ -1,0 +1,242 @@
+---
+title: Java - Collections
+description : "Java Interview Questions"
+sidebar_position: 2
+---
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Collections
+
+### What is the difference between `Array` and `ArrayList` in Java?
+`Array` is a fixed length data structure while `ArrayList` is a dynamic length data structure.
+
+We have defined an ArrayList with size 2 and inserting the 3rd element in it, what will happen? The new element will be added as ArrayList size will be grown dynamically. 
+
+<details>
+<summary>ArrayList</summary>
+```java title="ArrayList"
+List<String> list = new ArrayList<>(2);
+System.out.println(list.size()); // 0
+list.add("Amit");
+list.add("Prashant");
+list.add("Suresh");
+System.out.println(list.size()); // 3
+```
+</details>
+
+#### While trying to insert one million elements in the list with no size predefined will it be faster if we initialize the list with size of a million?
+With size defined taken taken will be significantly faster due to following reasons.
+- While adding a new element the List size will be checked and grow() method will be called to increase the size. This will not happen as we know the size already. 
+- Each time the List is grown the elements will be copied from old capacity to new Capacity. This memory allocation will happen earlier, and multiple copies will be avoided.
+<Tabs>
+<TabItem value="Without Size">
+
+```java
+Date start = new Data();
+// define an ArrayList
+List<String> list = new ArrayList<>();
+// loop for 1 million times
+for(int i=0; i<1000000; i++){
+  list.add(""+i);
+}
+
+Date end = new Date();
+System.out.printf("Time taken : %s (ms)",(end.getTime()-start.getTime()));
+
+```
+</TabItem>
+<TabItem value="With Size">
+
+```java
+Date start = new Data();
+// define an ArrayList
+List<String> list = new ArrayList<>(1000000);
+// loop for 1 million times
+for(int i=0; i<1000000; i++){
+  list.add(""+i);
+}
+
+Date end = new Date();
+System.out.printf("Time taken : %s (ms)",(end.getTime()-start.getTime()));
+
+```
+</TabItem>
+</Tabs>
+
+<details> 
+<summary>What is the difference between List.of() and Arrays.asList() method?</summary>
+```java title="List.of() vs Arrays.asList()"
+// returns immutable list
+// allows null values
+// throws UnsupportedOperationException
+List<Integer> list = List.of("Amit","Prashant","Suresh"); 
+list.add("Ramesh");
+
+// returns modifiable list
+// allows null values
+List<Integer> list = Arrays.asList("Amit","Prashant","Suresh");
+list.add("Ramesh");
+
+```
+:::note
+We can wrap the `new LinkedList(Arrays.asList())` to get the modifiable collection.
+::::
+</details>
+
+#### What are different kinds of `List` in Java?
+
+<Tabs>
+<TabItem value="ArrayList">
+`ArrayList` is a dynamic length data structure.
+- Unordered: Elements are not stored in any particular order.
+- Fast access: Offers constant-time access to elements by index (O(1)).
+- Dynamic resizing: Automatically grows as needed.
+- Best for: General-purpose lists where order doesn't matter, frequent random access, and adding/removing elements at the end.
+</TabItem>
+<TabItem value="LinkedList">
+`LinkedList` is a doubly linked list data structure.
+- Ordered: Elements are stored in a sequential order.
+- Fast insertions and deletions: Excels at adding/removing elements anywhere in the list (O(1) for additions/removals at the beginning or end).
+- Less efficient random access: Accessing elements by index is slower (O(n)).
+- Best for: Lists where order matters, frequent insertions/deletions in the middle, and iterating through elements sequentially.
+</TabItem>
+<TabItem value="Stack">
+`Stack` is a last-in, first-out (LIFO) data structure.
+- Last-in, first-out (LIFO) data structure: Elements are added and removed from the top.
+- Use cases: Implementing undo/redo functionality, parsing expressions, backtracking algorithms.
+</TabItem>
+<TabItem value="PriorityQueue">
+`PriorityQueue` is a priority-based queue data structure.
+- Orders elements based on their priority: The element with the highest priority is always at the head.
+- Use cases: Scheduling tasks, managing priority-based events, implementing heap data structures.
+</TabItem>
+<TabItem value="Choosing the right List">
+- Order: If order matters, use LinkedList or PriorityQueue.
+- Random access: If frequent random access is needed, use ArrayList.
+- Insertions/deletions: If frequent insertions/deletions in the middle are required, use LinkedList.
+- Thread safety: If thread safety is essential, use Vector or synchronize access to ArrayList/LinkedList.
+- Specialized operations: For specific operations like LIFO or priority-based access, use Stack or PriorityQueue.
+
+</TabItem>
+</Tabs>
+
+
+### What are different kinds of `Maps` in Java?
+`Map Interface`: Represents a collection of key-value pairs, where each key is unique.
+Provides methods for storing, retrieving, and managing these pairs.
+<Tabs>
+<TabItem value="HashMap">
+`HashMap` is a key-value pair data structure. It is not synchronized and allows one null key and multiple null values.
+- Most common and versatile implementation.
+- Unordered: Doesn't maintain any particular order of elements.
+- Fast performance: Average constant-time operations for basic operations.
+- Internal structure: Uses a hash table for efficient storage and retrieval.
+- Allows null keys and values.
+</TabItem>
+<TabItem value="TreeMap">
+`TreeMap` is a key-value pair data structure. It is sorted and does not allow null key or value.
+- Sorted: Maintains keys in ascending order based on their natural ordering or a custom comparator.
+- Internal structure: Uses a red-black tree for efficient sorting and retrieval.
+- Slightly slower than HashMap for basic operations: Logarithmic time complexity.
+- Doesn't allow null keys.
+</TabItem>
+<TabItem value="LinkedHashMap">
+`LinkedHashMap` is a key-value pair data structure. It is ordered and does not allow null key or value.
+- Combines features of HashMap and LinkedHashMap:
+- Order: Preserves insertion order of elements.
+- Performance: Similar to HashMap for basic operations.
+- Internal structure: Uses a hash table and a linked list.
+- Allows null keys and values.
+</TabItem>
+<TabItem value="EnumMap">
+`EnumMap` is a key-value pair data structure. It is ordered and does not allow null key or value.
+- Specialized implementation for maps with enum keys: Very efficient.
+- Internal structure: Optimized for enum keys.
+</TabItem>
+<TabItem value="Choosing the right Map">
+- HashMap: General-purpose, fast, doesn't require ordering.
+- TreeMap: When key ordering is essential.
+- LinkedHashMap: When insertion order needs to be preserved.
+- Hashtable: Thread safety is a primary concern, but performance is less critical.
+- EnumMap: Working with maps of enum keys.
+</TabItem>
+</Tabs>
+
+### What is the difference between `HashMap` and `HashTable` in Java?
+<Tabs>
+<TabItem value="HashMap">
+`HashMap` is a key-value pair data structure. It is not synchronized and allows one null key and multiple null values.
+- `HashMap` is not synchronized while `HashTable` is synchronized.
+- `HashMap` allows one null key and multiple null values while `HashTable` does not allow null key or value.
+</TabItem>
+<TabItem value="HashTable">
+`HashTable` is a key-value pair data structure. It is synchronized and does not allow null key or value.
+</TabItem>
+</Tabs>
+
+### What is the difference between `HashMap` and `HashSet` in Java? 
+- `HashMap` is a key-value pair while `HashSet` is a set of unique values.
+- `HashMap` allows one null key and multiple null values while `HashSet` does not allow null values.
+
+- `HashMap` is not sorted while `TreeMap` is sorted.
+- `HashMap` allows one null key and multiple null values while `TreeMap` does not allow null key or value.
+
+
+
+### What will be the output of the below Code?
+```java
+List<String> list = new ArrayList<>();
+list.add("amit");
+list.add("prashant");
+list.add("suresh");
+
+for(String s: list){
+  // delete if Amit
+  if(s.equals("Amit")) list.remove(s);
+}
+
+```
+
+<details>
+<summary>Answer </summary>
+```java title="Iterator"
+Iterator iterator = list.iterator();
+while(iterator.hasNext()){
+  String s = (String) iterator.next();
+  // delete if Amit
+  if(s.equals("Amit")) list.remove(s);
+}
+
+```
+It will give the `ConcurrentModificationException`, to save memory Java creates a subList as viewed on the original list.
+</details> 
+
+<Tabs>
+<TabItem value="String">
+StringBuffer is mutable and high performant for modifying String.
+</TabItem>
+<TabItem value="StringBuilder">
+StringBuffer is mutable and high performant for modifying String.
+</TabItem>
+</Tabs>
+
+### What is `Static` in Java?
+`Static` is a keyword in Java which is used to create a class level variable or method. `Static` variables are created in the class memory and are shared by all the objects of the class. `Static` methods can be called without creating an object of the class.
+
+:::tip Static Block
+**`Static Block`** is a block of code which is executed when the class is loaded in the memory. It is used to initialize the `Static` variables of the class.
+:::
+
+```java
+public class StaticBlockExample {
+    static {
+        System.out.println("Static Block");
+    }
+
+    public static void main(String[] args) {
+        System.out.println("Main Method");
+    }
+}
+```
+

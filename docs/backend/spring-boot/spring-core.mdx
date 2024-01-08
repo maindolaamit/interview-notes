@@ -1,0 +1,160 @@
+---
+title: Spring Core
+description : "Spring core Interview Questions"
+sidebar_position: 1
+---
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Spring Core
+
+### What is Spring Framework and what does it to in our application?
+Spring Framework is a comprehensive, open-source framework for building Java-based enterprise applications. It provides a wide range of features and services that simplify development, promote best practices, and enhance application performance and scalability.
+
+**Key Features and Capabilities:**
+<details>
+<summary>Dependency Injection</summary>
+- Core principle of Spring, managing dependencies between objects effortlessly.
+- Reduces tight coupling and promotes loose coupling for flexibility and testability.
+- Injects dependencies through constructors, setter methods, or annotations.
+</details>
+
+<details>
+<summary>Aspect-Oriented Programming (AOP)</summary>
+- Enables cross-cutting concerns (like logging, security, transactions) to be modularized and applied across application components.
+- Reduces code duplication and improves maintainability.
+</details>
+
+<details>
+<summary>Data Access</summary>
+- Offers seamless integration with various data access technologies (JDBC, JPA, Hibernate, NoSQL databases).
+- Provides abstractions for simplified data access and transaction management.
+</details>
+
+<details>
+<summary>Web MVC</summary>
+- Facilitates building web applications with a structured model-view-controller pattern.
+- Handles requests, renders views, and manages application flows.
+</details>
+
+<details>
+<summary>Transaction Management</summary>
+- Manages transactions declaratively through annotations or XML configuration.
+- Ensures data consistency and integrity across multiple operations.
+</details>
+
+**Benefits of using Spring**
+- **Testing**: 
+Robust testing support with integrated testing frameworks (JUnit, TestNG).
+Encourages test-driven development (TDD) for reliable and maintainable code.
+Benefits of Using Spring:
+
+- **Reduced Development Effort:**
+Simplifies common tasks and eliminates boilerplate code.
+Improved Testability:
+Promotes loose coupling and dependency injection for easier unit testing.
+
+- **Enhanced Maintainability:**
+Modular architecture and clear separation of concerns.
+Increased Flexibility:
+Adaptable to various application architectures and technologies.
+
+- **Scalability:**
+Well-suited for large-scale, enterprise-level applications.
+Large Community and Support:
+Active community, extensive documentation, and abundant resources.
+How Spring Works in Applications:
+
+- **Component Scanning:** Automatically discovers and registers Spring-managed components (beans) within the application.
+Dependency Injection: Wires together components by injecting their dependencies through constructors, setters, or fields.
+- **Aspect Weaving:** Applies aspects (cross-cutting concerns) to specific points in the application code at runtime.
+Request Handling: Processes web requests through controllers, maps them to models and views, and renders responses.
+- **Transaction Management:**
+Manages database transactions declaratively, ensuring data consistency and integrity.
+In conclusion, Spring Framework offers a powerful and flexible foundation for building modern Java applications. It simplifies development, promotes best practices, and provides a wealth of features to address common enterprise application concerns, making it a popular choice among developers worldwide.
+
+### What is `Bean Factory`?
+`BeanFactory` is the central interface in Spring’s core container. It is responsible for managing the lifecycle of beans, instantiating and configuring them, wiring them together, and handling their dependencies.
+
+**BeanFactory Implementations**
+- **XmlBeanFactory:** Loads beans from an XML file.
+- **ClassPathXmlApplicationContext:** Loads beans from an XML file located in the classpath.
+- **FileSystemXmlApplicationContext:** Loads beans from an XML file in the filesystem.
+- **AnnotationConfigApplicationContext:** Loads beans from Java-based configuration classes.
+
+### What is `Application` Context?
+`ApplicationContext` is a sub-interface of BeanFactory. It is the central interface in Spring’s core container and is responsible for managing the lifecycle of beans, instantiating and configuring them, wiring them together, and handling their dependencies.
+
+**ApplicationContext Implementations**
+- **ClassPathXmlApplicationContext:** Loads beans from an XML file located in the classpath.
+- **FileSystemXmlApplicationContext:** Loads beans from an XML file in the filesystem.
+- **AnnotationConfigApplicationContext:** Loads beans from Java-based configuration classes.
+
+
+### What is `Spring IoC` Container?
+The Spring IoC container is responsible for managing the lifecycle of beans, instantiating and configuring them, wiring them together, and handling their dependencies.
+
+### What is `Spring Bean`?
+In Spring, a bean represents a managed object within your application. It can be any object you want to manage, like a service, a repository, a controller, or even a database connection. Spring handles the creation, configuration, and lifecycle of these beans, simplifying development and promoting best practices.
+
+A Spring bean is an object that is instantiated, assembled, and managed by the Spring IoC container. It is the basic building block of a Spring application.
+
+Bean creation and management are governed by the Spring Bean Life Cycle:
+
+- Bean Instantiation: Spring creates an instance of the bean based on its configuration. This can be done through various methods, like using a constructor, a static factory method, or even instantiating the class directly.
+- Bean Properties: After creating the bean, Spring injects dependencies into its properties through Dependency Injection (DI). This means it wires together the objects your bean needs to function, reducing tight coupling and making your code more modular and testable.
+- Bean Initialization: You can define custom initialization logic for your beans using methods like init() or annotations like **@PostConstruct**. This is where you can perform setup tasks like opening database connections or initializing internal state.
+- Bean Usage: The bean is now ready to be used throughout your application. You can access it from other beans or inject it into controllers, services, or any other component that needs it.
+- Bean Destruction: When your application finishes or a bean is no longer needed, Spring performs bean destruction. This might involve closing resources, ending background tasks, or performing any necessary cleanup. You can customize destruction logic using methods like **destroy()** or **@PreDestroy**.
+
+
+**`Bean Scopes`**: Spring provides different scopes for beans, this determines how many instances of your bean exist and how Spring manages their lifecycle.
+Annotations: Spring uses annotations extensively to configure beans and their lifecycle stages. 
+Learn about annotations like **@Component, @Autowired, @PostConstruct, and @PreDestroy** to effectively manage your beans.
+<Tabs>
+<TabItem value="Singelton">
+- One instance per application.
+- Default scope.
+- Bean is cached in the Spring IoC container.
+- All requests for the bean will return a shared instance, so it is not thread-safe.
+</TabItem>
+<TabItem value="Prototype">
+- New instance every time.
+- Bean is not cached in the Spring IoC container.
+- All requests for the bean will return a new instance, so it is thread-safe.
+</TabItem>
+<TabItem value="Request">
+- One instance per HTTP request.
+- Bean is cached in the HTTP request scope.
+- All requests for the bean will return a shared instance, so it is not thread-safe.
+</TabItem>
+</Tabs>
+:::note
+Spring also provides other scopes like session, application, and websocket. However, these are only available in a web-aware ApplicationContext.
+**You can also define custom scopes by implementing the Scope interface.**
+:::
+
+:::tip
+Below are the three methods we can use to invoke Bean Lifecycle.
+- Using the Annotation @PostConstruct and @PreDestroy can define the bean lifecycle hooks. 
+- Configuring the method names in XML properties files, generally by giving the init and destroy methods. If you have so many beans then methods can be declared at the  config level rather than property level for every bean.  
+- Implementing the Interfaces InitializingBean and DisposableBean from org.springframework.beans.factory. This approach is not recommended but only for interview purposes.  
+:::
+
+<details>
+<summary>What is Bean Wiring?</summary>
+<div>
+**Bean wiring** is the process of connecting beans together to form an application. It is achieved by declaring dependencies between beans in the configuration metadata (XML, Java annotations, or Java code).
+</div>
+</details>
+
+<details>
+<summary>**What is the difference between a Spring bean and a Java bean?**</summary>
+<div>
+- A Spring bean is an object that is instantiated, assembled, and managed by the Spring IoC container. It is the basic building block of a Spring application.
+- A Java bean is a reusable software component that conforms to certain design conventions. It is a Java class that should follow the JavaBeans naming conventions (e.g., getters/setters, Serializable interface, etc.).
+</div>
+</details>
+
+
+
