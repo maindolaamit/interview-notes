@@ -3,7 +3,7 @@ import type { Config } from "@docusaurus/types";
 import type * as Preset from "@docusaurus/preset-classic";
 
 const config: Config = {
-  title: "InterviewGuide",
+  title: "InterviewNotes",
   tagline: "Interviews are cool",
   favicon: "img/favicon.ico",
 
@@ -16,7 +16,7 @@ const config: Config = {
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
   organizationName: "maindolaamit", // Usually your GitHub org/user name.
-  projectName: "interview-guide", // Usually your repo name.
+  projectName: "interview-notes", // Usually your repo name.
 
   onBrokenLinks: "throw",
   onBrokenMarkdownLinks: "warn",
@@ -58,7 +58,7 @@ const config: Config = {
     // Replace with your project's social card
     image: "img/docusaurus-social-card.jpg",
     navbar: {
-      title: "InterviewGuide",
+      title: "InterviewNotes",
       logo: {
         alt: "Site Logo",
         src: "img/top_job_interview_tips.png",
@@ -75,6 +75,24 @@ const config: Config = {
           sidebarId: "backendSidebar",
           position: "left",
           label: "BackEnd",
+        },
+        {
+          type: "docSidebar",
+          sidebarId: "systemDesignSidebar",
+          position: "left",
+          label: "Systems Design",
+        },
+        {
+          type: "docSidebar",
+          sidebarId: "lowLevelDesignSidebar",
+          position: "left",
+          label: "Low Level Design",
+        },
+        {
+          type: "docSidebar",
+          sidebarId: "microServicesSidebar",
+          position: "left",
+          label: "MicroServices",
         },
         { to: "/blog", label: "Blog", position: "left" },
         {
@@ -131,7 +149,7 @@ const config: Config = {
         //   ],
         // },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} InterviewGuide, Inc. Built with Docusaurus.`,
+      copyright: `Copyright © ${new Date().getFullYear()} InterviewNotes, Inc. Built with Docusaurus.`,
     },
     prism: {
       theme: prismThemes.github,

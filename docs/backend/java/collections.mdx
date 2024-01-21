@@ -122,6 +122,128 @@ We can wrap the `new LinkedList(Arrays.asList())` to get the modifiable collecti
 </Tabs>
 
 
+### What will be the output of the below Code?
+```java
+List<String> list = new ArrayList<>();
+list.add("amit");
+list.add("prashant");
+list.add("suresh");
+
+for(String s: list){
+  // delete if Amit
+  if(s.equals("Amit")) list.remove(s);
+}
+
+```
+
+<details>
+<summary>Answer </summary>
+```java title="Iterator"
+Iterator iterator = list.iterator();
+while(iterator.hasNext()){
+  String s = (String) iterator.next();
+  // delete if Amit
+  if(s.equals("Amit")) list.remove(s);
+}
+
+```
+It will give the `ConcurrentModificationException`, to save memory Java creates a subList as viewed on the original list.
+</details> 
+----
+
+### What is Hashing and how it is implemented in Java?
+`Hashing` is like a fingerprinting technique for data. It takes any piece of information, like a text document, a password, or even a whole file, and transforms it into a unique code called a "hash." Think of it like taking a complex recipe and turning it into a short grocery list – the list is much easier to manage and compare, but it still contains all the essential information.
+
+Hashing has a ton of applications, here are a few key ones:
+
+<details>
+<summary>Verifying data integrity:</summary>
+-  Imagine downloading a large file. How do you know it wasn't corrupted during download? You can compare its hash to the original one – if they match, the file is good to go!
+</details>
+<details>
+<summary>Securing passwords:</summary>
+- Instead of storing your actual password, websites store its hash. When you log in, they hash your entered password and compare it to the stored hash. If they match, you're in! This way, even if hackers steal the database, they can't get your actual passwords.
+</details>
+<details>
+<summary>Finding duplicates:</summary>
+-  Need to quickly weed out identical files in a massive collection? Hashing can do that in a flash. Just compare the hashes, and you'll instantly know which ones are copies.
+- Speeding up searches: Hash tables, which use hashing to store and retrieve data, are incredibly fast. This makes them ideal for applications like databases and search engines.
+</details>
+
+#### How `Hashing` is implemented in Java?
+`Hashing` is implemented in Java using `hashCode()` and `equals()` methods. `hashCode()` method returns an integer value and `equals()` method returns a boolean value. 
+
+<Tabs>
+<TabItem value="Hash Functions">
+Purpose: To map data of any size to a fixed-length integer value, called a hash code.
+
+**Characteristics**:
+- Deterministic: Same input always produces the same hash code.
+Efficient to compute.
+- Uniform distribution: Ideally, hash codes should be evenly distributed across the possible range of values.
+
+Common Java hash functions:
+- **hashCode() method:** Inherited by all Java objects.
+- **String.hashCode():** Specifically for strings.
+</TabItem>
+<TabItem value="Hash Code">
+`Hashing` is a technique to convert a range of key values into a range of indexes of an array. We're going to use the remainder operator `%` to get a range of key values. 
+- Represent: The output of a hash function, typically an integer.
+- Usage: Serve as indices within hash tables to efficiently store and retrieve data.
+```java
+int[] arr = new int[10];
+int key = 10;
+int index = key % arr.length;
+```
+</TabItem>
+<TabItem value="Hash Table">
+- Data structure: Utilizes hashing for fast storage and retrieval of key-value pairs.
+- Key classes:
+  - **HashMap**: Unordered collection of key-value pairs.
+  - **HashSet**: Set implementation using a hash table.
+  - **Hashtable**: Older, thread-safe version of HashMap.
+</TabItem>
+<TabItem value="Collision Handling">
+- Problem: Different keys can produce the same hash code (collision).
+- Resolution: Java primarily uses separate chaining:
+Each hash table bucket holds a linked list of entries with the same hash code.
+Allows multiple values to be stored at the same index.
+</TabItem>
+</Tabs>
+
+
+:::note Default `hashCode()`: 
+Typically returns a value based on the object's memory address.
+Reason: It's a unique identifier for each object instance, ensuring different objects usually have different hash codes.
+::::
+
+:::warning Not encryption
+ `Hashing` is a one-way process; original data cannot be recovered from the hash code.
+::::
+
+#### What is the difference between `HashMap` and `HashTable` in Java?
+<Tabs>
+<TabItem value="HashMap">
+`HashMap` is a key-value pair data structure.
+- `HashMap` is not synchronized while `HashTable` is synchronized.
+- `HashMap` allows one null key and multiple null values while `HashTable` does not allow null key or value.
+</TabItem>
+<TabItem value="HashTable">
+`HashTable` is a key-value pair data structure.
+- `HashTable` is synchronized while `HashMap` is not synchronized.
+- `HashTable` does not allow null key or value while `HashMap` allows one null key and multiple null values.
+</TabItem>
+</Tabs>
+
+#### What is the difference between `HashMap` and `HashSet` in Java? 
+- `HashMap` is a key-value pair while `HashSet` is a set of unique values.
+- `HashMap` allows one null key and multiple null values while `HashSet` does not allow null values.
+
+
+
+----
+
+
 ### What are different kinds of `Maps` in Java?
 `Map Interface`: Represents a collection of key-value pairs, where each key is unique.
 Provides methods for storing, retrieving, and managing these pairs.
@@ -163,54 +285,6 @@ Provides methods for storing, retrieving, and managing these pairs.
 </TabItem>
 </Tabs>
 
-### What is the difference between `HashMap` and `HashTable` in Java?
-<Tabs>
-<TabItem value="HashMap">
-`HashMap` is a key-value pair data structure. It is not synchronized and allows one null key and multiple null values.
-- `HashMap` is not synchronized while `HashTable` is synchronized.
-- `HashMap` allows one null key and multiple null values while `HashTable` does not allow null key or value.
-</TabItem>
-<TabItem value="HashTable">
-`HashTable` is a key-value pair data structure. It is synchronized and does not allow null key or value.
-</TabItem>
-</Tabs>
-
-### What is the difference between `HashMap` and `HashSet` in Java? 
-- `HashMap` is a key-value pair while `HashSet` is a set of unique values.
-- `HashMap` allows one null key and multiple null values while `HashSet` does not allow null values.
-
-- `HashMap` is not sorted while `TreeMap` is sorted.
-- `HashMap` allows one null key and multiple null values while `TreeMap` does not allow null key or value.
-
-
-
-### What will be the output of the below Code?
-```java
-List<String> list = new ArrayList<>();
-list.add("amit");
-list.add("prashant");
-list.add("suresh");
-
-for(String s: list){
-  // delete if Amit
-  if(s.equals("Amit")) list.remove(s);
-}
-
-```
-
-<details>
-<summary>Answer </summary>
-```java title="Iterator"
-Iterator iterator = list.iterator();
-while(iterator.hasNext()){
-  String s = (String) iterator.next();
-  // delete if Amit
-  if(s.equals("Amit")) list.remove(s);
-}
-
-```
-It will give the `ConcurrentModificationException`, to save memory Java creates a subList as viewed on the original list.
-</details> 
 
 <Tabs>
 <TabItem value="String">
@@ -220,23 +294,3 @@ StringBuffer is mutable and high performant for modifying String.
 StringBuffer is mutable and high performant for modifying String.
 </TabItem>
 </Tabs>
-
-### What is `Static` in Java?
-`Static` is a keyword in Java which is used to create a class level variable or method. `Static` variables are created in the class memory and are shared by all the objects of the class. `Static` methods can be called without creating an object of the class.
-
-:::tip Static Block
-**`Static Block`** is a block of code which is executed when the class is loaded in the memory. It is used to initialize the `Static` variables of the class.
-:::
-
-```java
-public class StaticBlockExample {
-    static {
-        System.out.println("Static Block");
-    }
-
-    public static void main(String[] args) {
-        System.out.println("Main Method");
-    }
-}
-```
-

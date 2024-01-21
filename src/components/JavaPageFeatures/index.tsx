@@ -1,6 +1,8 @@
-import clsx from "clsx";
-import Heading from "@theme/Heading";
 import styles from "./styles.module.css";
+import Feature from "../HomepageFeatures/";
+import { FeatureItem } from "../common/feature";
+import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
+import Layout from "@theme/Layout";
 
 const FeatureList: FeatureItem[] = [
   {
@@ -35,21 +37,7 @@ const FeatureList: FeatureItem[] = [
   },
 ];
 
-function Feature({ title, Svg, description }: FeatureItem) {
-  return (
-    <div className={clsx("col col--4")}>
-      <div className="text--center">
-        <Svg className={styles.featureSvg} role="img" />
-      </div>
-      <div className="text--center padding-horiz--md">
-        <Heading as="h3">{title}</Heading>
-        <p>{description}</p>
-      </div>
-    </div>
-  );
-}
-
-export default function HomepageFeatures(): JSX.Element {
+function JavaHomepageFeatures(): JSX.Element {
   return (
     <section className={styles.features}>
       <div className="container">
@@ -60,5 +48,19 @@ export default function HomepageFeatures(): JSX.Element {
         </div>
       </div>
     </section>
+  );
+}
+
+export default function JavaHome(): JSX.Element {
+  const { siteConfig } = useDocusaurusContext();
+  return (
+    <Layout
+      title={`Hello from ${siteConfig.title}`}
+      description="Description will go into a meta tag in <head />"
+    >
+      <main>
+        <JavaHomepageFeatures />
+      </main>
+    </Layout>
   );
 }

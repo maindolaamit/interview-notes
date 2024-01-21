@@ -3,6 +3,7 @@ title: Java - Core
 description : "Java Interview Questions"
 sidebar_position: 1
 ---
+
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
@@ -216,12 +217,12 @@ public class SuperExample {
     }
 }
 ```
+
 ###  Why does Java not support multiple inheritance?
 Java does not support multiple inheritance because of the Diamond problem. If we have two classes A and B which extends C and we have a method in C which is overridden in both A and B. Now if we create a class D which extends both A and B and we call the method from D, which method will be called?
+![Diamond Problem](./img/diamond-problem.png)
 
 This is the reason Java does not support multiple inheritance.
-
-![Diamond Problem](../../../img/docs/languages/java/diamond-problem.png)
 
 ### What is the difference between `Abstract Class` and `Interface` in Java?
 We should use interface when we only know the specification but Abstract when we know the partial Implementation.
@@ -253,6 +254,25 @@ public class InterfaceExampleImpl implements InterfaceExample {
 }
 
 ```
+
+#### How to implement multiple interfaces with same method name?
+```java
+interface Interface1 {
+  void myMethod(String arg);
+}
+
+interface Interface2 {
+  void myMethod(String arg);
+}
+
+public class MyClass implements Interface1, Interface2 {
+  @Override
+  public void myMethod(String arg) {
+    System.out.println("Implementing method from both interfaces: " + arg);
+  }
+}
+```
+
 </TabItem>
 <TabItem value="Abstract Class">
 - `Abstract` Class can have both abstract and non-abstract methods.

@@ -1,0 +1,186 @@
+---
+title: Design Patterns
+description : "Low Level Design Interview Questions"
+sidebar_position: 1
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Design Patterns
+
+### Features of Good Design
+Let's look at some of the features of a good design to aim for better software architecture.
+<details>
+<summary>Code Reuse</summary>
+- Reuse of code is one of the most important features of a good design.
+- It reduces the development time and cost.
+- It also improves the quality of the software.
+</details>
+
+<details>
+<summary>Extensibility</summary>
+- A good design should be extensible, i.e. it should be designed in a way that it can accommodate future requirements without changing the existing code.
+- It should be open for extension but closed for modification.
+</details>
+
+### Encapsulation
+- A good design should have encapsulation.
+- Encapsulation means that the internal details of a class should be hidden from the outside world.
+- This makes the design more extensible and maintainable.
+
+Let's take this in example in Java.
+```java
+// method to get the order amount
+public int getOrderAmount() {
+    int orderAmount = 0;
+    for (OrderItem orderItem : orderItems) {
+        orderAmount += orderItem.getPrice() * orderItem.getQuantity();
+        // check tax based on state
+        if (state.equals("FL") || state.equals("OR")) {
+            orderAmount += orderItem.getPrice() * orderItem.getQuantity() * 1;
+        } else if (state.equals("NY")) {
+            orderAmount += orderItem.getPrice() * orderItem.getQuantity() * 1.08;
+        }
+    }
+    return orderAmount;
+}
+```
+In the above code, the tax calculation logic is tightly coupled with the order amount calculation logic.
+If we want to change the tax calculation logic, we will have to change the order amount calculation logic as well.
+This is not a good design.
+
+Let's see how we can improve this design.
+```java
+// method to get the order amount
+public int getOrderAmount() {
+    int orderAmount = 0;
+    for (OrderItem orderItem : orderItems) {
+        orderAmount += orderItem.getPrice() * orderItem.getQuantity();
+        orderAmount = orderAmount + getTaxAmount(orderAmount, state);
+    }
+    return orderAmount;
+}
+
+// method to get the tax amount
+public int getTaxAmount(int amount, String state) {
+    int taxAmount = amount * getTaxRate(state);
+    return taxAmount;
+}
+
+// method to get the tax rate
+public int getTaxRate(String state) {
+    int taxRate = 0;
+    for (OrderItem orderItem : orderItems) {
+        // check tax based on state
+        if (state.equals("FL") || state.equals("OR")) {
+            taxRate = 1;
+        } else {
+            taxRate = 1.08;
+        }
+    }
+    return taxRate;
+}
+```
+In the above code, the tax calculation logic is decoupled from the order amount calculation logic.
+If we want to change the tax calculation logic, we can do it without changing the order amount calculation logic.
+This is a good design.
+
+### What is a Design Pattern?
+`Design patterns` are typical solutions to commonly occurring problems in software design. They are like pre-made blueprints that you can customize to solve a recurring design problem in your code.
+
+You can’t just find a pattern and copy it into your program, the way you can with off-the-shelf functions or libraries. The
+pattern is not a specific piece of code, but a general concept for solving a particular problem. You can follow the pattern
+details and implement a solution that suits the realities of your own program.
+
+- Design patterns are a toolkit of tried and tested solutions to common problems in software design. Even if you never
+  encounter these problems, knowing patterns is still useful because it teaches you how to solve all sorts of problems using principles of object-oriented design.
+
+:::note
+Cost and time are two of the most valuable metrics when
+developing any software product. Less time in development
+means entering the market earlier than competitors. Lower
+development costs mean more money is left for marketing and
+a broader reach to potential customers.
+:::
+
+##### Classifications of a pattern
+
+<details>
+<summary>Maintainability</summary>
+- A good design should be maintainable, i.e. it should be designed in a way that it is easy to fix the bugs.
+- It should be easy to understand and modify.
+</details>
+
+<details>
+<summary>Loose Coupling</summary>
+- A good design should have loose coupling between various modules.
+- Loose coupling means that the modules are not dependent on each other.
+- This makes the design more extensible and maintainable.
+</details>
+
+<details>
+<summary>High Cohesion</summary>
+- A good design should have high cohesion between various modules.
+- High cohesion means that the code within a single module is highly related.
+- This makes the design more extensible and maintainable.
+</details>
+
+<details>
+<summary>Low Coupling and High Cohesion</summary>
+- Low coupling and high cohesion are two important features of a good design.
+- Low coupling means that the modules are not dependent on each other.
+- High cohesion means that the code within a single module is highly related.
+- Low coupling and high cohesion make the design more extensible and maintainable.
+</details>
+
+<details>
+<summary>Separation of Concerns</summary>
+- A good design should have separation of concerns.
+- Separation of concerns means that the code should be divided into different modules based on what they do so that each module is responsible for a single functionality.
+- This makes the design more extensible and maintainable.
+</details>
+
+<details>
+<summary>Single Responsibility Principle</summary>
+- A good design should follow the single responsibility principle.
+- Single responsibility principle means that each module should have a single responsibility.
+- This makes the design more extensible and maintainable.
+</details>
+
+<details>
+<summary>Open Closed Principle</summary>
+- A good design should follow the open closed principle.
+- Open closed principle means that the design should be open for extension but closed for modification.
+- This makes the design more extensible and maintainable.
+</details>
+
+<details>
+<summary>Dependency Inversion Principle</summary>
+- A good design should follow the dependency inversion principle.
+- Dependency inversion principle means that the high level modules should not depend on the low level modules.
+- Instead, both should depend on abstractions.
+- This makes the design more extensible and maintainable.
+</details>
+
+<details>
+<summary>Interface Segregation Principle</summary>
+- A good design should follow the interface segregation principle.
+- Interface segregation principle means that the interfaces should be segregated into smaller interfaces so that the clients only need to know about the methods that they are interested in.
+- This makes the design more extensible and maintainable.
+</details>
+
+<details>
+<summary>Don't Repeat Yourself</summary>
+- A good design should follow the don't repeat yourself principle.
+- Don't repeat yourself principle means that the code should not be repeated.
+- Instead, it should be abstracted into a common method or class.
+- This makes the design more extensible and maintainable.
+</details>
+
+<details>
+<summary>Keep It Simple Stupid</summary>
+- A good design should follow the keep it simple stupid principle.
+- Keep it simple stupid principle means that the design should be simple.
+- This makes the design more extensible and maintainable.
+</details>
