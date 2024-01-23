@@ -28,7 +28,9 @@ const config: Config = {
     defaultLocale: "en",
     locales: ["en"],
   },
-
+  plugins: [
+    'plugin-image-zoom'
+  ],
   presets: [
     [
       "classic",
@@ -57,6 +59,20 @@ const config: Config = {
   themeConfig: {
     // Replace with your project's social card
     image: "img/docusaurus-social-card.jpg",
+    imageZoom: {
+          // CSS selector to apply the plugin to, defaults to '.markdown img'
+          // selector: '.markdown :not(em) > img',
+          selector: '.markdown',
+          // Optional medium-zoom options
+          // see: https://www.npmjs.com/package/medium-zoom#options
+          options: {
+            margin: 24,
+            background: '#BADA55',
+            scrollOffset: 0,
+            container: '#zoom-container',
+            template: '#zoom-template',
+          },
+        },
     navbar: {
       title: "InterviewNotes",
       logo: {
@@ -149,7 +165,7 @@ const config: Config = {
         //   ],
         // },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} InterviewNotes, Inc. Built with Docusaurus.`,
+      copyright: `Copyright © ${new Date().getFullYear()} InterviewNotes, Inc. Built with Docusaurus and Co-Pilot.`,
     },
     prism: {
       theme: prismThemes.github,
