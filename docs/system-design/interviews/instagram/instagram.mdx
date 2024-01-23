@@ -1,5 +1,5 @@
 ---
-title: Instagram
+title: Image/Video Sharing Service
 description : "System Interview Questions"
 sidebar_position: 4
 ---
@@ -113,6 +113,27 @@ returns True if the paste existed and was deleted successfully
 */
 boolean deletePost(api_dev_key, post_id)
     returns True if the post is deleted successfully or False if failed
+
+/**
+POST API to follow a user
+api/v1/follow
+    api_dev_key - A developer key to track the user who created the paste and to block abuse
+    user_id - key to find the user
+returns True if the user is followed successfully or False if failed
+*/
+boolean followUser(api_dev_key, user_id)
+    returns True if the user is followed successfully or False if failed
+
+
+/**
+GET API to Search User, Post, etc by tags or title
+api/v1/search
+    api_dev_key - A developer key to track the user who created the paste and to block abuse
+    query - search query
+returns list of posts
+*/
+List<Post> search(api_dev_key, query)
+    returns list of posts
 ```
 
 ### Database Design
