@@ -106,9 +106,15 @@ const config: Config = {
         },
         {
           type: "docSidebar",
-          sidebarId: "microServicesSidebar",
+          sidebarId: "frontEndSidebar",
           position: "left",
-          label: "MicroServices",
+          label: "FrontEnd",
+        },
+        {
+          type: "docSidebar",
+          sidebarId: "behaviouralSidebar",
+          position: "left",
+          label: "Behavioural",
         },
         { to: "/blog", label: "Blog", position: "left" },
         {
