@@ -5,6 +5,9 @@ sidebar_position: 3
 ---
 
 ### What is Distributed Caching?
+Caching takes advantage of `Locality of Reference` to speed up the process of serving data. If a requested data is found in the cache,
+it is called a `cache hit`, if not, it is called a `cache miss` and the data has to be recomputed or fetched from its original storage location.
+
 - Caching is the process of storing frequently used data in a cache.
 - A cache is a temporary storage component area where the data is stored so that it can be accessed quickly in the future.
 - Distributed caching is the process of caching data in multiple cache instances that are deployed in different servers.

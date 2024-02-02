@@ -77,7 +77,7 @@ const config: Config = {
       title: "InterviewNotes",
       logo: {
         alt: "Site Logo",
-        src: "img/top_job_interview_tips.png",
+        src: "img/home-logo.jpg",
       },
       items: [
         // {
@@ -94,6 +94,12 @@ const config: Config = {
         },
         {
           type: "docSidebar",
+          sidebarId: "frontEndSidebar",
+          position: "left",
+          label: "FrontEnd",
+        },
+        {
+          type: "docSidebar",
           sidebarId: "systemDesignSidebar",
           position: "left",
           label: "Systems Design",
@@ -103,12 +109,6 @@ const config: Config = {
           sidebarId: "lowLevelDesignSidebar",
           position: "left",
           label: "Low Level Design",
-        },
-        {
-          type: "docSidebar",
-          sidebarId: "frontEndSidebar",
-          position: "left",
-          label: "FrontEnd",
         },
         {
           type: "docSidebar",
