@@ -76,53 +76,8 @@ The Richardson Maturity Model is a model for classifying the maturity of a REST 
 3. **Level 2**: The API uses HTTP methods and hypermedia, but the hypermedia is static.
 4. **Level 3**: The API uses HTTP methods and hypermedia, and the hypermedia is dynamic.
 
-## GraphQL Interview Questions
-
-### What is GraphQL?
-GraphQL is a query language for APIs and a runtime for fulfilling those queries with your existing data. It provides a more efficient, powerful, and flexible alternative to REST.
-
-### What are the main features of GraphQL?
-The main features of GraphQL are:
-1. **Hierarchical**: A GraphQL query is hierarchical and composed of fields. The query is shaped just like the data it returns.
-2. **Strongly Typed**: A GraphQL query is a string, and is parsed into a tree of fields. The tree is validated against a type system.
-3. **Client-Specified Queries**: A GraphQL query is a string, and is parsed into a tree of fields. The tree is validated against a type system.
-4. **Introspective**: A GraphQL query can be introspective. It can query the schema for details about the schema.
-
-### What are the main components of GraphQL?
-The main components of GraphQL are:
-1. **Schema**: It defines the types and fields that can be queried.
-2. **Query**: It is used to read or fetch values.
-3. **Mutation**: It is used to write or modify values.
-4. **Subscription**: It is used to listen for changes to a value.
-
-## gRPC Interview Questions
-### What is gRPC?
-gRPC is a high-performance, open-source universal RPC framework. It is based on HTTP/2 and Protocol Buffers.
-
-### What are the main features of gRPC?
-The main features of gRPC are:
-1. **Simple Service Definition**: It uses Protocol Buffers to define services and messages.
-2. **Bi-directional Streaming**: It supports streaming requests and responses.
-3. **Pluggable**: It supports authentication, load balancing, and health checking.
-4. **Language Agnostic**: It supports multiple languages.
-
-### What are the main components of gRPC?
-The main components of gRPC are:
-1. **Service**: It defines the methods that can be called remotely.
-2. **Protocol Buffers**: It defines the messages that can be sent and received.
-3. **Server**: It listens for requests and sends responses.
-4. **Client**: It sends requests and listens for responses.
-
-### What is a Service Definition in gRPC?
-A Service Definition in gRPC is defined using Protocol Buffers. It defines the methods that can be called remotely.
-
-### What is Protocol Buffers?
-Protocol Buffers is a method of serializing structured data. It is used to define the messages that can be sent and received in gRPC.
-
-
-## HTTP Interview Questions
-### What important HTTP status codes and error messages ?
-The important HTTP status codes and error messages are:
+<details>
+<summary>What important HTTP status codes and error messages ?</summary>
 1. **200 OK**: It indicates that the request has succeeded.
 2. **201 Created**: It indicates that the request has been fulfilled and has resulted in one or more new resources being created.
 3. **400 Bad Request**: It indicates that the server cannot or will not process the request due to something that is perceived to be a client error.
@@ -139,6 +94,7 @@ The important HTTP status codes and error messages are:
 - **Client error codes (4xx):** Error caused by the client (e.g., malformed request, unauthorized access).
 - **Server error codes (5xx):** Error on the server's side (e.g., internal error, service unavailable).
 :::
+</details>
 
 
 :::tip
@@ -189,9 +145,51 @@ JSON Response Body:
 ```
 :::
 
+<details>
+<summary>GraphQL</summary>
+### What is GraphQL?
+GraphQL is a query language for APIs and a runtime for fulfilling those queries with your existing data. It provides a more efficient, powerful, and flexible alternative to REST.
+
+### What are the main features of GraphQL?
+The main features of GraphQL are:
+1. **Hierarchical**: A GraphQL query is hierarchical and composed of fields. The query is shaped just like the data it returns.
+2. **Strongly Typed**: A GraphQL query is a string, and is parsed into a tree of fields. The tree is validated against a type system.
+3. **Client-Specified Queries**: A GraphQL query is a string, and is parsed into a tree of fields. The tree is validated against a type system.
+4. **Introspective**: A GraphQL query can be introspective. It can query the schema for details about the schema.
+
+### What are the main components of GraphQL?
+The main components of GraphQL are:
+1. **Schema**: A Schema in GraphQL is a collection of types. It defines the types and fields that can be queried.
+2. **Query**: It is used to read or fetch values.
+3. **Mutation**: It is used to write or modify values.
+4. **Subscription**: It is used to listen for changes to a value.
+
+</details>
 
 
+<details>
+<summary>gRPC</summary>
+### What is gRPC?
+gRPC is a high-performance, open-source universal RPC framework. It is based on HTTP/2 and Protocol Buffers.
 
+### What are the main features of gRPC?
+The main features of gRPC are:
+1. **Simple Service Definition**: It uses Protocol Buffers to define services and messages.
+2. **Bi-directional Streaming**: It supports streaming requests and responses.
+3. **Pluggable**: It supports authentication, load balancing, and health checking.
+4. **Language Agnostic**: It supports multiple languages.
 
+### What are the main components of gRPC?
+The main components of gRPC are:
+1. **Service**: It defines the methods that can be called remotely.
+2. **Protocol Buffers**: It defines the messages that can be sent and received.
+3. **Server**: It listens for requests and sends responses.
+4. **Client**: It sends requests and listens for responses.
 
+### What is a Service Definition in gRPC?
+A Service Definition in gRPC is defined using Protocol Buffers. It defines the methods that can be called remotely.
 
+### What is Protocol Buffers?
+Protocol Buffers is a method of serializing structured data. It is used to define the messages that can be sent and received in gRPC.
+
+</details>

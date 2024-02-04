@@ -29,7 +29,7 @@ const config: Config = {
     locales: ["en"],
   },
   plugins: [
-    'plugin-image-zoom'
+      '@docusaurus/theme-mermaid',
   ],
   presets: [
     [
@@ -55,24 +55,12 @@ const config: Config = {
       } satisfies Preset.Options,
     ],
   ],
-
+  markdown: {
+    mermaid: true,
+  },
   themeConfig: {
     // Replace with your project's social card
     image: "img/docusaurus-social-card.jpg",
-    imageZoom: {
-          // CSS selector to apply the plugin to, defaults to '.markdown img'
-          // selector: '.markdown :not(em) > img',
-          selector: '.markdown',
-          // Optional medium-zoom options
-          // see: https://www.npmjs.com/package/medium-zoom#options
-          options: {
-            margin: 24,
-            background: '#BADA55',
-            scrollOffset: 0,
-            container: '#zoom-container',
-            template: '#zoom-template',
-          },
-        },
     navbar: {
       title: "InterviewNotes",
       logo: {

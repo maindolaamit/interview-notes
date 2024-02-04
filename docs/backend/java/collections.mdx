@@ -7,6 +7,20 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
 # Collections
+```mermaid
+classDiagram
+    class GameObject {
+        -String Name
+        -int PosX
+        -int PosY
+        +Despawn() void
+    }
+    class Player {
+        -int Health
+        +Heal(int amount) void
+    }
+```
+
 
 ### What is the difference between `Array` and `ArrayList` in Java?
 `Array` is a fixed length data structure while `ArrayList` is a dynamic length data structure.
