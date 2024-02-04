@@ -1,0 +1,197 @@
+---
+title: API Interview Questions
+description : "Micro-Services Interview Questions"
+sidebar_position: 1
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+## RESTful API Interview Questions
+
+### What is REST?
+REST stands for **RE**presentational
+**S**tate **T**ransfer. It is an architectural style for designing networked applications. REST is a lightweight alternative to mechanisms like RPC (Remote Procedure Calls) and Web Services (SOAP, WSDL, etc).
+
+### What are the principles of REST?
+The principles of REST are:
+1. **Client-Server**: There should be a separation between the server that offers a service, and the client that consumes it.
+2. **Stateless**: Each request from a client must contain all the information required by the server to fulfill the request. The server must not store any client context between requests. This constraint enables the server to be scaled, as it does not need to store any session information for the client.
+3. **Cacheable**: The server must indicate to the client if requests can be cached or not. If a response is cacheable, the client cache should be used for the next request.
+4. **Layered System**: A client cannot ordinarily tell whether it is connected directly to the end server or an intermediary along the way. Intermediary servers may improve system scalability by enabling load balancing and by providing shared caches. They may also enforce security policies.
+
+### What are the common HTTP methods used in REST based architecture?
+The common HTTP methods used in REST based architecture are:
+1. **GET**: It requests a representation of the specified resource.
+2. **POST**: It submits data to be processed to a specified resource.
+3. **PUT**: It updates a specified resource.
+4. **DELETE**: It deletes the specified resource.
+5. **PATCH**: It is used to apply partial modifications to a resource.
+6. **HEAD**: It asks for a response identical to that of a GET request, but without the response body.
+
+### What is the difference between
+<Tabs>
+<TabItem value="PUT vs POST">
+- **PUT**: It is used to update a resource. If the resource does not exist, it creates a new one.
+- **POST**: It is used to create a new resource.
+</TabItem>
+<TabItem value="PUT vs PATCH">
+- **PUT**: It is used to update a resource. It replaces the resource entirely.
+- **PATCH**: It is used to apply partial modifications to a resource.
+</TabItem>
+<TabItem value="GET vs POST">
+- **GET**: It requests a representation of the specified resource. Requests using GET should only retrieve data.
+- **POST**: It submits data to be processed to a specified resource. It is used to create a new resource.
+</TabItem>
+</Tabs>
+
+<Tabs>
+<TabItem value="HTTP and HTTPS">
+- **HTTP**: It stands for HyperText Transfer Protocol. It is the protocol over which data is sent between a browser and the website that you are connected to.
+- **HTTPS**: It stands for HyperText Transfer Protocol Secure. It is the secure version of HTTP. It is the protocol over which data is sent between a browser and the website that you are connected to. The 'S' at the end of HTTPS stands for 'Secure'. It means all communications between your browser and the website are encrypted.
+</TabItem>
+<TabItem value="REST and SOAP">
+- **REST**: It is a lightweight alternative to mechanisms like RPC (Remote Procedure Calls) and Web Services (SOAP, WSDL, etc). It is an architectural style for designing networked applications.
+- **SOAP**: It is a protocol. It is a simple XML-based protocol to let applications exchange information over HTTP. It is a protocol specification for exchanging structured information in the implementation of web services in computer networks.
+</TabItem>
+<TabItem value="RPC and REST">
+- **RPC**: It is a protocol. It is a request–response protocol for message-passing. It allows a program to cause a subroutine or procedure to execute in another address space (commonly on another computer on a shared network) without the programmer explicitly coding the details for this remote interaction.
+- **REST**: It is an architectural style. It is a lightweight alternative to mechanisms like RPC (Remote Procedure Calls) and Web Services (SOAP, WSDL, etc). It is an architectural style for designing networked applications.
+</TabItem>
+<TabItem value="REST and GraphQL">
+- **REST**: It is an architectural style. It is a lightweight alternative to mechanisms like RPC (Remote Procedure Calls) and Web Services (SOAP, WSDL, etc). It is an architectural style for designing networked applications.
+- **GraphQL**: It is a query language for APIs. It is a specification for building APIs. It provides a more efficient, powerful, and flexible alternative to REST.
+</TabItem>
+</Tabs>
+
+
+### What is HATEOAS?
+HATEOAS stands for **H**ypermedia **A**s **T**he **E**ngine **O**f **A**pplication **S**tate.
+It is a constraint of the REST application architecture. A hypermedia-driven site provides information to navigate the site's REST interfaces dynamically by including hypermedia links with the responses.
+
+### What is the Richardson Maturity Model?
+The Richardson Maturity Model is a model for classifying the maturity of a REST API. It was proposed by Leonard Richardson. The model has four levels:
+1. **Level 0**: The API uses HTTP as a transport system, but does not use any of the features of HTTP.
+2. **Level 1**: The API uses HTTP methods, but does not use hypermedia.
+3. **Level 2**: The API uses HTTP methods and hypermedia, but the hypermedia is static.
+4. **Level 3**: The API uses HTTP methods and hypermedia, and the hypermedia is dynamic.
+
+## GraphQL Interview Questions
+
+### What is GraphQL?
+GraphQL is a query language for APIs and a runtime for fulfilling those queries with your existing data. It provides a more efficient, powerful, and flexible alternative to REST.
+
+### What are the main features of GraphQL?
+The main features of GraphQL are:
+1. **Hierarchical**: A GraphQL query is hierarchical and composed of fields. The query is shaped just like the data it returns.
+2. **Strongly Typed**: A GraphQL query is a string, and is parsed into a tree of fields. The tree is validated against a type system.
+3. **Client-Specified Queries**: A GraphQL query is a string, and is parsed into a tree of fields. The tree is validated against a type system.
+4. **Introspective**: A GraphQL query can be introspective. It can query the schema for details about the schema.
+
+### What are the main components of GraphQL?
+The main components of GraphQL are:
+1. **Schema**: It defines the types and fields that can be queried.
+2. **Query**: It is used to read or fetch values.
+3. **Mutation**: It is used to write or modify values.
+4. **Subscription**: It is used to listen for changes to a value.
+
+## gRPC Interview Questions
+### What is gRPC?
+gRPC is a high-performance, open-source universal RPC framework. It is based on HTTP/2 and Protocol Buffers.
+
+### What are the main features of gRPC?
+The main features of gRPC are:
+1. **Simple Service Definition**: It uses Protocol Buffers to define services and messages.
+2. **Bi-directional Streaming**: It supports streaming requests and responses.
+3. **Pluggable**: It supports authentication, load balancing, and health checking.
+4. **Language Agnostic**: It supports multiple languages.
+
+### What are the main components of gRPC?
+The main components of gRPC are:
+1. **Service**: It defines the methods that can be called remotely.
+2. **Protocol Buffers**: It defines the messages that can be sent and received.
+3. **Server**: It listens for requests and sends responses.
+4. **Client**: It sends requests and listens for responses.
+
+### What is a Service Definition in gRPC?
+A Service Definition in gRPC is defined using Protocol Buffers. It defines the methods that can be called remotely.
+
+### What is Protocol Buffers?
+Protocol Buffers is a method of serializing structured data. It is used to define the messages that can be sent and received in gRPC.
+
+
+## HTTP Interview Questions
+### What important HTTP status codes and error messages ?
+The important HTTP status codes and error messages are:
+1. **200 OK**: It indicates that the request has succeeded.
+2. **201 Created**: It indicates that the request has been fulfilled and has resulted in one or more new resources being created.
+3. **400 Bad Request**: It indicates that the server cannot or will not process the request due to something that is perceived to be a client error.
+4. **401 Unauthorized**: It indicates that the request has not been applied because it lacks valid authentication credentials for the target resource.
+5. **403 Forbidden**: It indicates that the server understood the request, but refuses to authorize it.
+6. **404 Not Found**: It indicates that the server has not found anything matching the Request-URI.
+7. **500 Internal Server Error**: It indicates that the server encountered an unexpected condition that prevented it from fulfilling the request.
+
+:::note
+- **Status codes:** 3-digit codes indicating the outcome of an HTTP request.
+- **Informational codes (1xx):** Request received and processing continues.
+- **Successful codes (2xx):** Request successful and the server responded with information.
+- **Redirection codes (3xx):** Further action required to complete the request (e.g., redirect to a different resource).
+- **Client error codes (4xx):** Error caused by the client (e.g., malformed request, unauthorized access).
+- **Server error codes (5xx):** Error on the server's side (e.g., internal error, service unavailable).
+:::
+
+
+:::tip
+Format for returning errors in APIs based on Uber's guidelines:
+
+Choose the appropriate HTTP status code from the standard ranges (4xx for client errors, 5xx for server errors) to accurately reflect the error type.
+- **error:** String containing a human-readable error message suitable for developers and end-users.
+- **code:** Optional string representing a specific error code for programmatic identification and handling.
+- **description:** Optional string containing additional information about the error.
+- **errors:** Optional array of objects containing specific fields and their associated error messages for validation errors (e.g., "username": "This field is required").
+- **fields:** Optional object containing specific fields and their associated error messages for validation errors (e.g., "username": ["This field is required"]).
+
+JSON Response Body:
+```json title="Single error occurred"
+{
+  "error": "Invalid request",
+  "code": "invalid_request",
+  "description": "The request is missing a required parameter",
+  "fields": {
+    "username": ["This field is required"],
+    "password": ["This field is required"]
+  }
+}
+```
+
+```json title="Multiple errors occurred"
+{
+  "error": "Multiple errors occurred",
+  "code": "request_failed",
+  "description": "The request failed due to multiple errors",
+  "errors": [
+    {
+      "code": "required",
+      "field": "username",
+      "messages": "This field is required"
+    },
+    {
+      "field": "email",
+      "code": "invalid_format",
+      "messages": "Invalid email format"
+    },
+    {
+      "code": "authentication_failed",
+      "message": "Invalid credentials"
+    }
+  ]
+}
+```
+:::
+
+
+
+
+
+
+
