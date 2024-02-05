@@ -68,12 +68,6 @@ const config: Config = {
         src: "img/home-logo.jpg",
       },
       items: [
-        // {
-        //   type: "docSidebar",
-        //   sidebarId: "tutorialSidebar",
-        //   position: "left",
-        //   label: "Tutorial",
-        // },
         {
           type: "docSidebar",
           sidebarId: "backendSidebar",
