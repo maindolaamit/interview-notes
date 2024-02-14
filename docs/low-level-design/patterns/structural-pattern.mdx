@@ -1,0 +1,148 @@
+---
+title: Structural Design Patterns
+description : "Low Level Design Interview Questions"
+sidebar_position: 1
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+Structural Design Patterns are concerned with how classes and objects can be composed, to form larger structures. The structural design patterns simplify the structure by identifying the relationships.
+
+<details>
+<summary>Adapter Pattern</summary>
+- The Adapter pattern is used to allow two incompatible interfaces to work together. This is the real world definition for an adapter.
+- An adapter allows a system to use classes of another system that is incompatible with it.
+
+:::tip
+Use the Adapter pattern when you want to use some existing class, but its interface isn't compatible with the rest of your code.
+:::
+
+`MediaPlayer` class is the interface that we want to use in our application. `VlcPlayer` and `Mp4Player` are the classes that we want to use in our application, but their interfaces are not compatible with our `MediaPlayer` interface. So, we create an `MediaAdapter` class that implements the `MediaPlayer` interface and uses `VlcPlayer` and `Mp4Player` classes to play the required audio format.
+
+```java
+public interface MediaPlayer {
+   public void play(String audioType, String fileName);
+}
+```
+```java
+public interface AdvancedMediaPlayer {
+   public void playVlc(String fileName);
+   public void playMp4(String fileName);
+}
+```
+```java
+public class VlcPlayer implements AdvancedMediaPlayer{
+   @Override
+   public void playVlc(String fileName) {
+      System.out.println("Playing vlc file. Name: "+ fileName);
+   }
+   @Override
+   public void playMp4(String fileName) {
+      //do nothing
+   }
+}
+```
+```java
+public class Mp4Player implements AdvancedMediaPlayer{
+   @Override
+   public void playVlc(String fileName) {
+      //do nothing
+   }
+   @Override
+   public void playMp4(String fileName) {
+      System.out.println("Playing mp4 file. Name: "+ fileName);
+   }
+}
+```
+```java
+public class MediaAdapter implements MediaPlayer {
+   AdvancedMediaPlayer advancedMusicPlayer;
+   public MediaAdapter(String audioType){
+      if(audioType.equalsIgnoreCase("vlc") ){
+         advancedMusicPlayer = new VlcPlayer();
+      } else if (audioType.equalsIgnoreCase("mp4")){
+         advancedMusicPlayer = new Mp4Player();
+      }
+   }
+   @Override
+   public void play(String audioType, String fileName) {
+      if(audioType.equalsIgnoreCase("vlc")){
+         advancedMusicPlayer.playVlc(fileName);
+      }else if(audioType.equalsIgnoreCase("mp4")){
+         advancedMusicPlayer.playMp4(fileName);
+      }
+   }
+}
+```
+```java
+public class AudioPlayer implements MediaPlayer {
+   MediaAdapter mediaAdapter;
+   @Override
+   public void play(String audioType, String fileName) {
+      if(audioType.equalsIgnoreCase("mp3")){
+         System.out.println("Playing mp3 file. Name: "+ fileName);
+      } else if(audioType.equalsIgnoreCase("vlc") || audioType.equalsIgnoreCase("mp4")){
+         mediaAdapter = new MediaAdapter(audioType);
+         mediaAdapter.play(audioType, fileName);
+      } else{
+         System.out.println("Invalid media. "+ audioType + " format not supported");
+      }
+   }
+}
+```
+```java
+public class AdapterPatternDemo {
+   public static void main(String[] args) {
+      AudioPlayer audioPlayer = new AudioPlayer();
+      audioPlayer.play("mp3", "beyond the horizon.mp3");
+      audioPlayer.play("mp4", "alone.mp4");
+      audioPlayer.play("vlc", "far far away.vlc");
+      audioPlayer.play("avi", "mind me.avi");
+   }
+}
+```
+</details>
+
+<details>
+<summary>Bridge Pattern</summary>
+- The Bridge pattern is used to separate the abstract elements of a class from the implementation details, providing the means to replace the implementation details without modifying the abstraction. The Bridge pattern is used to separate the abstract elements of a class from the implementation details, providing the means to replace the implementation details without modifying the abstraction.
+</details>
+
+<details>
+<summary>Composite Pattern</summary>
+The Composite pattern is used to compose objects into tree structures to represent part-whole hierarchies. The Composite pattern is used to compose objects into tree structures to represent part-whole hierarchies.
+
+</details>
+
+<details>
+<summary>Decorator Pattern</summary>
+The Decorator pattern is used to add new functionality to an existing object, without altering its structure. The Decorator pattern is used to add new functionality to an existing object, without altering its structure.
+</details>
+
+<details>
+<summary>Facade Pattern</summary>
+The Facade pattern is used to provide a simple interface to a complex subsystem. The Facade pattern is used to provide a simple interface to a complex subsystem.
+</details>
+
+<details>
+<summary>Flyweight Pattern</summary>
+The Flyweight pattern is used to reduce the memory footprint of objects. The Flyweight pattern is used to reduce the memory footprint of objects.
+</details>
+
+<details>
+<summary>Proxy Pattern</summary>
+The Proxy pattern is used to provide a placeholder for another object to control access to it. The Proxy pattern is used to provide a placeholder for another object to control access to it.
+</details>
+
+<details>
+<summary>Structural Design Patterns Interview Questions</summary>
+1. What is the Adapter pattern?
+2. What is the Bridge pattern?
+3. What is the Composite pattern?
+4. What is the Decorator pattern?
+5. What is the Facade pattern?
+6. What is the Flyweight pattern?
+7. What is the Proxy pattern?
+</details>
+
