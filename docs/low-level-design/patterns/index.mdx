@@ -1,90 +1,10 @@
 ---
 title: Design Patterns
 description : "Low Level Design Interview Questions"
-sidebar_position: 1
+sidebar_position: 3
 ---
-
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
-
-# Design Patterns
-
-### Features of Good Design
-Let's look at some of the features of a good design to aim for better software architecture.
-<details>
-<summary>Code Reuse</summary>
-- Reuse of code is one of the most important features of a good design.
-- It reduces the development time and cost.
-- It also improves the quality of the software.
-</details>
-
-<details>
-<summary>Extensibility</summary>
-- A good design should be extensible, i.e. it should be designed in a way that it can accommodate future requirements without changing the existing code.
-- It should be open for extension but closed for modification.
-</details>
-
-### Encapsulation
-- A good design should have encapsulation.
-- Encapsulation means that the internal details of a class should be hidden from the outside world.
-- This makes the design more extensible and maintainable.
-
-Let's take this in example in Java.
-```java
-// method to get the order amount
-public int getOrderAmount() {
-    int orderAmount = 0;
-    for (OrderItem orderItem : orderItems) {
-        orderAmount += orderItem.getPrice() * orderItem.getQuantity();
-        // check tax based on state
-        if (state.equals("FL") || state.equals("OR")) {
-            orderAmount += orderItem.getPrice() * orderItem.getQuantity() * 1;
-        } else if (state.equals("NY")) {
-            orderAmount += orderItem.getPrice() * orderItem.getQuantity() * 1.08;
-        }
-    }
-    return orderAmount;
-}
-```
-In the above code, the tax calculation logic is tightly coupled with the order amount calculation logic.
-If we want to change the tax calculation logic, we will have to change the order amount calculation logic as well.
-This is not a good design.
-
-Let's see how we can improve this design.
-```java
-// method to get the order amount
-public int getOrderAmount() {
-    int orderAmount = 0;
-    for (OrderItem orderItem : orderItems) {
-        orderAmount += orderItem.getPrice() * orderItem.getQuantity();
-        orderAmount = orderAmount + getTaxAmount(orderAmount, state);
-    }
-    return orderAmount;
-}
-
-// method to get the tax amount
-public int getTaxAmount(int amount, String state) {
-    int taxAmount = amount * getTaxRate(state);
-    return taxAmount;
-}
-
-// method to get the tax rate
-public int getTaxRate(String state) {
-    int taxRate = 0;
-    for (OrderItem orderItem : orderItems) {
-        // check tax based on state
-        if (state.equals("FL") || state.equals("OR")) {
-            taxRate = 1;
-        } else {
-            taxRate = 1.08;
-        }
-    }
-    return taxRate;
-}
-```
-In the above code, the tax calculation logic is decoupled from the order amount calculation logic.
-If we want to change the tax calculation logic, we can do it without changing the order amount calculation logic.
-This is a good design.
 
 ### What is a Design Pattern?
 `Design patterns` are typical solutions to commonly occurring problems in software design. They are like pre-made blueprints that you can customize to solve a recurring design problem in your code.
@@ -142,35 +62,6 @@ a broader reach to potential customers.
 </details>
 
 <details>
-<summary>Single Responsibility Principle</summary>
-- A good design should follow the single responsibility principle.
-- Single responsibility principle means that each module should have a single responsibility.
-- This makes the design more extensible and maintainable.
-</details>
-
-<details>
-<summary>Open Closed Principle</summary>
-- A good design should follow the open closed principle.
-- Open closed principle means that the design should be open for extension but closed for modification.
-- This makes the design more extensible and maintainable.
-</details>
-
-<details>
-<summary>Dependency Inversion Principle</summary>
-- A good design should follow the dependency inversion principle.
-- Dependency inversion principle means that the high level modules should not depend on the low level modules.
-- Instead, both should depend on abstractions.
-- This makes the design more extensible and maintainable.
-</details>
-
-<details>
-<summary>Interface Segregation Principle</summary>
-- A good design should follow the interface segregation principle.
-- Interface segregation principle means that the interfaces should be segregated into smaller interfaces so that the clients only need to know about the methods that they are interested in.
-- This makes the design more extensible and maintainable.
-</details>
-
-<details>
 <summary>Don't Repeat Yourself</summary>
 - A good design should follow the don't repeat yourself principle.
 - Don't repeat yourself principle means that the code should not be repeated.
@@ -184,3 +75,4 @@ a broader reach to potential customers.
 - Keep it simple stupid principle means that the design should be simple.
 - This makes the design more extensible and maintainable.
 </details>
+

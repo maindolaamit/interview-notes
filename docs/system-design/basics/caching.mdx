@@ -16,6 +16,18 @@ it is called a `cache hit`, if not, it is called a `cache miss` and the data has
 - Distributed caching is used to store data that is expensive to compute.
 - Distributed caching is used to store data that is shared by multiple users.
 
+#### Cache Invalidation Strategies
+- **Write-Through Cache:** In this strategy, data is written into the cache and the corresponding database at the same time. This ensures that the cache is never stale, but has the disadvantage of lower write performance due to the dual writes.
+- **Write-Around Cache:** In this strategy, data is written directly to the storage, bypassing the cache. This is useful for very large datasets that are rarely accessed.
+- **Write-Back Cache:** In this strategy, data is written to the cache and the write is immediately acknowledged to the client. The write to the backend storage is performed sometime later. This can improve write performance, but has the disadvantage of potential data loss in the event of a crash, since the only copy of the written data is in the cache.
+- **Refresh Ahead Cache:** In this strategy, the cache is proactively refreshed in anticipation of future requests. This can help avoid the latency of cache misses, but runs the risk of refreshing data that is never read.
+
+#### Cache Eviction Policies
+- **First In, First Out (FIFO):** The cache evicts the first block accessed first without any regard to how often or how many times it was accessed before.
+- **Last In, First Out (LIFO):** The cache evicts the block accessed most recently first without any regard to how often or how many times it was accessed before.
+- **Least Recently Used (LRU):** Discards the least recently used items first.
+- **Most Recently Used (MRU):** Discards, in contrast to LRU, the most recently used items first.
+
 ### What is a CDN
 A content delivery network (CDN) is a globally distributed network of proxy servers, serving content from locations closer to the user. Generally, static files such as HTML/CSS/JS, photos, and videos are served from CDN, although some CDNs such as Amazon's CloudFront support dynamic content. The site's DNS resolution will tell clients which server to contact.
 
