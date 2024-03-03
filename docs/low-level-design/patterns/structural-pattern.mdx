@@ -9,16 +9,28 @@ import TabItem from '@theme/TabItem';
 
 Structural Design Patterns are concerned with how classes and objects can be composed, to form larger structures. The structural design patterns simplify the structure by identifying the relationships.
 
-<details>
-<summary>Adapter Pattern</summary>
-- The Adapter pattern is used to allow two incompatible interfaces to work together. This is the real world definition for an adapter.
-- An adapter allows a system to use classes of another system that is incompatible with it.
+
+### Adapter Pattern
+The Adapter pattern is used to allow two incompatible interfaces to work together. This is the real world definition for an adapter.
+
+An adapter allows a system to use classes of another system that is incompatible with it.
 
 :::tip
 Use the Adapter pattern when you want to use some existing class, but its interface isn't compatible with the rest of your code.
 :::
 
-`MediaPlayer` class is the interface that we want to use in our application. `VlcPlayer` and `Mp4Player` are the classes that we want to use in our application, but their interfaces are not compatible with our `MediaPlayer` interface. So, we create an `MediaAdapter` class that implements the `MediaPlayer` interface and uses `VlcPlayer` and `Mp4Player` classes to play the required audio format.
+```mermaid
+classDiagram
+    VideoConvertor : +convertVideo(Path videoFile)
+    VideoConvertor : -videoFile Path
+    BitRateReader <|-- VideoConvertor  
+    AudioMixer   <|-- VideoConvertor
+    Codecs   <|-- VideoConvertor
+    Application --> VideoConvertor
+```
+<details>
+<summary>Example</summary>
+- `MediaPlayer` class is the interface that we want to use in our application. `VlcPlayer` and `Mp4Player` are the classes that we want to use in our application, but their interfaces are not compatible with our `MediaPlayer` interface. So, we create an `MediaAdapter` class that implements the `MediaPlayer` interface and uses `VlcPlayer` and `Mp4Player` classes to play the required audio format.
 
 ```java
 public interface MediaPlayer {
@@ -104,9 +116,13 @@ public class AdapterPatternDemo {
 ```
 </details>
 
+---
+
+### Bridge Pattern
+The Bridge pattern is used to separate the abstract elements of a class from the implementation details, providing the means to replace the implementation details without modifying the abstraction. The Bridge pattern is used to separate the abstract elements of a class from the implementation details, providing the means to replace the implementation details without modifying the abstraction.
 <details>
-<summary>Bridge Pattern</summary>
-- The Bridge pattern is used to separate the abstract elements of a class from the implementation details, providing the means to replace the implementation details without modifying the abstraction. The Bridge pattern is used to separate the abstract elements of a class from the implementation details, providing the means to replace the implementation details without modifying the abstraction.
+<summary>Example</summary>
+-
 </details>
 
 <details>
