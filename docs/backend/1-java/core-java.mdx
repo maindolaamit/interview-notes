@@ -223,7 +223,29 @@ public class SuperExample {
 ###  Why does Java not support multiple inheritance?
 Java does not support multiple inheritance because of the Diamond problem. If we have two classes A and B which extends C and we have a method in C which is overridden in both A and B. Now if we create a class D which extends both A and B and we call the method from D, which method will be called?
 
-![Diamond Problem](./img/diamond-problem.png)
+```mermaid
+classDiagram
+  class A {
+    +int data
+    +void doSomething()
+  }
+  class B {
+    +int b
+    +void doSomethingB()
+  }
+  class C {
+    +int c
+    +void doSomethingC()
+  }
+  class D {
+    +void doSomethingD()
+  }
+
+  B --|> A : Inheritance
+  C --|> A : Inheritance
+  D --|> B : Inheritance
+  D --|> C : Inheritance
+```
 
 This is the reason Java does not support multiple inheritance.
 

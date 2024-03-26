@@ -9,16 +9,29 @@ import TabItem from '@theme/TabItem';
 
 Structural Design Patterns are concerned with how classes and objects can be composed, to form larger structures. The structural design patterns simplify the structure by identifying the relationships.
 
-<details>
-<summary>Adapter Pattern</summary>
-- The Adapter pattern is used to allow two incompatible interfaces to work together. This is the real world definition for an adapter.
-- An adapter allows a system to use classes of another system that is incompatible with it.
+
+### Adapter Pattern
+The Adapter pattern is used to allow two incompatible interfaces to work together. This is the real world definition for an adapter.
+
+An adapter allows a system to use classes of another system that is incompatible with it.
 
 :::tip
 Use the Adapter pattern when you want to use some existing class, but its interface isn't compatible with the rest of your code.
 :::
 
-`MediaPlayer` class is the interface that we want to use in our application. `VlcPlayer` and `Mp4Player` are the classes that we want to use in our application, but their interfaces are not compatible with our `MediaPlayer` interface. So, we create an `MediaAdapter` class that implements the `MediaPlayer` interface and uses `VlcPlayer` and `Mp4Player` classes to play the required audio format.
+```mermaid
+classDiagram
+    VideoConvertor : +convertVideo(Path videoFile)
+    VideoConvertor : -videoFile Path
+    BitRateReader <|-- VideoConvertor  
+    AudioMixer   <|-- VideoConvertor
+    Codecs   <|-- VideoConvertor
+    Application --> VideoConvertor
+```
+
+<details>
+<summary>Example</summary>
+- `MediaPlayer` class is the interface that we want to use in our application. `VlcPlayer` and `Mp4Player` are the classes that we want to use in our application, but their interfaces are not compatible with our `MediaPlayer` interface. So, we create an `MediaAdapter` class that implements the `MediaPlayer` interface and uses `VlcPlayer` and `Mp4Player` classes to play the required audio format.
 
 ```java
 public interface MediaPlayer {
@@ -104,9 +117,14 @@ public class AdapterPatternDemo {
 ```
 </details>
 
+---
+
+### Bridge Pattern
+The Bridge pattern is used to separate the abstract elements of a class from the implementation details, providing the means to replace the implementation details without modifying the abstraction. The Bridge pattern is used to separate the abstract elements of a class from the implementation details, providing the means to replace the implementation details without modifying the abstraction.
+
 <details>
-<summary>Bridge Pattern</summary>
-- The Bridge pattern is used to separate the abstract elements of a class from the implementation details, providing the means to replace the implementation details without modifying the abstraction. The Bridge pattern is used to separate the abstract elements of a class from the implementation details, providing the means to replace the implementation details without modifying the abstraction.
+<summary>Example</summary>
+- hi
 </details>
 
 <details>
@@ -121,8 +139,9 @@ The Composite pattern is used to compose objects into tree structures to represe
 
 </details>
 
-<details>
-<summary>Facade Pattern</summary>
+---
+
+### Facade Pattern
 - The Client uses the Facade to access the subsystem. The Facade pattern is used to provide a simple interface to a complex subsystem, library, a framework.
 - Having a Facade is handy when you want to integrate your app with a sophisticated library that has dozens of features, but you just need a tiny bit of its functionality.
 :::tip
@@ -130,7 +149,40 @@ The Composite pattern is used to compose objects into tree structures to represe
 - A Facade class can often be a Singleton since the same facade can be used by many clients.
 - Unlike Facade pattern, Proxy has similar interface, but Proxy does not add any new functionality, it just controls access to the object while Facade provides a simplified interface.
 :::
-In this example, we have a `ShapeMaker` class that provides a simple interface to the complex subsystem of classes that draw different shapes. The `ShapeMaker` class hides the complexity of the subsystem from the client.
+
+```mermaid
+classDiagram
+    class ClientApplication {
+        +VideoConverter videoConverter
+    }
+    class VideoConverter {
+        +VideoMixer videoMixer
+        +AudioMixer audioMixer
+        +Codecs codecs
+        +Bitrate bitrate
+    }
+    class VideoMixer {
+        
+    }
+    class AudioMixer {
+        
+    }
+    class Codecs {
+        
+    }
+    class Bitrate {
+        
+    }
+    ClientApplication --> VideoConverter : uses
+    VideoConverter --> VideoMixer : uses
+    VideoConverter --> AudioMixer : uses
+    VideoConverter --> Codecs : uses
+    VideoConverter --> Bitrate : uses
+```
+
+<details>
+<summary>Example</summary>
+- In this example, we have a `ShapeMaker` class that provides a simple interface to the complex subsystem of classes that draw different shapes. The `ShapeMaker` class hides the complexity of the subsystem from the client.
 
 ```java
 public class ShapeMaker {
