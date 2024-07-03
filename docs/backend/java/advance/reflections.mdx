@@ -1,0 +1,204 @@
+---
+title: Reflections
+description : "Java Interview Questions"
+sidebar_position: 4
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+
+Reflection is an API which is used to examine or modify the behavior of methods, classes, interfaces at runtime. The required classes for `Reflection` are provided under java.lang.reflect package.
+Using Reflection we can write general purpose algorithms that dynamically adapt and modify their behavior based on the classes they are acting on.
+- The java.lang.Class class provides many methods that can be used to get metadata, examine and change the run time behavior of a class.
+- The java.lang.reflect package provides many classes to implement reflection.
+
+#### Advantages of Reflection
+- It is used in IDE (Integrated Development Environment) e.g. Eclipse, MyEclipse, NetBeans etc.
+- It is used in the debugger to examine or modify the state of objects at runtime.
+- It is used in the Test Tools etc.
+
+
+### Below are the 3 ways to get the Class of an object in Java:
+<details>
+<summary>Using getClass() method</summary>
+  ```java
+  public class Test {
+      public static void main(String[] args) {
+          Test t = new Test();
+          Class c = t.getClass();
+          System.out.println(c.getName());
+      }
+  }
+  ```
+</details>
+
+<details>
+<summary>Using .class with the class</summary>
+  ```java
+  public class Test {
+      public static void main(String[] args) {
+          Class c = Test.class;
+          System.out.println(c.getName());
+      }
+  }
+  ```
+</details>
+
+
+<details>
+<summary>Using Class.forName() method</summary>
+```java
+public class Test {
+    public static void main(String[] args) {
+        try {
+            Class c = Class.forName("Test");
+            System.out.println(c.getName());
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+</details>
+
+
+### Constructor class in Java
+The `java.lang.reflect.Constructor` class provides various methods to work with the constructor of a class.
+- The `java.lang.Class` class provides the `getDeclaredConstructors()` method which returns all the constructors of the class.
+- `getConstructor()` method returns all the public constructor of the class.
+- To create an object of the class which is package-private we need to set the `setAccessible(true)` method.
+
+<details>
+<summary>Print all Constructors with Parameters</summary>
+```java title="Constructor.java"
+import java.lang.reflect.Constructor;
+
+public static void printConstructors(Class<?> cls) {
+    Constructor<?>[] constructors = cls.getDeclaredConstructors();
+
+    System.out.println(String.format("Class name: " + cls.getName() + " has " + constructors.length + " constructors"));
+    for (Constructor constructor : constructors) {
+        Class<?>[] parameterTypes = constructor.getParameterTypes();
+        List<String> list  = Arrays.stream(parameterTypes).map(Class::getName)
+          .collect(Collectors.toList());
+
+        System.out.println(parameterTypes);
+    }
+}
+```
+</details>
+
+### Method class in Java
+The `java.lang.reflect.Method` class provides many methods to work with the methods of a class. Throws `NoSuchMethodException` if the constructor is not found.
+- The `java.lang.Class` class provides the `getMethod()` method which returns the method of the class.
+
+### Field class in Java
+The `java.lang.reflect.Field` class provides many methods to work with the fields of a class. Throws `NoSuchFieldException` if the field is not found.
+Using `Field` class we can get the field name, type, and value of a field about a class dynamically.
+- The `java.lang.Class` class provides the `getDeclaredField()` method which returns all fiels of the 
+  class **irrespective of the access specifier, excluding inherited fields**.
+- `getField()` method returns all public fields of the class **including inherited fields**.
+- `Synthetic` fields are created by the compiler and are not present in the source code, we should not modify them.
+- To access the private fields of a class, the `setAccessible(true)` method needs to be called.
+
+
+### Create a JSON Serialzer
+In the below example let's create a JSON serializer using Reflection. The serializer will serialize the object into a JSON string and will not have access to the Classes outside its package.
+
+
+<details>
+<summary>Sample classes to serialize</summary>
+```java
+import java.lang.reflect.Method;
+import java.lang.reflect.Field;
+import java.lang.reflect.Constructor;
+
+public class Person {
+    private final String name;
+    private final int age;
+    private final Address address;
+
+    public Person(String name, int age, Address address) {
+        this.name = "John";
+        this.age = 30;
+        this.address = "New York";
+    }
+}
+
+public class Address{
+    private final String street;
+    private final String city;
+    private final String state;
+
+    public Address(String street, String city, String state) {
+        this.street = "123 Main St";
+        this.city = "New York";
+        this.state = "NY";
+    }
+}
+```
+</details>
+
+
+<details>
+<summary>JSON Serializer</summary>
+```java title="JSONSerializer.java"
+// method to add double quotes to the value
+private static String formatValue(String value){
+  return "\"" + value + "\"";
+}
+
+// method to format primitive types
+private static String formatPrimitive(Field field, Object parent) throws IllegalAccessException {
+  if(field.getType().equals(boolean.class)
+      || field.getType().equals(int.class)
+      || field.getType().equals(long.class)
+      || field.getType().equals(short.class))
+    return field.get(parent).toString();
+  else if(field.getType().equals(double.class)
+      || field.getType().equals(float.class))
+    return String.format("%.2f", field.get(parent));
+  else 
+    throw new IllegalArgumentException("Unsupported type"+ field.getType().getName());
+}
+
+public static String objectToString(Object obj) throws IllegalAccessException {
+    StringBuilder sb = new StringBuilder();
+    sb.append("{").append("\n");
+    Field[] fields = obj.getClass();.getDeclaredFields();
+
+    // loop for each field
+    for(Field field : fields){
+        field.setAccessible(true);
+        if(field.isSynthetic()) continue;
+
+        sb.append(formatValue(field.getName()));
+        sb.append(":");
+
+        if(field.getType().isPrimitive()){
+          sb.append(formatPrimitive(field, obj));
+        } else if(field.getType().equals(String.class)){
+          sb.append(objectToString(field.get(obj)));
+        } else{
+          sb.append(objectToString(field.get(obj)));
+        }
+
+        sb.append(",");
+    }
+    // remove last comma
+    sb.deleteCharAt(sb.length()-1);
+    sb.append("\n").append("}");
+    return sb.toString();
+}
+
+class Main {
+    public static void main(String[] args) throws Exception {
+        Address a = new Address("123 Main St", "New York", "NY");
+        Person p = new Person("John", 30, a);
+
+        System.out.println(objectToString(p));
+    }
+}
+```
+</details>
