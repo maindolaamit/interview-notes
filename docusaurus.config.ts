@@ -84,7 +84,7 @@ const config: Config = {
           type: "docSidebar",
           sidebarId: "systemDesignSidebar",
           position: "left",
-          label: "Systems Design",
+          label: "Designs",
         },
         {
           type: "docSidebar",
