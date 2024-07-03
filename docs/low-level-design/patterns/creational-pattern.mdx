@@ -1,0 +1,140 @@
+---
+title: Creational
+description : "Low Level Design Interview Questions"
+sidebar_position: 0
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+It is a `creational Design Pattern` which provides interface for creating objects in a superclass while allowing
+subclass to alter the Object types which will be created.
+
+
+## Singleton
+Singleton pattern is a creational design pattern that lets you ensure that a class has only one instance, while providing a global access point to this instance.
+#### Why do we need Singleton Pattern?
+- For example, if you have a class that needs to be instantiated only once, you can use the Singleton pattern. The Singleton pattern is used in scenarios when a user wants to restrict instantiation of a class to only one
+object.
+- When you want to use some shared resources like file system, database or network connections, you use Singleton pattern.
+
+### How to implement Singleton Pattern?
+To implement the Singleton pattern, you need to create a class with a method that creates a new instance of the class if one doesn’t exist. If an instance already exists, it simply returns a reference to that object.
+
+- Eager initialization: In eager initialization, the instance of Singleton Class is created at the time of class loading, this is the easiest method to create a singleton class but it has a drawback that instance is created even though client application might not be using it.
+    <details>
+    <summary>Example</summary>
+    ```java
+    public class Singleton {
+        private static Singleton instance;
+        private Singleton() {
+        }
+        public static Singleton getInstance() {
+            if (instance == null) {
+                instance = new Singleton();
+            }
+            return instance;
+        }
+    }
+    ```
+    </details>
+- Lazy initialization: In lazy initialization, the instance of Singleton Class is created when required. This is the most popular way of creating a singleton class because it is lazy initialization.
+    <details>
+    <summary>Example</summary>
+    ```java
+    public class Singleton {
+        private static Singleton instance;
+        private Singleton() {
+        }
+        public static Singleton getInstance() {
+            if (instance == null) {
+                instance = new Singleton();
+            }
+            return instance;
+        }
+    }
+    ```
+    </details>
+- Thread Safe Singleton: The easier way to create a thread-safe singleton class is to make the global access method synchronized, so that only one thread can execute this method at a time.
+    <details>
+    <summary>Example</summary>
+    ```java
+    public class Singleton {
+        private static Singleton instance;
+        private Singleton() {
+        }
+        public static synchronized Singleton getInstance() {
+            if (instance == null) {
+                instance = new Singleton();
+            }
+            return instance;
+        }
+    }
+    ```
+    </details>
+- Bill Pugh Singleton Implementation: Prior to Java 5, java memory model had a lot of issues and the above approaches used to fail in certain scenarios where too many threads try to get the instance of the Singleton class simultaneously. So Bill Pugh came up with a different approach to create the Singleton class using a inner static helper class.
+    <details>
+    <summary>Example</summary>
+    ```java
+    public class Singleton {
+        private Singleton() {
+        }
+        private static class SingletonHelper {
+            private static final Singleton INSTANCE = new Singleton();
+        }
+        public static Singleton getInstance() {
+            return SingletonHelper.INSTANCE;
+        }
+    }
+    ```
+    </details>
+- Using Enum: This is the best way to create a singleton class. It handles serialization and deserialization and also provides the guarantee that only one instance of the singleton class is created.
+    <details>
+    <summary>Example</summary>
+    ```java
+    public enum Singleton {
+        INSTANCE;
+        public void doSomething() {
+        }
+    }
+    ```
+    </details>
+
+:::tip When to use Singleton Pattern?
+- When you want to use some shared resources like file system, database or network connections, you use Singleton pattern.
+- When you want to restrict instantiation of a class to only one object.
+- When you want to have a global point of access to a class.
+
+Use Singleton when you want to have a more strict control over global variables.
+:::
+
+:::warning
+Singleton patterns violate the Single Responsibility Principle. They introduce global state into your application. This makes it difficult to test your application. It also makes it difficult to reason about the code. It’s difficult to know when and where the Singleton is being used.
+:::
+
+
+## Factory Method
+A class should have one and only one reason to change, meaning that a class should have only one job.
+
+If a class does more than one job, it becomes coupled. A change to one responsibility results to modification of the other responsibility. This leads to fragile designs that break in many places.
+Consider a simple example of a `Vehicle` class. It has a method `drive()`. Now you want to add a new functionality to the `drive()` method. You add a new method `startEngine()` to the `Vehicle` class. This change affects the other functionality of the `Vehicle` class. To keep the `Vehicle` class simple, we can create a separate class `Engine` having its own `start()` method. Then we can use the `Engine` class in the `Vehicle` class. This way we can separate the vehicle’s functionality from the engine’s functionality.
+
+<details>
+<summary>Abstract Factory Method</summary>
+Every subclass or derived class should be substitutable for their base or parent class.
+</details>
+
+<details>
+<summary>Builder</summary>
+A client should never be forced to implement an interface that it doesn’t use or clients shouldn’t be forced to depend on methods they do not use.
+</details>
+
+<details>
+<summary>Prototype</summary>
+Entities must depend on abstractions not on concretions. It states that the high-level module must not depend on the low-level module, but they should depend on abstractions.
+</details>
+
+:::tip
+Using these principles mindlessly can cause more harm than good. The SOLID principles are guidelines, not rules. They are not meant to be followed blindly. They are meant to be used as a guide to help you create better designs.
+:::
+

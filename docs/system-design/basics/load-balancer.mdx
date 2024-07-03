@@ -30,6 +30,12 @@ A load balancer is a device that acts as a reverse proxy and distributes network
     - Layer 4
     - Layer 7
 
+### Classifications of Load Balancers
+- **Layer 4 Load Balancer**: A layer 4 load balancer operates at the network level.
+ It forwards traffic based on IP address and port number. Layer 4 load balancers make routing decisions based on the source and destination IP addresses and ports, and are the most efficient load balancers.
+- **Layer 7 Load Balancer**: A layer 7 load balancer operates at the application level, and can make routing decisions based on various characteristics of the HTTP header, cookies, or data within the application message itself.
+ Layer 7 load balancers are more powerful, but also more resource intensive.
+
 ### What is a Reverse Proxy ?
 A reverse proxy is a web server that centralizes internal services and provides unified interfaces to the public. Requests from clients are forwarded to a server that can fulfill it before the reverse proxy returns the server's response to the client.
 

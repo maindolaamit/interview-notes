@@ -4,8 +4,10 @@ description : "Java Interview Questions"
 sidebar_position: 1
 ---
 
+```mdx-code-block
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+```
 
 # Core Java
 
@@ -220,7 +222,30 @@ public class SuperExample {
 
 ###  Why does Java not support multiple inheritance?
 Java does not support multiple inheritance because of the Diamond problem. If we have two classes A and B which extends C and we have a method in C which is overridden in both A and B. Now if we create a class D which extends both A and B and we call the method from D, which method will be called?
-![Diamond Problem](./img/diamond-problem.png)
+
+```mermaid
+classDiagram
+  class A {
+    +int data
+    +void doSomething()
+  }
+  class B {
+    +int b
+    +void doSomethingB()
+  }
+  class C {
+    +int c
+    +void doSomethingC()
+  }
+  class D {
+    +void doSomethingD()
+  }
+
+  B --|> A : Inheritance
+  C --|> A : Inheritance
+  D --|> B : Inheritance
+  D --|> C : Inheritance
+```
 
 This is the reason Java does not support multiple inheritance.
 
@@ -350,6 +375,12 @@ public class FinalizeExample {
 }
 ```
 
+:::note
+Code in finally is NOT executed only in two situations.
+- If exception is thrown in finally.
+- If JVM Crashes in between (for example, System.exit()).
+:::
+
 ### What is the difference between `throw` and `throws` in Java?
 `throw` is used to throw an exception while `throws` is used to declare an exception.
   
@@ -369,13 +400,43 @@ public class FinalizeExample {
 
 ### What is the difference between `checked` and `unchecked` Exception in Java?
 `checked` Exception are the Exception which are checked at compile time while `unchecked` Exception are the Exception which are not checked at compile time.
+
+<details>
+<summary>Checked Exception</summary>
 ```java
-public void method() throws Exception {
+public void method(){
     // some code
+    throw new Exception("Checked Exception");
+}
+
+public static void main(String[] args) {
+    try {
+        method();
+    } catch (Exception e) {
+        // Need to handle the Exception otherwise it will give compile time error
+        // They should either be caught or declared in the method signature
+    }
 }
 ```
+</details>
+
+<details>
+<summary>Unchecked Exception</summary>
 ```java
-public void method() throws RuntimeException {
+public void method() {
     // some code
+    throw new RuntimeException("Unchecked Exception");
+}
+
+public static void main(String[] args) {
+    method();
 }
 ```
+Exception in thread "main" java.lang.RuntimeException: Unchecked Exception at Main.main(Main.java:7)
+</details>
+
+### Explain the Factory Design pattern and two class examples you have used?
+We can use SessionFactory to obtain the session Object to perform CRUD operation and BeanFactory to obtain the Bean Object.
+
+We can use SessionFactory to obtain the session Object to perform CRUD operation and BeanFactory to obtain the Bean Object.
+

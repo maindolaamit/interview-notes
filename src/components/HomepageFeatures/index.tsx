@@ -4,12 +4,12 @@ import styles from "./styles.module.css";
 
 const FeatureList: FeatureItem[] = [
   {
-    title: "Easy to Use",
+    title: "Easy to Revise Notes",
     Svg: require("@site/static/img/undraw_docusaurus_mountain.svg").default,
     description: (
       <>
-        Docusaurus was designed from the ground up to be easily installed and used to get your
-        website up and running quickly.
+        InterViewNotes is built with the purpose of making it easy to revise notes. It is designed to
+        be easy to revise important topics.
       </>
     ),
   },
@@ -18,18 +18,18 @@ const FeatureList: FeatureItem[] = [
     Svg: require("@site/static/img/undraw_docusaurus_tree.svg").default,
     description: (
       <>
-        Docusaurus lets you focus on your docs, and we&apos;ll do the chores. Go ahead and move your
-        docs into the <code>docs</code> directory.
+        Select the topics you want to revise and focus on what matters. InterViewNotes is designed to
+        helps you revise not to learn & explain in depth.
       </>
     ),
   },
   {
-    title: "Powered by React",
+    title: "Community Driven",
     Svg: require("@site/static/img/undraw_docusaurus_react.svg").default,
     description: (
       <>
-        Extend or customize your website layout by reusing React. Docusaurus can be extended while
-        reusing the same header and footer.
+        InterViewNotes is open source and is driven by the community. It is designed to be easy to
+        contribute and help others.
       </>
     ),
   },

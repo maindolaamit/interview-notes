@@ -1,0 +1,264 @@
+---
+title: Python
+description : "Python Interview Questions"
+sidebar_position: 0
+---
+
+### What is use of `__init__` in python?
+`__init__` is a special method in Python classes. It is called a constructor method and is automatically called when a new instance of the class is created. It is used to initialize the object's state.
+
+```python
+class MyClass:
+    def __init__(self, name):
+        self.name = name
+
+obj = MyClass('John')
+print(obj.name) # John
+```
+
+### What is the difference between `__str__` and `__repr__` in Python?
+`__str__` and `__repr__` are both methods used to represent an object in Python. `__str__` is used to return a string representation of the object and is used for the end user. `__repr__` is used to return a string representation of the object and is used for debugging and development.
+
+```python
+class MyClass:
+    def __init__(self, name):
+        self.name = name
+
+    def __str__(self):
+        return f'Name: {self.name}'
+
+    def __repr__(self):
+        return f'MyClass({self.name})'
+
+obj = MyClass('John')
+print(str(obj)) # Name: John
+print(repr(obj)) # MyClass(John)
+```
+
+### What is the difference between `is` and `==` in Python?
+`is` is used to check if two variables refer to the same object in memory. `==` is used to check if two variables have the same value.
+
+```python
+a = [1, 2, 3]
+b = a
+print(a is b) # True
+print(a == b) # True
+
+c = [1, 2, 3]
+print(a is c) # False
+print(a == c) # True
+```
+
+### What is the difference between `append` and `extend` in Python?
+`append` is used to add a single element to the end of a list. `extend` is used to add multiple elements to the end of a list.
+
+```python
+a = [1, 2, 3]
+a.append(4)
+print(a) # [1, 2, 3, 4]
+
+b = [5, 6, 7]
+a.extend(b)
+print(a) # [1, 2, 3, 4, 5, 6, 7]
+```
+
+### What is the difference between `sort` and `sorted` in Python?
+`sort` is a method used to sort a list in place. `sorted` is a built-in function used to return a new sorted list.
+
+```python
+a = [3, 2, 1]
+a.sort()
+print(a) # [1, 2, 3]
+
+b = [3, 2, 1]
+c = sorted(b)
+print(b) # [3, 2, 1]
+print(c) # [1, 2, 3]
+```
+
+### What is the difference between `args` and `kwargs` in Python?
+
+`args` is used to pass a variable number of positional arguments to a function. `kwargs` is used to pass a variable number of keyword arguments to a function.
+
+```python
+def myfunc(*args):
+    for arg in args:
+        print(arg)
+
+myfunc(1, 2, 3)
+
+def myfunc(**kwargs):
+    for key, value in kwargs.items():
+        print(f'{key}: {value}')
+
+myfunc(a=1, b=2, c=3)
+```
+
+### What is the difference between `list` and `tuple` in Python?
+
+`list` is a mutable data type in Python. `tuple` is an immutable data type in Python.
+
+```python
+a = [1, 2, 3]
+a[0] = 4
+print(a) # [4, 2, 3]
+
+b = (1, 2, 3)
+b[0] = 4
+# TypeError: 'tuple' object does not support item assignment
+```
+
+### What is the difference between `global` and `nonlocal` in Python?
+
+`global` is used to declare a global variable inside a function. `nonlocal` is used to declare a variable in the enclosing scope inside a nested function.
+
+```python
+x = 10
+
+def myfunc():
+    global x
+    x = 20
+
+myfunc()
+print(x) # 20
+
+def outer():
+    y = 10
+    def inner():
+        nonlocal y
+        y = 20
+    inner()
+    print(y) # 20
+
+outer()
+```
+
+### What are `lambdas `in Python?
+Lambda is a small anonymous function. It can take any number of arguments, but can only have one expression.
+
+```python
+add = lambda x, y: x + y
+print(add(2, 3)) # 5
+```
+
+### What is the difference between `yield` and `return` in Python?
+
+`yield` is used to return a value from a generator function. `return` is used to return a value from a regular function.
+
+```python
+def mygen():
+    yield 1
+    yield 2
+    yield 3
+
+gen = mygen()
+print(next(gen)) # 1
+
+def myfunc():
+    return 1
+
+print(myfunc()) # 1
+```
+
+### What is the difference between `map` and `filter` in Python?
+
+`map` is used to apply a function to every element in an iterable. `filter` is used to filter elements from an iterable based on a function.
+
+```python
+a = [1, 2, 3, 4]
+b = map(lambda x: x * 2, a)
+
+c = [1, 2, 3, 4]
+d = filter(lambda x: x % 2 == 0, c)
+
+print(list(b)) # [2, 4, 6, 8]
+print(list(d)) # [2, 4]
+```
+
+### What is the difference between `iter` and `next` in Python?
+
+`iter` is used to create an iterator from an iterable. `next` is used to get the next element from an iterator.
+
+```python
+a = [1, 2, 3]
+b = iter(a)
+print(next(b)) # 1
+print(next(b)) # 2
+print(next(b)) # 3
+```
+
+### What is the difference between `shallow copy` and `deep copy` in Python?
+
+A shallow copy creates a new object, but does not create new objects for the elements of the original object. A deep copy creates a new object and creates new objects for the elements of the original object.
+
+```python
+import copy
+
+a = [[1, 2, 3], [4, 5, 6]]
+
+b = copy.copy(a)
+b[0][0] = 4
+print(a) # [[4, 2, 3], [4, 5, 6]]
+
+c = copy.deepcopy(a)
+c[0][0] = 1
+print(a) # [[4, 2, 3], [4, 5, 6]]
+```
+
+### What is Pickling and Unpickling in Python?
+
+Pickling is the process of converting a Python object into a byte stream. Unpickling is the process of converting a byte stream back into a Python object.
+
+```python
+
+import pickle
+
+a = [1, 2, 3]
+
+with open('data.pkl', 'wb') as f:
+    pickle.dump(a, f)
+
+with open('data.pkl', 'rb') as f:
+    b = pickle.load(f)
+
+print(b) # [1, 2, 3]
+```
+
+### What is the difference between `__getattr__` and `__getattribute__` in Python?
+`__getattr__` is called when an attribute is not found in the usual places. `__getattribute__` is called for every attribute access.
+
+```python
+class MyClass:
+    def __getattr__(self, name):
+        return f'Attribute {name} not found'
+
+    def __getattribute__(self, name):
+        return f'Attribute {name}'
+```
+
+### How do we define a private & protected variable in Python?
+In Python, private variables are defined using a double underscore `__` before the variable name.
+
+```python
+class MyClass:
+    def __init__(self):
+        self.__name = 'John'
+
+    def get_name(self):
+        return self.__name
+```
+
+Protected variables are defined using a single underscore `_` before the variable name.
+
+```python
+class MyClass:
+    def __init__(self):
+        self._name = 'John'
+
+    def get_name(self):
+        return self._name
+```
+
+
+
+
