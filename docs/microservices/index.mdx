@@ -10,12 +10,23 @@ import TabItem from '@theme/TabItem';
 ### Features of Good Design
 Let's look at some of the features of a good design to aim for better software architecture.
 <details>
-<summary>Code Reuse</summary>
-- Reuse of code is one of the most important features of a good design.
-- It reduces the development time and cost.
-- It also improves the quality of the software.
+<summary>Fault vs Failure</summary>
+- Fault is when a component of a system deviates from its spec.
+- Failure is when the system as a whole stops providing service
 </details>
+:::tip
+It is impossible to build a system that is free from faults, but we can build a system that is resilient to failures.
 
+By deliberately inducing faults, you ensure that the fault-tolerance machinery is continually exercised and tested,
+which can increase your confidence that faults will be handled correctly when they occur naturally.
+The Netflix `Chaos Monkey` is an example of this approach.
+:::
+
+<details>
+    <summary>Latency vs Response Time</summary>
+    - Response time is the time taken to respond to a request.
+    - Latency is the time request waiting to be handled - during which it was latent.
+</details>
 <details>
 <summary>Extensibility</summary>
 - A good design should be extensible, i.e. it should be designed in a way that it can accommodate future requirements without changing the existing code.

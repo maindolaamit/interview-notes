@@ -4,66 +4,164 @@ description : "Systems Design Basics"
 sidebar_position: 2
 ---
 
-### Vertical vs Horizontal Scaling
-Vertical scaling, referred to as “scale up”, means the process of adding more power (CPU, RAM, etc.) to your servers. Horizontal scaling, referred to as “scale-out”, allows you to scale by adding more servers into your pool of resources.
+<details>
+    <summary>What is Scalability?</summary>
+    - Scalability is the ability of a system to handle increased load by adding resources to the system.
+    - A system that scales well will be able to maintain or even increase its level of performance or service even as it
+    gets larger.
+    - Scalability can be measured in terms of latency or throughput.
+    - Latency is the time taken to respond to a request.
+    - Throughput is the number of requests a system can handle per second.
+</details>
 
-When traffic is low, vertical scaling is a great option, and the simplicity of vertical scaling is its main advantage. Unfortunately, it comes with serious limitations.
+<details>
+    <summary>What is Throughput?</summary>
+    - Throughput is the number of requests a system can handle per second, usually measured in requests per second.
+    - Throughput is affected by the number of requests the server is handling at a given time.
+    - Throughput is also affected by the size of the requests.
+    - Throughput is also affected by the size of the responses.
+</details>
+
+<details>
+    <summary>Fault vs Failure</summary>
+    - Fault is when a component of a system deviates from its spec.
+    - Failure is when the system as a whole stops providing service
+</details>
+
+:::tip
+It is impossible to build a system that is free from faults, but we can build a system that is resilient to failures.
+
+By deliberately inducing faults, you ensure that the fault-tolerance machinery is continually exercised and tested,
+which can increase your confidence that faults will be handled correctly when they occur naturally.
+The Netflix `Chaos Monkey` is an example of this approach.
+:::
+
+### Vertical Scaling
+Vertical scaling, referred to as “scale up”, means the process of adding more power (CPU, RAM, etc.) to your servers.
+Horizontal scaling, referred to as “scale-out”, allows you to scale by adding more servers into your pool of resources.
+
+<details>
+    <summary>Shared Memory Architecture</summary>
+
+    Many CPUs, many RAM chips, and many disks can be joined together under one operating system, and
+    a fast interconnect allows any CPU to access any part of the memory or disk. In this
+    kind of shared-memory architecture, all the components can be treated as a single
+    machine
+
+    The problem with a shared-memory approach is that the cost grows faster than linearly:
+    a machine with twice as many CPUs, twice as much RAM, and twice as much
+    disk capacity as another typically costs significantly more than twice
+</details>
+
+**When traffic is low, vertical scaling is a great option**, and the simplicity of vertical scaling is its main advantage.
+“It’s also worth noting that vertical scaling can make it easier to perform other types of scaling. As a concrete example, moving your database infrastructure to a larger machine may allow it to host the logically isolated databases for newly created microservices as part of functional decomposition.”
+
+Unfortunately, it comes with serious limitations.
 - Vertical scaling has a hard limit. It is impossible to add unlimited CPU and memory to a single server.
-- Vertical scaling does not have failower and redundancy. If one server goes down, the website/app goes down with it completely.
+- Vertical scaling does not have failover and redundancy. If one server goes down, the website/app goes down with it completely.
+- A machine twice the size cannot necessarily handle twice the load
+
+### Horizontal Scaling
 Horizontal scaling is more desirable for large scale applications due to the limitations of vertical scaling.
+- needs load distribution mechanism, often with help of a load balancer
 
 <details>
-<summary>What is Reliability?</summary>
-- Reliability is the probability that a system will fail in a given period.
-- An often quoted reliability standard is the "five nines" (99.999 percent) reliability. This allows for 5.26 minutes of downtime per year.
-- A Distributed system will be considered reliable it it is able to provide the same service even if one or more of its components fail.
-- Any failing node can be replaced with a new node without affecting the service.
+    <summary>Shared nothing Architecture</summary>
+
+    In this each machine or virtual machine is called `node` and are joined together at software level using
+    conventional network. Each node has its own memory and disk, and there is no shared memory or disk.
+
+    These nodes are independent and do not share memory or disk, and communicate with each other using messages.
+    This distributed network of nodes is called a `cluster` and required most caution from the developer to ensure
+    that the system is fault-tolerant and can handle failures gracefully.
+</details>
+
+### Data Replication & Partitioning
+`Replication` means keeping a copy of the same data on multiple machines.
+This is done to ensure that the system is fault-tolerant and can handle failures gracefully.
+- To keep data close to user (reduce latency)
+- To keep data available even if one of the replicas goes down (improve availability)
+- To scale out the machines for read requests (improve throughput)
+
+Replication is easy but difficult when data is changing. It is difficult to keep all the replicas in sync.
+
+<details>
+    <summary>Leader Follower</summary>
+    - One of the replicas is designated as the leader and the rest are followers.
+    All write requests go to the leader and the leader replicates the changes to the followers.
+    - All other nodes are called followers and they replicate the changes made by the leader by taking its log.
+    - If the leader goes down, one of the followers is elected as the new leader.
+</details>
+
+
+`Partitioning` means dividing the data into smaller parts and distributing them across multiple machines.
+This is done to ensure that the system can handle a large amount of data and traffic.
+- To keep data close to user (reduce latency)
+- To keep data available even if one of the replicas goes down (improve availability)
+
+The way data partitioning works is that we take a key associated with the workload and apply a function to it, and the result is the partition (sometimes called a shard) we will distribute the work to.
+
+- Data partitioning scales really nicely for transactional workloads.
+- If your system is write-constrained, for example, data partitioning can deliver huge improvements.
+- Reduced impact and scope of maintenance activities like Rolling updates can be done on a per-partition basis.
+
+
+Limitations:
+- If Partitioning is not done correctly, it can lead to hotspots.
+- If a partition fails then that portion of the data is unavailable.
+- Query a data spanning multiple partitions can be complex and slow.
+
+
+<details>
+    <summary>What is Reliability?</summary>
+    - Reliability is the probability that a system will fail in a given period.
+    - An often quoted reliability standard is the "five nines" (99.999 percent) reliability. This allows for 5.26
+    minutes of downtime per year.
+    - A Distributed system will be considered reliable it it is able to provide the same service even if one or more of
+    its components fail.
+    - Any failing node can be replaced with a new node without affecting the service.
 </details>
 
 <details>
-<summary>What is Availability?</summary>
-- Availability is the time a system remains operational to perform its required function in a specific period.
-- Availability is usually measured as a percentage of uptime in a given year.
-- Availability = uptime / (uptime + downtime)
-- A system that is highly available will be able to provide service even if one or more of its components fail.
-- Any failing node can be replaced with a new node without affecting the service.
+    <summary>What is Availability?</summary>
+    - Availability is the time a system remains operational to perform its required function in a specific period.
+    - Availability is usually measured as a percentage of uptime in a given year.
+    - Availability = uptime / (uptime + downtime)
+    - A system that is highly available will be able to provide service even if one or more of its components fail.
+    - Any failing node can be replaced with a new node without affecting the service.
 </details>
 
 <details>
-<summary>What is Durability?</summary>
-- Durability is the ability of a system to recover from component failures and continue to function.
-- Durability is usually measured as the mean time to failure (MTTF) or mean time between failures (MTBF).
-- Durability is usually measured in years.
-- A system that is highly durable will be able to recover from component failures and continue to function.
-- Any failing node can be replaced with a new node without affecting the service.
+    <summary>What is Durability?</summary>
+    - Durability is the ability of a system to recover from component failures and continue to function.
+    - Durability is usually measured as the mean time to failure (MTTF) or mean time between failures (MTBF).
+    - Durability is usually measured in years.
+    - A system that is highly durable will be able to recover from component failures and continue to function.
+    - Any failing node can be replaced with a new node without affecting the service.
 </details>
 
 
 <details>
-<summary>What is Scalability?</summary>
-- Scalability is the ability of a system to handle increased load by adding resources to the system.
-- A system that scales well will be able to maintain or even increase its level of performance or service even as it gets larger.
-- Scalability can be measured in terms of latency or throughput.
-- Latency is the time taken to respond to a request.
-- Throughput is the number of requests a system can handle per second.
+    <summary>What is Latency?</summary>
+    - Latency is the time taken for a request to travel from the client to the server and back, usually measured in
+    milliseconds.
+    - Latency is affected by the distance between the client and the server.
+    - Latency is also affected by the number of hops between the client and the server.
+    - Latency is also affected by the number of requests the server is handling at a given time.
+    - Latency is also affected by the size of the requests.
+    - Latency is also affected by the size of the responses.
+</details>
+<details>
+    <summary>Latency vs Response Time</summary>
+    - Response time is the time taken to respond to a request.
+    - Latency is the time request waiting to be handled - during which it was latent.
 </details>
 
 <details>
-<summary>What is Latency?</summary>
-- Latency is the time taken for a request to travel from the client to the server and back, usually measured in milliseconds.
-- Latency is affected by the distance between the client and the server.
-- Latency is also affected by the number of hops between the client and the server.
-- Latency is also affected by the number of requests the server is handling at a given time.
-- Latency is also affected by the size of the requests.
-- Latency is also affected by the size of the responses.
-</details>
-
-<details>
-<summary>What is Throughput?</summary>
-- Throughput is the number of requests a system can handle per second, usually measured in requests per second.
-- Throughput is affected by the number of requests the server is handling at a given time.
-- Throughput is also affected by the size of the requests.
-- Throughput is also affected by the size of the responses.
+    <summary>Extensibility</summary>
+    - A good design should be extensible, i.e. it should be designed in a way that it can accommodate future
+    requirements without changing the existing code.
+    - It should be open for extension but closed for modification.
 </details>
 
 ### CAP Theorem
@@ -73,31 +171,31 @@ The CAP theorem states that it is impossible for a distributed system to simulta
 - Partition tolerance: The system continues to operate despite an arbitrary number of messages being dropped (or delayed) by the network between nodes.
 
 <details>
-<summary>What is Consistency?</summary>
-- Consistency is the guarantee that all nodes in a distributed system will have the same data at the same time.
-- Consistency is usually measured as the time it takes for the data to be replicated across all nodes.
-- Consistency is usually measured in milliseconds.
-- A system that is highly consistent will have the same data across all nodes at the same time.
+    <summary>What is Consistency?</summary>
+    - Consistency is the guarantee that all nodes in a distributed system will have the same data at the same time.
+    - Consistency is usually measured as the time it takes for the data to be replicated across all nodes.
+    - Consistency is usually measured in milliseconds.
+    - A system that is highly consistent will have the same data across all nodes at the same time.
 </details>
 
 <details>
-<summary>What is Partition Tolerance?</summary>
-- Partition Tolerance is the ability of a system to continue to function even if the network is partitioned.
-- A system that is highly partition tolerant will continue to function even if the network is partitioned.
+    <summary>What is Partition Tolerance?</summary>
+    - Partition Tolerance is the ability of a system to continue to function even if the network is partitioned.
+    - A system that is highly partition tolerant will continue to function even if the network is partitioned.
 </details>
 
 <details>
-<summary>What is BASE?</summary>
-- BASE is an acronym for Basically Available, Soft state, Eventual consistency.
-- BASE is a set of principles that inform how distributed systems should be designed.
-- BASE is an alternative to ACID.
-- BASE is used to describe the properties of many NoSQL databases.
+    <summary>What is BASE?</summary>
+    - BASE is an acronym for Basically Available, Soft state, Eventual consistency.
+    - BASE is a set of principles that inform how distributed systems should be designed.
+    - BASE is an alternative to ACID.
+    - BASE is used to describe the properties of many NoSQL databases.
 </details>
 
 <details>
-<summary>What is ACID?</summary>
-- ACID is an acronym for Atomicity, Consistency, Isolation, Durability.
-- ACID is a set of principles that inform how distributed systems should be designed.
-- ACID is used to describe the properties of many SQL databases.
+    <summary>What is ACID?</summary>
+    - ACID is an acronym for Atomicity, Consistency, Isolation, Durability.
+    - ACID is a set of principles that inform how distributed systems should be designed.
+    - ACID is used to describe the properties of many SQL databases.
 </details>
 

@@ -1,0 +1,107 @@
+---
+title: Databases
+description : "Systems Design Basics"
+sidebar_position: 3
+---
+
+## Relational Databases
+A relational database is a type of database that stores and provides access to data points that are related to one another.
+There are no restrictions on the number of relationships that can be stored in a relational database.
+
+In a relational database, the query optimizer automatically decides which parts of the query to execute in which order, and which indexes to use.
+
+:::note
+Anything that is meaningful to humans may need to change sometime in
+the future—and if that information is duplicated, all the redundant copies need to be
+updated. That incurs write overheads, and risks inconsistencies (where some copies
+of the information are updated but others aren’t).
+
+Removing such duplication is the key idea behind `Normalization` in databases.
+:::
+
+
+On the `OLTP` side, `storage engines` originates from two main schools of thought:
+- The log-structured school, which only permits appending to files and deleting
+obsolete files, but never updates a file that has been written. Bitcask, SSTables,
+LSM-trees, LevelDB, Cassandra, HBase, Lucene, and others belong to this group.
+- The update-in-place school, which treats the disk as a set of fixed-size pages that
+can be overwritten. B-trees are the biggest example of this philosophy, being used
+in all major relational databases and also many non-relational ones.
+
+### Indexes
+The most common type of index is a `B-tree index`, which is well suited to the most common access pattern where you look up a single document by its key.
+
+:::note
+a B-tree with n keys always has a depth of O(log n).
+Most databases can fit into a B-tree that is three or four levels deep, so you don’t need to follow many page references to find the page you are look‐
+ing for.
+
+(A four-level tree of 4 KB pages with a branching factor of 500 can store up to 256 TB.)
+:::
+
+
+In order to make the database resilient to crashes, it is common for B-tree implementations to include an additional data structure on disk:
+a `write-ahead` log (WAL, also known as a redo log).
+This is an append-only file to which every B-tree modification must be written before it can be applied to the pages of the tree itself.
+When the database comes back up after a crash, this log is used to restore the B-tree back to a consistent state.
+
+
+### Column-family stores
+In most OLTP databases, storage is laid out in a row-oriented fashion: all the values
+from one row of a table are stored next to each other. Document databases are similar: an entire document is
+typically stored as one contiguous sequence of bytes.
+
+A `row-oriented` storage engine still needs to load all of those rows (each consisting of over 100 attributes) from
+disk into memory, parse them, and filter out those that don’t meet the required conditions, that can take a long time.
+The idea behind `column-oriented` storage is simple: don’t store all the values from one row together, but store all the values from each column together instead.
+
+
+Often, the number of distinct values in a column is small compared to the number of rows.
+`Bitmap Indexes` such as these are very well suited for the kinds of queries that are common in a data warehouse.
+
+
+:::tip
+Besides reducing the volume of data that needs to be loaded from disk, column-oriented storage layouts are also good
+for making efficient use of CPU cycles. For example, the query engine can take a chunk of compressed column data that fits
+comfortably in the CPU’s L1 cache and iterate through it in a tight loop (that is, with no function calls).
+:::
+
+## NoSQL Databases
+The main arguments in favor of the document data model are schema flexibility, bet‐ ter performance due to locality, and that for some applications it is closer to the data
+structures used by the application.
+
+The document model has limitations: for example, you cannot refer directly to a nes‐
+ted item within a document, but instead you need to say something like “the second
+item in the list of positions for user 251” (much like an access path in the hierarchical
+model). However, as long as documents are not too deeply nested, that is not usually
+a problem.
+The locality advantage only applies if you need large parts of the document at the same time.
+
+The relational model counters by providing better support for joins, and many-to-one and many-to-many relationships.
+
+:::note
+Document databases are sometimes called `schemaless`, but that’s misleading, as the
+code that reads the data usually assumes some kind of structure—i.e., there is an
+implicit schema, but it is not enforced by the database.
+
+A more accurate term is `schema-on-read` (the structure of the data is implicit, and only interpreted when the
+data is read), in contrast with `schema-on-write` (the traditional approach of relational)
+:::
+
+<details>
+    <summary>Which data model leads to simpler application code?</summary>
+
+    If the data in your application has a document-like structure (i.e., a tree of one-to many relationships, where
+    typically the entire tree is loaded at once), then it’s proba‐
+    Data Models and Query Languages a good idea to use a document model.
+
+    The poor support for joins in document databases may or may not be a problem,
+    depending on the application.
+</details>
+
+
+:::note
+Many different databases implement their proprietary binary encoding to send and receive data. They have a network
+protocol over which we can send query and receive results over network protocol using DB drivers.
+:::
+

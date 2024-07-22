@@ -1,0 +1,49 @@
+---
+title: Network
+description : "High Level Design concepts"
+sidebar_position: 6
+---
+
+
+REST is not a protocol, but rather a design philosophy that builds upon the principles
+of HTTP. It emphasizes simple data formats, using URLs for identifying
+resources and using HTTP features for cache control, authentication, and content
+type negotiation
+
+### SOAP
+The API of a SOAP web service is described using an XML-based language called the
+Web Services Description Language, or WSDL. WSDL enables code generation so
+that a client can access a remote service using local classes and method calls (which
+are encoded to XML messages and decoded again by the framework). This is useful in
+statically typed programming languages, but less so in dynamically typed ones
+
+
+As WSDL is not designed to be human-readable, and as SOAP messages are often too
+complex to construct manually, users of SOAP rely heavily on tool support
+
+
+### RPC
+
+#### Difference between RPC and Local function calls
+- A local function call is predictable and either succeeds or fails, depending only on parameters that are under your control.
+A network request is unpredictable: the request or response may be lost due to a network problem, or the remote
+machine may be slow or unavailable, and such problems are entirely outside of your control.
+Network problems are common, so you have to anticipate them, for example by retrying a failed request.
+- A local function call either returns a result, or throws an exception, or never returns (because it goes into an infinite
+loop or the process crashes). A network request has another possible outcome: it may return without a result, due to a
+timeout. In that case, you simply don’t know what happened: if you don’t get a response from the remote service, you
+have no way of knowing whether the request got through or not.
+- Every time you call a local function, it normally takes about the same time to execute. A network request is much slower
+than a function call, and its latency is also wildly variable:
+- When you call a local function, you can efficiently pass it references (pointers) to objects in local memory. When you
+make a network request, all those parameters need to be encoded into a sequence of bytes that can be sent over the network.
+That’s okay if the parameters are primitives like numbers or strings, but quickly becomes problematic with larger objects.
+
+
+**gRPC supports streams, where a call consists of not just one request and one response, but a series of requests and responses over time**
+
+
+
+### Message brokers
+A topic provides only one-way dataflow. However, a consumer may itself publish messages to another topic (so you can chain
+them together), or to a reply queue that is consumed by the sender of the original message (allowing a request/response dataflow, similar to RPC).
