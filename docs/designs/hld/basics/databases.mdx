@@ -45,6 +45,58 @@ a `write-ahead` log (WAL, also known as a redo log).
 This is an append-only file to which every B-tree modification must be written before it can be applied to the pages of the tree itself.
 When the database comes back up after a crash, this log is used to restore the B-tree back to a consistent state.
 
+### Transactions
+Most databases are accessed by several clients at the same time. That is no problem if
+they are reading and writing different parts of the database, but if they are accessing
+the same database records, you can run into concurrency problems (race conditions)
+
+- **Atomic** : It refers to something that cannot be broken down into smaller parts.
+The system can only be in the state it was before the operation
+or after the operation, not something in between.
+- **Isolation** : Isolation in the sense of ACID means that concurrently executing transactions are
+isolated from each other: they cannot step on each other’s toes.
+- **Durability** : Durability is the promise that once a transaction has committed successfully,
+any data it has written will not be forgotten, even if there is a hardware fault or the database crashes.
+
+::: note
+Atomicity can be implemented using a log for crash recovery, and isolation can be implemented
+using a lock on each object (allowing only one thread to access an object at any one time).
+:::
+
+A transaction is usually understood as a mechanism for grouping multiple operations on multiple objects into one
+unit of execution.
+
+##### Read committed
+Imagine a transaction has written some data to the database, but the transaction has not yet committed or aborted.
+Can another transaction see that uncommitted data?
+If yes, that is called a dirty read.
+Transactions running at the read committed isolation level must prevent dirty reads.
+This means that any writes by a transaction only become visible to others when that
+transaction commits
+**Read committed is a very popular isolation level.
+It is the default setting in Oracle 11g, PostgreSQL, SQL Server 2012, MemSQL, and many other databases**
+
+##### Write committed
+Image two clients are trying to update the same data, one is part of a transaction, and the other is not.
+If the non-transactional client overwrites the uncommited data of the transactional client, that is called a dirty write.
+Most commonly, databases prevent dirty writes by using row-level locks: when a transaction wants to modify a
+particular object (row or document), it must first acquire a lock on that object.
+It must then hold that lock until the transaction is committed or aborted.
+Only one transaction can hold the lock for any given object; if another transaction wants to write to the same object,
+it must wait until the first transaction is committed or aborted before it can acquire the lock and continue
+
+
+
+:::note
+Locks and compare-and-set operations assume that there is a single up-to-date copy of the data.
+However, databases with multi-leader or leaderless replication usually allow several writes to happen concurrently and replicate them asynchronously,
+so they cannot guarantee that there is a single up-to-date copy of the data.
+Thus, techniques based on locks or compare-and-set do not apply in this context.
+
+A common approach in such replicated databases is to allow concurrent writes to create several conflicting versions of
+a value (also known as siblings), and to use application code or special data structures to resolve and merge
+these versions after the fact.
+:::
 
 ### Column-family stores
 In most OLTP databases, storage is laid out in a row-oriented fashion: all the values
@@ -105,3 +157,20 @@ Many different databases implement their proprietary binary encoding to send and
 protocol over which we can send query and receive results over network protocol using DB drivers.
 :::
 
+
+<details>
+    <summary>Fencing Tokens</summary>
+
+    When using a lock or lease to protect a resource from being accessed by multiple clients at the same time, it is
+    important to ensure that the lock or lease is released when the client no longer needs it.
+
+    If a client becomes unreachable while holding a lock or lease due to network delay or GC pause,
+    the resource may become unavailable
+    indefinitely. This is known as a `split-brain` situation. When the client come back alive it may assume that it still
+    holds the lock or lease, and start modifying the resource, even though another client may have acquired the lock or lease.
+
+    To prevent this, the lock or lease can be associated with a `fencing token`, which is an increasing value that changes
+    every time the lock or lease is acquired by `lock server`. When a client sends a write request it includes the
+    fencing token. If the fencing token has changed since the resource last saw it,
+    the lock or lease is considered to be held by another client, and the operation fails.
+</details>

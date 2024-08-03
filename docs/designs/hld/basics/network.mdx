@@ -17,3 +17,40 @@ response time is longer, it might as well be down), and the service may be requi
 These metrics set expectations for clients of the service and allow customers to demand a refund if the `SLA `is not met.
 
 
+
+### Timeouts and unbounded delays
+
+Asynchronous systems try to deliver packets as soon as possible, but there is no upper bound on how long it might take for a packet to be delivered.
+This is called an `unbounded delay`.
+
+<details>
+<summary>If a timeout is the only sure way of detecting a fault, then how long should the timeout be?</summary>
+    ** There is unfortunately no simple answer. **
+    - A short timeout will detect faults quickly, but it might also generate false positives.
+    - A long timeout will generate fewer false positives, but it will take longer to detect actual faults.
+
+    When a node is declared dead it's work is reassigned to other nodes. This is called `failover`. It burdens the
+    other nodes and increases the latency of the system or even cause it to fail. This is called `cascading failure`.
+</details>
+
+In a public cloud and multi-tenant data centers, the network is a shared resource and the performance of the network can be unpredictable.
+In such environment, we can measure the distribution of network latency and use it to set timeouts.
+So rather than choosing constant timeout, the system can continuously measure network response time and their
+variability(jitter) and adjust the timeout accordingly.
+
+This is called `adaptive timeouts` and used by Google's Spanner, Cassandra and F1 systems.
+
+
+### Sync vs Async
+A traditional fixed line telephone is extremely reliable,
+wouldn't it be nice to have similar reliability in computer networks.
+
+A telephone line uses `circuit(a guranteed amount of bandwidth)` to establish a connection between two parties.
+This kind of communication is called `synchronous` communication, there is no queuing.
+A `circuit` is a dedicated path between two points in a network which is very different from the packet-switched (TCP)
+networks, while internet shares bandwidth among multiple users dynamically.
+
+The datacenters and internet are designed for burst traffic, so they don't have any guaranteed bandwidth and are
+supposed to complete a job quickly.
+Using `circuit` for some applications would be wasteful of network capacity.
+
