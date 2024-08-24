@@ -83,7 +83,8 @@ This is done to ensure that the system is fault-tolerant and can handle failures
 - To keep data available even if one of the replicas goes down (improve availability)
 - To scale out the machines for read requests (improve throughput)
 
-Replication is easy but difficult when data is changing. It is difficult to keep all the replicas in sync.
+Replication is straightforward but challenging when data is changing.
+It is challenging to keep all the replicas in sync.
 
 <details>
     <summary>Leader Follower</summary>
@@ -93,6 +94,11 @@ Replication is easy but difficult when data is changing. It is difficult to keep
     - If the leader goes down, one of the followers is elected as the new leader.
 </details>
 
+:::tip
+If two nodes both believe that they are the leader, that situation is called split
+brain, and it often leads to data loss. Correct implementations of consensus help
+avoid such problems.
+:::
 
 `Partitioning` means dividing the data into smaller parts and distributing them across multiple machines.
 This is done to ensure that the system can handle a large amount of data and traffic.

@@ -13,7 +13,8 @@ In a relational database, the query optimizer automatically decides which parts 
 :::note
 Anything that is meaningful to humans may need to change sometime in
 the future—and if that information is duplicated, all the redundant copies need to be
-updated. That incurs write overheads, and risks inconsistencies (where some copies
+updated.
+That incurring write overheads, and risks inconsistencies (where some copies
 of the information are updated but others aren’t).
 
 Removing such duplication is the key idea behind `Normalization` in databases.
@@ -74,7 +75,7 @@ Transactions running at the read committed isolation level must prevent dirty re
 This means that any writes by a transaction only become visible to others when that
 transaction commits
 **Read committed is a very popular isolation level.
-It is the default setting in Oracle 11g, PostgreSQL, SQL Server 2012, MemSQL, and many other databases**
+It is the default setting in Oracle 11g, PostgresSQL, SQL Server 2012, MemSQL, and many other databases**
 
 ##### Write committed
 Image two clients are trying to update the same data, one is part of a transaction, and the other is not.
@@ -97,6 +98,10 @@ A common approach in such replicated databases is to allow concurrent writes to 
 a value (also known as siblings), and to use application code or special data structures to resolve and merge
 these versions after the fact.
 :::
+
+
+**Transaction isolation** is primarily about avoiding race conditions due to concurrently executing transactions,
+whereas **distributed consistency** is mostly about coordinating the state of replicas in the face of delays and faults.
 
 ### Column-family stores
 In most OLTP databases, storage is laid out in a row-oriented fashion: all the values
