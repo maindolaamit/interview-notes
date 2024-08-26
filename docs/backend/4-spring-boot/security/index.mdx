@@ -92,10 +92,15 @@ Authorities are actions that you allow a user to do in the context of the applic
 
     - It is used to authenticate a user by delegating to `UserDetailsService` and `PasswordEncoder`.
     - It's responsibility is strongly coupled with the `Authentication` contract.
-    - It has one method named `authenticate()` which receives `Authentication` object as parameter and returns
+  It has one method named `authenticate()` which receives `Authentication` object as parameter and returns
   an Authentication object.
     - If method receives an `Authentication` object which is not supported then it must return null.
-    - `DaoAuthenticationProvider` is used to authenticate a user against the UserDetailsService.
+
+  :::note
+  `AuthenticationProvider` is where you find conditions to decide whether to authenticate a user or not.
+  The component that delegate this responsibility to the AuthenticationProvide is  `AuthenticationManager` which
+  received request from the HTTP filter layers.
+  :::
 </details>
 
 ---
@@ -207,10 +212,183 @@ The Authentication interface of Spring Security extends this contract
   - Even if this method returns true, the `authenticate()` method can still return null if the
     provider cannot authenticate the user.
 
-<details>
-  <summary>How to implement `authenticate()` method</summary>
+---
+![Authorization](./authorization.svg)
 
-  - The method should throw `AuthenticationException` if the authentication fails.
-  - If method receives an `Authentication` object which is not supported then it must return null.
-  - `DaoAuthenticationProvider` is used to authenticate a user against the UserDetailsService.
+### Security Context
+
+On Successful authentication, the `SecurityContext` is populated with the `Authentication` object.
+The SecurityContext is a thread-local object
+that holds details of the principal currently interacting with the application.
+It is used to store the details of the currently authenticated user, also known as the principal.
+The SecurityContextHolder is a helper class that provides access to the SecurityContext.
+It is used to store the SecurityContext and retrieve it when needed.
+
+```java
+public interface SecurityContext extends Serializable{
+    Authentication getAuthentication();
+    void setAuthentication(Authentication authentication);
+}
+```
+
+3 Strategies to store the SecurityContext:
+<details>
+  <summary>MODE_THREADLOCAL</summary>
+
+  Default implementation, Offers the ability to isolate `SecurityContext` for each Thread, `SecurityContext` is stored in a ThreadLocal.
 </details>
+<details>
+  <summary>MODE_INHERITABLETHREADLOCAL</summary>
+
+  SecurityContext is stored in an InheritableThreadLocal.
+
+  When your code creates a thread it does not have SecurityContext stored in the ThreadLocal
+  as framework is not aware about. The `Autherization` object is null and can get a `NullPointerException`
+  while accessing the SecurityContext in the new thread.
+
+  `DelegatingSecurityContextCallable` and `DelegatingSecurityContextExecutorService` is used to propagate
+  the SecurityContext to the new thread.
+
+</details>
+<details>
+  <summary>MODE_GLOBAL</summary>
+
+  SecurityContext is stored in a static field. This is not recommended for multi-threaded applications.
+</details>
+
+:::tip
+If you want to perform action based on failed authentication such as adding a header to the response, you can use
+`AuthenticationFailureHandler` interface.
+You can implement the `onAuthenticationFailure()` method to perform the action and register them in `SecurityFilterChain`.
+:::
+
+----
+<details>
+  <summary>**Configuration Examples** : </summary>
+
+  We have an endpoint accepts item code as a path variable,
+  ```java
+  @RestController
+  public class ItemController {
+    @GetMapping("/item/{code}")
+      public String productCode(@PathVariable String code) {
+      return code;
+    }
+  }
+  ```
+
+  Configure authorization so that only digits are permitted for path, while all other calls are denied.
+
+
+  ```java
+  @Configuraion
+  public class ProjectConfig {
+      @Bean
+      SecurityFilterChain configure(HttpSecurity http) throws Exception {
+          http.addFilterBefore(new ValidateRequestFilter(), UsernamePasswordAuthenticationFilter.class);
+          http.httpBasic(Customizer.withDefaults());
+          http.authorizeHttpRequests(
+              c -> c.requestMatchers("/item/{code:^[0-9]+$}").permitAll()
+                    .anyRequest().denyAll()
+          );
+          return http.build();
+      }
+
+      @Bean
+      PasswordEncoder passwordEncoder() {
+          return NoOpPasswordEncoder.getInstance();
+      }
+  }
+```
+  :::note
+  When using parameter expressions with a regex, make sure to not have a space between the name of the parameter,
+  the colon (:), and the regex, as displayed in the above code.
+  :::
+  ---
+
+  Configure authorization so that only email ending with `.com` are permitted for path, while all other calls are denied.
+  ```java
+  @Configuraion
+  public class ProjectConfig {
+    @Bean
+      SecurityFilterChain configure(HttpSecurity http) throws Exception {
+      http.addFilterBefore(new ValidateRequestFilter(), UsernamePasswordAuthenticationFilter.class);
+      http.httpBasic(Customizer.withDefaults());
+      http.authorizeHttpRequests(
+        c -> c.requestMatchers("/email/{code:*(?:.+@.+\\.com)$}").permitAll()
+            .anyRequest().denyAll()
+      );
+      return http.build();
+    }
+  }
+  ```
+
+  ---
+  when you need to write a more complex rule, eventually referring to more path patterns and multiple path variable
+  values, it’s easier to write a regex matcher.
+
+  Configure authorization so that only paths from `/ca/fr`, `/uk/fr`,`/us/fr` or `/uk|us|ca/en` are permitted,
+  while all other calls are denied.
+  ```java
+  @Configuraion
+  public class ProjectConfig {
+    @Bean
+      SecurityFilterChain configure(HttpSecurity http) throws Exception {
+      http.addFilterBefore(new ValidateRequestFilter(), UsernamePasswordAuthenticationFilter.class);
+      http.httpBasic(Customizer.withDefaults());
+      http.authorizeHttpRequests(
+      c -> c.regexMatchers(".*/(us|uk|ca)+/(fr|en).*")
+              .authenticated()
+            .anyRequest().denyAll()
+      );
+      return http.build();
+    }
+  }
+  ```
+</details>
+
+### OAuth 2.0
+`OAuth 2` is a specification that tells one how to separate the authentication responsibilities in a system.
+This way, multiple apps can use one other app that implements the authentication,
+helping the users to authenticate faster, keeping their details more secure,
+and minimizing the costs of implementation in the apps.
+
+![OAuth 2.0](./oauth2-flow.svg)
+
+:::note
+In the first version of OAuth, the auth server directly returned the access token to the client.
+This was a problem because the client could see the access token, and if the client was compromised, or redirect is
+intercepted by a malicious actor, the access token could be stolen.
+
+By returning authorization code instead of access token, the auth server forces to resend a request where they
+authenticate again.
+This way getting authorization code alone is not enough to get access to the resource.
+:::
+
+`Tokens` are like access keys for an app, `Tokens` are an essential part of the
+OAuth 2 authentication and authorization process because they’re the ones used to
+prove the authenticity of a client and user authentication, but they are also the way a
+backend gets more details about the client and the user.
+
+- **Opaque—Tokens** which don’t store data. To implement the authorization, the resource server usually needs to call
+  the authorization server, provide the opaque token, and get the user & client details to whom token was issued.
+  This call is known as the introspection call, can be compared to signed documents.
+- **Non-opaque—Tokens** that store data, making it immediately possible for the backend to implement the authorization.
+  The JSON Web Token (JWT) is the most used non-opaque token implementation.
+
+`JWT` is composed of three parts: the header, the payload, and the signature.
+The data in the header and body is JSON formatted, then encoded as Base64 to make it smaller and easier to transfer.
+
+##### When to use Opaque Tokens
+Non-opaque tokens are the most frequently used today because they don’t require introspection to validate them.
+However, non-opaque tokens contain data, and the client sends this data over the wire to its backend,
+anyone getting the token can also see the data the token carries. In the majority of cases, this is not a problem.
+
+**But what should you do if you have a larger amount of data or data that is unsafe to send over the wire carried within a token?**
+In such case Opaque tokens are the best choice.
+
+
+::: note
+Token revocation is a process where the authorization server invalidates a token before it expires.
+Normally, an access token lifespan is short, so stealing a token still makes it difficult for one to use it.
+But sometimes you want to be extra cautious.
