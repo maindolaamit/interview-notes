@@ -84,13 +84,7 @@ const config: Config = {
           type: "docSidebar",
           sidebarId: "systemDesignSidebar",
           position: "left",
-          label: "Designs",
-        },
-        {
-          type: "docSidebar",
-          sidebarId: "lowLevelDesignSidebar",
-          position: "left",
-          label: "Low Level Design",
+          label: "Designs & Systems",
         },
         {
           type: "docSidebar",

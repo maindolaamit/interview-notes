@@ -4,13 +4,18 @@ description: "Spring Security Interview Questions"
 sidebar_position: 4
 ---
 
-
-
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
 # Spring Security
 
+- `Encoding` refers to any transformation of a given input. For example, if we have a function
+`x` that reverses a string, function `x` -> `y` applied to ABCD produces DCBA
+- `Hashing` is a particular type of encoding, except the function is only one way.
+That is, from an output `y` of the hashing function, you cannot get back the input `x`.
+- `Encryption` is a particular type of encoding in which, to obtain the output, we provide both
+the input value and a key. The key makes it possible to choose afterward who should be
+able to reverse the function (obtain the input from the output).
 ### What is Spring Security?
 It is a powerful and highly customizable authentication and access-control framework.
 It is the de-facto standard for securing Spring-based applications.
@@ -58,6 +63,7 @@ exists together with the default UserDetailsService. When we replace the
 default implementation of the UserDetailsService, we must also specify a
 PasswordEncoder
 :::
+
 
 ----
 
