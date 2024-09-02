@@ -308,3 +308,173 @@ StringBuffer is mutable and high performant for modifying String.
 StringBuffer is mutable and high performant for modifying String.
 </TabItem>
 </Tabs>
+
+
+### What will be the output of the below Codes?
+```java
+public static void main(String[] args) {
+  String[] stringArray = {"one", "two", "three"};
+  var stringList = Arrays.asList(stringArray);
+
+  int[] intArray = {1, 2, 3};
+  var intlist = Arrays.asList(intArray);
+  System.out.print(stringList.contains("one") + " ,");
+  System.out.print(intList.contains(1));
+}
+```
+<details>
+  <summary>Answer </summary>
+  The output will be `true , false`.
+  `intArray` is an array of primitive type `int`, so `Arrays.asList(intArray)` will not do auto-boxing and send a single
+  value.
+</details>
+----
+
+```java
+public static void main(String[] args) {
+  var ints = new ArrayList<>(List.of(1, 2, 3, 4, 5));
+  var sublist = ints.subList(0, 0);
+  System.out.print(sublist +"");
+  sublist.addA11(List.of(10, 11, 12));
+  System.out.print(ints);
+}
+```
+<details>
+  <summary>Answer </summary>
+  `sublist` is a view of the original list, so any changes in the sublist will be reflected in the original list.
+  The output will be `[]` and `java.lang.UnsupportedOperationException`.
+</details>
+----
+
+```java
+public static void main(String[] args) {
+  String[] ints = {"a", "b", "c", null};
+
+  var strings1 = Stream.of(ints).toList();
+  System.out.print(strings1.size());
+
+  var strings2 = List.of(ints);
+  System.out.print(strings2.size());
+}
+```
+<details>
+  <summary>Answer </summary>
+  The output will be `4` and `NullPointerException`.
+  `Stream.of(ints).toList()` will not throw an exception for null values, while `List.of(ints)` will throw
+  a `NullPointerException`.
+</details>
+----
+
+```java
+public static void main(String[] args) {
+  String[] ints = {"a", "b", "c", null};
+
+  var strings = Arrays.asList(ints);
+  strings.removeIf(Objects::isNull);
+  System.out.print(strings.size());
+}
+```
+<details>
+  <summary>Answer </summary>
+  The output will be `UnsupportedOperationException`.
+  `Arrays.asList` returns a fixed-size list, so we cannot add or remove elements from it.
+</details>
+----
+
+```java
+public static void main(String[] args) {
+  var ints = List.of(1,2,3);
+  var a = Arrays.asList(1,2,3);
+  var c = Collections.unmodifiableCollection(ints);
+  var l = Collections.unmodifiableList(ints);
+
+  System.out.println(a.equals(c) + " ");
+  System.out.println(a.equals(l) + " ");
+  System.out.println(l.equals(c) + " ");
+}
+```
+
+<details>
+  <summary>Answer </summary>
+  The output will be `false`, `true`, and `false`.
+  `Arrays.asList` returns a modifiable list, while `Collections.unmodifiableCollection` and
+  `Collections.unmodifiableList` return unmodifiable views of the original list.
+</details>
+----
+
+```java
+public static void main(String[] args) {
+  Map<String> map = new HashMap<>();
+  map.put(4, null);
+
+  System.out.println(map.getOrDefault(4, "four"));
+  map.putIfAbsent(4, "four");
+  System.out.println(map.get(4));
+}
+```
+
+<details>
+  <summary>Answer </summary>
+  The output will be `null` and `four`,
+  `getOrDefault` : Since the key 4 exists with a null value, the method returns null.
+  `putIfAbsent` will consider null value as value is absent and insert it in the map.
+</details>
+----
+
+```java
+public static void main(String[] args) {
+  var numbers = List.of(-1, 0, 1);
+  Map<Integer, List< Integer>> map = new HashMap<>(;
+  numbers.forEach (
+    number -> map.putIfAbsent (number, new ArrayList‹>())
+                 .add (number)) ;
+  System.out.print(map.get(0));
+}
+```
+
+<details>
+  <summary>Answer </summary>
+  The output will be `NullPointerException`.
+  The `putIfAbsent` method will return null if the key is absent, so the `add` method will be called on a null list.
+  `computeIfAbsent` method should be used instead of `putIfAbsent`.
+</details>
+----
+
+```java
+public static void main(String[] args) {
+  Set<String> hashSet = new HashSet<>(List.of("a", "b", "c"));
+  Set<String> treeSet = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+
+  treeSet.addAll(List.of("a", "b", "c"));
+
+  System.out.println(hashSet.equals(treeSet) + " ");
+  System.out.println(treeSet.equals(hashSet));
+}
+```
+
+<details>
+  <summary>Answer </summary>
+  The output will be `true` and `false`
+</details>
+----
+
+```java
+public static void main(String[] args) {
+  var map = new IdentityHashMap<Integer, String>();
+  map.put(1, "one");
+  map.put(2, "two");
+  map.put(3, "three");
+  map.put(1, "one again");
+  map.put(2, "two again");
+  map.put(3, "three again");
+  System.out.println(map.size());
+}
+```
+
+<details>
+  <summary>Answer </summary>
+  The output will be `6`, as IdentityHashMap is a special type of HashMap that uses reference equality (== operator)
+  instead of object equality (equals method) to determine key uniqueness.
+  This means that two keys are considered equal only if they are the same object.
+</details>
+----
