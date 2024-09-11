@@ -70,21 +70,21 @@ const config: Config = {
       items: [
         {
           type: "docSidebar",
-          sidebarId: "backendSidebar",
+          sidebarId: "langSidebar",
           position: "left",
-          label: "BackEnd",
+          label: "Programming",
         },
         {
           type: "docSidebar",
-          sidebarId: "frontEndSidebar",
+          sidebarId: "microServicesDesignSidebar",
           position: "left",
-          label: "FrontEnd",
+          label: "MicroServices & Patterns",
         },
         {
           type: "docSidebar",
           sidebarId: "systemDesignSidebar",
           position: "left",
-          label: "Designs & Systems",
+          label: "System Design",
         },
         {
           type: "docSidebar",

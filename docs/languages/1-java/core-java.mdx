@@ -11,6 +11,9 @@ import TabItem from '@theme/TabItem';
 
 # Core Java
 
+### What is difference between `==` and `equals` in Java?
+`==` is used to compare the reference of the object, if two variables holds reference to the same object while `equals` is used to compare the content of the object.
+
 ### What is String and String Pool in Java?
 Strings in Java are immutable Object, using `new` keyword will always create a new Object in Heap Memory. String Pool is a special memory location in Heap Memory where all the String literals are stored. When we create a String literal using `""` or `new String()` it will be stored in String Pool. If we create a String using `new` keyword it will be stored in Heap Memory.
 
@@ -25,21 +28,43 @@ Avoid storing **sensitive information** in the String pool, as it can potentiall
 In scenarios where you need frequent string comparisons, using interned strings from the pool can be faster.
 :::
 
+<details>
+  <summary>String Buffer vs String Builder</summary>
+  ```java
+  public class Main {
+    public static void main(String[] args) {
+      // StringBuilder
+      StringBuilder stringBuilder = new StringBuilder();
+      stringBuilder.append("Hello ");
+      stringBuilder.append("World!");
+      System.out.println(stringBuilder); // Outputs: Hello World!
+
+      // StringBuffer
+      StringBuffer stringBuffer = new StringBuffer();
+      stringBuffer.append("Hello ");
+      stringBuffer.append("World!");
+      System.out.println(stringBuffer); // Outputs: Hello World!
+  }
+}
+  ```
+  Both StringBuilder and StringBuffer allow you to create a string in parts, but the difference lies in their synchronization mechanism. If your application is single-threaded or you do not need to share these objects across threads then using StringBuilder can be faster than StringBuffer as it does not have any overhead of synchronization.
+</details>
 #### What is the difference between `String`, `StringBuffer` and `StringBuilder` in Java?
 <Tabs>
-<TabItem value="String">
-- `String` is immutable while `StringBuffer` and `StringBuilder` are mutable. 
-</TabItem>
-<TabItem value="StringBuilder">
-- `StringBuilder` is synchronized while `StringBuilder` is not synchronized.
-</TabItem>
-<TabItem value="StringBuffer">
-- `StringBuffer` is mutable and high performant for modifying String.
-- `StringBuffer` is synchronized while StringBuilder is not synchronized.
-</TabItem>
+  <TabItem value="String">
+    - `String` is immutable while `StringBuffer` and `StringBuilder` are mutable.
+  </TabItem>
+  <TabItem value="StringBuilder">
+    - `StringBuilder` is synchronized while `StringBuilder` is not synchronized.
+    - `StringBuilder` is high performant for modifying String.
+  </TabItem>
+  <TabItem value="StringBuffer">
+    - `StringBuffer` is synchronized i.e. thread-safe. Multiple threads can share the object without any problem.
+    - `StringBuffer` is synchronized while StringBuilder is not synchronized.
+  </TabItem>
 </Tabs>
 
-### Why do we need a wrapper Class ? What is Auto-Boxing in Java?
+### Why do we need a wrapper Class? What is Auto-Boxing in Java?
 Auto Boxing is the automatic conversion that the Java compiler makes between the primitive types and their corresponding object wrapper classes. Below are the following reasons.
 - They have a lot of Utility methods in them and support null values which is not possible in primitives.
 - They are compatible with Collections as collections do not support primitive types.
@@ -74,6 +99,56 @@ public class StaticBlockExample {
     }
 }
 ```
+
+<details>
+<summary>Inner Static classes</summary>
+
+  When to use static inner classes
+
+  - Helper methods : Use static inner classes when you need helper methods that are closely related to another class, but don't require access to its instance variables.
+  - Utility classes : When creating utility classes with methods that operate on a specific type or data structure, consider using a static inner class to encapsulate the utility functions.
+  - Private implementation details : If you have private implementation details that are only needed within a single method or group of related methods, a static inner class can be a good choice for hiding those details.
+
+```java
+public class Calculator {
+    public static void main(String[] args) {
+        int result = MathHelper.add(5, 10);
+        System.out.println("Result: " + result);
+
+        double mean = MathHelper.calculateMean(new int[] {1, 2, 3, 4, 5});
+        System.out.println("Mean: " + mean);
+    }
+
+    public static class MathHelper {
+        // Helper methods for math operations
+        public static int add(int a, int b) {
+            return a + b;
+        }
+
+        public static double calculateMean(int[] numbers) {
+            int sum = 0;
+            for (int num : numbers) {
+                sum += num;
+            }
+            return (double) sum / numbers.length;
+        }
+
+        // Another helper method
+        public static boolean isPrime(int number) {
+            if (number <= 1) {
+                return false;
+            }
+            for (int i = 2; i * i <= number; i++) {
+                if (number % i == 0) {
+                    return false;
+                }
+            }
+            return true;
+        }
+    }
+}
+```
+</details>
 
 ### What are `constructor` in java?
 `Constructor` is a special method in Java which is used to initialize the object of the class. It has the same name as the class and does not have any return type. It can have parameters for initial values.
@@ -134,48 +209,24 @@ public class SingletonExample {
 ```
 
 <details>
-<summary>
-Each JVM (Java Virtual Machine) runs in its own isolated environment, with its own class loader and memory space. This isolation ensures that singleton instances are unique within their respective JVMs.
-</summary>
-- Class Loading: Each JVM has its own class loader, responsible for loading classes and creating their instances. When a singleton class is loaded for the first time within a JVM, its single instance is created and maintained thereafter.
-- Memory Isolation: JVMs have separate memory spaces, preventing interference between classes and objects in different JVMs. This means singleton instances in one JVM are distinct from those in other JVMs.
-- Distributed Systems: In distributed systems where multiple JVMs interact, each JVM will have its own singleton instances, potentially leading to multiple instances of the same singleton class across the system.
-- Serialization: When a singleton is serialized and deserialized, its unique instance identity might not be preserved, potentially leading to multiple instances within a JVM. Careful handling of serialization is crucial to maintain the singleton pattern.
+  <summary>
+    Each JVM (Java Virtual Machine) runs in its own isolated environment, with its own class loader and memory space.
+    This isolation ensures that singleton instances are unique within their respective JVMs.
+  </summary>
+  - Class Loading: Each JVM has its own class loader, responsible for loading classes and creating their instances. When
+  a singleton class is loaded for the first time within a JVM, its single instance is created and maintained thereafter.
+  - Memory Isolation: JVMs have separate memory spaces, preventing interference between classes and objects in different
+  JVMs. This means singleton instances in one JVM are distinct from those in other JVMs.
+  - Distributed Systems: In distributed systems where multiple JVMs interact, each JVM will have its own singleton
+  instances, potentially leading to multiple instances of the same singleton class across the system.
+  - Serialization: When a singleton is serialized and deserialized, its unique instance identity might not be preserved,
+  potentially leading to multiple instances within a JVM. Careful handling of serialization is crucial to maintain the
+  singleton pattern.
 </details>
 
 #### What is the difference between `Singleton` and `Static` class in Java?
 `Singleton` is a design pattern in Java which is used to create only one instance of the class while `Static` class is a class which has only static methods and variables.
 
-<details>
-<summary>SingletonExample.java</summary>
-  ```java
-  public class SingletonExample {
-      private static SingletonExample singletonExample;
-  
-      private SingletonExample() {
-      }
-  
-      public static SingletonExample getInstance() {
-          if (singletonExample == null) {
-              singletonExample = new SingletonExample();
-          }
-          return singletonExample;
-      }
-  }
-  ```
-</details>
-  ```java title=StaticClassExample.java
-  public class StaticClassExample {
-      private static int i;
-  
-      private StaticClassExample() {
-      }
-  
-      public static void method() {
-          // some code
-      }
-  }
-  ```
 
 ### What is the difference between `instanceof` and `isInstance` in Java?
 `instanceof` is a keyword in Java which is used to check if an object is an instance of a class while `isInstance` is a method in Java which is used to check if an object is an instance of a class.
@@ -251,97 +302,89 @@ This is the reason Java does not support multiple inheritance.
 
 ### What is the difference between `Abstract Class` and `Interface` in Java?
 We should use interface when we only know the specification but Abstract when we know the partial Implementation.
-:::tip 
-**Interfaces** are more preferred as we can implement multiple Interfaces but can only extend one Abstract class. With java 8 we can have default implementation of a method in an Interface. 
+:::tip
+**Interfaces** are more preferred as we can implement multiple Interfaces but can only extend one Abstract class. With java 8 we can have default implementation of a method in an Interface.
 :::
 <Tabs>
-<TabItem value="Interface">
-- `Interface` can only have abstract methods.
-- `Interface` can only have static and final variables. 
--`Interface` cannot have constructor. 
-```java
-public interface InterfaceExample {
-    int i = 10;
+  <TabItem value="Interface">
+    - `Interface` can only have abstract methods.
+    - `Interface` can only have static and final variables.
+    - `Interface` cannot have constructor.
+    ```java
+    public interface InterfaceExample {
+      int i = 10;
 
-    void method();
+      void method();
 
-    default void method2() {
-        // some code
+      default void method2() {
+      // some code
     }
-}
-
-//  implements InterfaceExample
-public class InterfaceExampleImpl implements InterfaceExample {
-    @Override
-    public void method() {
-        // some code
-    }
-}
-
-```
-
-#### How to implement multiple interfaces with same method name?
-```java
-interface Interface1 {
-  void myMethod(String arg);
-}
-
-interface Interface2 {
-  void myMethod(String arg);
-}
-
-public class MyClass implements Interface1, Interface2 {
-  @Override
-  public void myMethod(String arg) {
-    System.out.println("Implementing method from both interfaces: " + arg);
   }
-}
-```
 
-</TabItem>
-<TabItem value="Abstract Class">
-- `Abstract` Class can have both abstract and non-abstract methods.
-- `Abstract` Class can have static, final and non-final variables.
-- `Abstract` Class can have constructor.
-```java 
-public abstract class AbstractClassExample {
+  // implements InterfaceExample
+  public class InterfaceExampleImpl implements InterfaceExample {
+      @Override
+        public void method() {
+        // some code
+      }
+  }
+    ```
+
+    #### How to implement multiple interfaces with same method name?
+    ```java
+    interface Interface1 {
+      void myMethod(String arg);
+  }
+
+    interface Interface2 {
+      void myMethod(String arg);
+  }
+
+    public class MyClass implements Interface1, Interface2 {
+      @Override
+        public void myMethod(String arg) {
+        System.out.println("Implementing method from both interfaces: " + arg);
+      }
+  }
+    ```
+
+  </TabItem>
+  <TabItem value="Abstract Class">
+    - `Abstract` Class can have both abstract and non-abstract methods.
+    - `Abstract` Class can have static, final and non-final variables.
+    - `Abstract` Class can have constructor.
+    ```java
+    public abstract class AbstractClassExample {
     private int i;
 
     public AbstractClassExample(int i) {
-        this.i = i;
-    }
+    this.i = i;
+  }
 
     public abstract void method();
 
     public void method2() {
-        // some code
-    }
-}
+    // some code
+  }
+  }
 
-//  extends AbstractClassExample
-public class AbstractClassExampleImpl extends AbstractClassExample {
+    // extends AbstractClassExample
+    public class AbstractClassExampleImpl extends AbstractClassExample {
     public AbstractClassExampleImpl(int i) {
-        super(i);
-    }
+    super(i);
+  }
 
     @Override
     public void method() {
-        // some code
-    }
-}
-```
-</TabItem>
+    // some code
+  }
+  }
+    ```
+  </TabItem>
 </Tabs>
 
 
-### What is difference between `==` and `equals` in Java?
-`==` is used to compare the reference of the object while `equals` is used to compare the content of the object.
-```java
-Integer i1 = new Integer(10);
-Integer i2 = new Integer(10);
-System.out.println(i1 == i2); // false
-System.out.println(i1.equals(i2)); // true
-```
+### What is `serialization` in java
 
 ### What is the difference between `final`, `finally` and `finalize` in Java?
 `final` is used to make a variable constant, `finally` is used to execute a block of code irrespective of the exception and `finalize` is a method which is called by the Garbage Collector before destroying the object.
@@ -383,7 +426,7 @@ Code in finally is NOT executed only in two situations.
 
 ### What is the difference between `throw` and `throws` in Java?
 `throw` is used to throw an exception while `throws` is used to declare an exception.
-  
+
   ```java
   throw new Exception("Exception");
   ```
@@ -402,41 +445,40 @@ Code in finally is NOT executed only in two situations.
 `checked` Exception are the Exception which are checked at compile time while `unchecked` Exception are the Exception which are not checked at compile time.
 
 <details>
-<summary>Checked Exception</summary>
-```java
-public void method(){
+  <summary>Checked Exception</summary>
+  ```java
+  public void method(){
     // some code
     throw new Exception("Checked Exception");
-}
+  }
 
-public static void main(String[] args) {
+  public static void main(String[] args) {
     try {
-        method();
-    } catch (Exception e) {
-        // Need to handle the Exception otherwise it will give compile time error
-        // They should either be caught or declared in the method signature
-    }
+    method();
+  } catch (Exception e) {
+    // Need to handle the Exception otherwise it will give compile time error
+    // They should either be caught or declared in the method signature
+  }
 }
-```
+  ```
 </details>
 
 <details>
-<summary>Unchecked Exception</summary>
-```java
-public void method() {
-    // some code
-    throw new RuntimeException("Unchecked Exception");
+  <summary>Unchecked Exception</summary>
+  ```java
+  public void method() {
+  // some code
+  throw new RuntimeException("Unchecked Exception");
 }
 
-public static void main(String[] args) {
-    method();
+  public static void main(String[] args) {
+  method();
 }
-```
-Exception in thread "main" java.lang.RuntimeException: Unchecked Exception at Main.main(Main.java:7)
+  ```
+  Exception in thread "main" java.lang.RuntimeException: Unchecked Exception at Main.main(Main.java:7)
 </details>
 
 ### Explain the Factory Design pattern and two class examples you have used?
-We can use SessionFactory to obtain the session Object to perform CRUD operation and BeanFactory to obtain the Bean Object.
-
-We can use SessionFactory to obtain the session Object to perform CRUD operation and BeanFactory to obtain the Bean Object.
+- We can use SessionFactory to obtain the session Object to perform CRUD operation and BeanFactory to obtain the Bean Object.
+- We can use SessionFactory to obtain the session Object to perform CRUD operation and BeanFactory to obtain the Bean Object.
 

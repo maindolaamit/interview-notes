@@ -1,0 +1,43 @@
+---
+title: Cross-Cutting concerns
+description : "Patterns for Cross Cutting concerns"
+sidebar_position: 4
+---
+
+## Service Discovery?
+
+
+## Observability patterns
+Understanding and diagnosing problem in a microservice architecture is much more complicated.
+A request can bound around multiple services before a response is finally returns to a client.
+In addition, there will not be a single log file to check but multiple files.
+Similarly, problem with latency are more difficult to diagnose due to multiple service calls.
+
+You can use the following pattern to design observable services:
+- `Health Check API` : Expose an endpoint that returns the health of the service
+- `Log aggregation`: Log service activity and write logs into a centralized logging
+server, which provides searching and alerting.
+- `Distributed tracing`: Assign each external request a unique ID and trace requests
+as they flow between services.
+- `Exception tracking` : Report exceptions to an exception tracking service, which
+deduplicates exceptions, alerts developers, and tracks the resolution of each
+exception.
+- `Application metrics` : Maintain metrics, such as counters and gauges, and expose
+them to a metrics server.
+- `Audit logging` :Log user actions
+
+## Security Patterns
+In a microservice architecture, users are typically authenticated by the API gateway.
+It must then pass information about the user, such as identity and roles, to the services it invokes.
+A common solution is to apply the Access token pattern.
+The API gateway passes an access token, such as JWT (JSON Web Token), to the services,
+which can validate the token and collect information about the user.
+
+:::tip
+The goal of continuous delivery/deployment (and, more generally, DevOps) is to rapidly yet reliably deliver software.
+Four useful metrics for assessing software development are as follows:
+  - `Deployment frequency`: How often software is deployed into production
+  - `Lead time`: Time from a developer checking in a change to that change being deployed
+  - `Meantime to recover`: Time to recover from a production problem
+  - `Change failure rate`: Percentage of changes that result in a production problem
+:::
