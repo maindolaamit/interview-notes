@@ -1,43 +1,114 @@
 ---
-title: Protocols
+title: Communication
 description : "Communication Protocols in Micro-Services"
 sidebar_position: 2
 ---
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
+Communication patterns and protocols are crucial in connecting individual microservices and forming a cohesive application.
+Microservices communicate through well-defined APIs, but the specific pattern chosen impacts performance, scalability,
+ and overall system behavior.
 
-Communication patterns are crucial in connecting individual microservices and forming a cohesive application.
-Microservices communicate through well-defined APIs, but the specific pattern chosen impacts performance, scalability, and overall system behavior.
 Here's an overview of common communication patterns used in microservices:
 
-### 1. RESTful APIs:
-    - REST (Representational State Transfer) is an architectural style for designing networked applications.
-    - It uses standard HTTP methods (GET, POST, PUT, DELETE) to perform CRUD operations on resources.
-    - RESTful APIs are stateless and can be cached for improved performance.
-    - The most widely used pattern, providing direct request-response interaction between services.
-    - Simple and intuitive, but can introduce tight coupling and performance bottlenecks.
+## Network Protocols
+### 1. HTTP based
+<Tabs>
+    <TabItem value="REST">
+        - REST (Representational State Transfer) is an architectural style for designing networked applications.
+        - It uses standard HTTP methods (GET, POST, PUT, DELETE) to perform CRUD operations on resources.
+        - RESTful APIs are stateless and can be cached for improved performance.
+        - The most widely used pattern, providing direct request-response interaction between services.
+        - Simple and intuitive, but can introduce tight coupling and performance bottlenecks.
+        - Caching is easier with REST due to its stateless nature.
+
+        **Challenges of REST:**
+        - Over-fetching and under-fetching of data due to fixed endpoints.
+        - Lack of flexibility in data retrieval, leading to multiple requests for related data.
+
+    </TabItem>
+    <TabItem value="gRPC">
+        - gRPC is a high-performance, open-source RPC (Remote Procedure Call) framework developed by Google.
+        - It uses HTTP/2 for transport and Protocol Buffers for serialization,
+         resulting in efficient and fast communication between services.
+        - gRPC is suitable for building microservices that require low-latency and high-throughput communication.
+
+        **Challenges of gRPC:**
+        - gRPC is more complex to set up and requires additional tooling compared to REST.
+        - It may not be suitable for public APIs due to its binary nature and lack of human-readability
+    </TabItem>
+    <TabItem value="GraphQL">
+        - GraphQL is a query language for APIs that provides a more flexible and efficient alternative to REST.
+        - It allows clients to request only the data they need, reducing over-fetching and under-fetching of data.
+        - GraphQL is suitable for microservices that need to expose complex data structures and support diverse
+        client requirements.
+
+       **Challenges of GraphQL:**
+        - Caching is more challenging with GraphQL due to its dynamic nature. Same query can return different
+        results based on the input variables.
+
+            :::warning
+            While GraphQL theoretically can handle writes as well as reads, it doesn’t seem to fit as well as it is for reads.
+             This leads to situations in which teams are using GraphQL for read but REST for writes.
+
+             GraphQL's sweet spot is at the perimeter of your system, where your system is exposed to the client,
+             typically in a web application or mobile application.
+            :::
+    </TabItem>
+</Tabs>
+
+:::tip
+REST based APIs are not a great choice for real-time communication and asynchronous processing. There are better
+alternatives like WebSockets, gRPC, and Messaging Protocols, it is not recommended for high volume data transfer.
+:::
+
 ### 2. Messaging Protocols:
-    - Messaging protocols like AMQP (Advanced Message Queuing Protocol) and MQTT (Message Queuing Telemetry Transport) enable asynchronous communication between microservices.
+Message Brokers are like middleware that sits between services and facilitates communication.
+They tend to provide messaging in the form of `queues`, `topics`, or `publish-subscribe mechanisms`.
+They also provide additional features like `message queuing`, routing, and `delivery guarantees`.
+    - Messaging protocols like AMQP (Advanced Message Queuing Protocol) and MQTT (Message Queuing Telemetry Transport)
+     enable asynchronous communication between microservices.
     - They support event-driven architectures and decouple services by allowing them to communicate through messages.
     - Messaging protocols are useful for building scalable and resilient microservices systems.
     - Utilizes message brokers like RabbitMQ or Kafka to decouple message sending and receiving. Enables asynchronous processing and scales well for high message volumes. Patterns include:
         - Point-to-point: Direct message delivery between specific services.
         - Publish-subscribe: Allows multiple subscribers to receive messages based on topics.
         - Event sourcing: Captures all application state changes as events, enabling reconstruction and reactive processing.
-### 3. gRPC:
-    - gRPC is a high-performance, open-source RPC (Remote Procedure Call) framework developed by Google.
-    - It uses HTTP/2 for transport and Protocol Buffers for serialization, resulting in efficient and fast communication between services.
-    - gRPC is suitable for building microservices that require low-latency and high-throughput communication.
 
-### 4. GraphQL:
-    - GraphQL is a query language for APIs that provides a more flexible and efficient alternative to REST.
-    - It allows clients to request only the data they need, reducing over-fetching and under-fetching of data.
-    - GraphQL is suitable for microservices that need to expose complex data structures and support diverse client requirements.
+[Messaging Protocols](./message-brokers) are discussed in detail in the next section.
 
-### 5. WebSockets:
+import MessageQueue from './img/message-queue.svg';
+import MessageTopic from './img/message-topic.svg';
+
+<Tabs>
+    <TabItem value="Queues">
+        **Queues allow for point-to-point communication between services, ensuring reliable message delivery and load balancing.**
+        <MessageQueue width="100%" height="80%"/>
+    </TabItem>
+    <TabItem value="Topics">
+        **Topics enable publish-subscribe communication, broadcasting messages to multiple subscribers based on topics or channels.**
+        <MessageTopic width="100%" height="80%"/>
+    </TabItem>
+</Tabs>
+
+#### Guaranteed Delivery
+- **At-Least-Once:** One of the easiest way to provide guaranteed delivery is to resent the message at least once.
+  This means that the message will be delivered at least once, but it may be duplicated.
+- **Exactly-Once:** The message is delivered exactly once, ensuring no duplicates or losses.
+
+:::warning
+Guaranteeing exactly once delivery in all cases is impossible, while other experts say you basically can do so with a few
+simple workarounds.
+Either way, if your broker of choice claims to implement this, then pay really careful attention to how it is implemented.
+
+A very simple example would be for each message to have an ID, which a consumer can check each time a message is received.
+:::
+### 3. WebSockets:
     - WebSockets provide full-duplex communication channels over a single TCP connection, enabling real-time interaction between microservices and clients.
     - They are suitable for applications that require real-time updates, such as chat applications, live dashboards, and collaborative tools.
+
+---
 
 ## Communication Patterns
 Communication patterns are crucial in connecting individual microservices and forming a cohesive application.

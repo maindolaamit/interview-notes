@@ -480,5 +480,38 @@ Code in finally is NOT executed only in two situations.
 
 ### Explain the Factory Design pattern and two class examples you have used?
 - We can use SessionFactory to obtain the session Object to perform CRUD operation and BeanFactory to obtain the Bean Object.
-- We can use SessionFactory to obtain the session Object to perform CRUD operation and BeanFactory to obtain the Bean Object.
+- We can use Factory pattern to create an object of the class based on the input parameter.
+
+```java
+public class FactoryExample {
+    public static void main(String[] args) {
+        Factory factory = new Factory();
+        factory.getObject("A").method();
+        factory.getObject("B").method();
+    }
+}
+
+class Factory {
+    public Object getObject(String type) {
+        if (type.equals("A")) {
+            return new A();
+        } else if (type.equals("B")) {
+            return new B();
+        }
+        return null;
+    }
+}
+
+class A {
+    public void method() {
+        System.out.println("A");
+    }
+}
+
+class B {
+    public void method() {
+        System.out.println("B");
+    }
+}
+```
 

@@ -1,7 +1,7 @@
 ---
 title: SOLID Principles
 description : "Low Level Design Interview Questions"
-sidebar_position: 0
+sidebar_position: 5
 ---
 
 import Tabs from '@theme/Tabs';
@@ -13,25 +13,124 @@ Robert C. Martin (Uncle Bob) introduced the SOLID principles in his 2000 paper D
 - Low level classes : Implement basic operations and have no knowledge of the business rules.
 - High level classes : Implement business rules and have no knowledge of the basic operations.
 
-<details>
-<summary>Single Responsibility Principle</summary>
-- A class should have one and only one reason to change, meaning that a class should have only one job.
-- A class should have one and only one reason to change, meaning that a class should have only one job.
+{/* <details> */}
+{/* <summary>Single Responsibility Principle</summary> */}
+### Single Responsibility Principle
+
+:::note
+The main goal of this principle is reducing complexity. You
+don’t need to invent a sophisticated design for a program that
+only has about 200 lines of code. Make a dozen methods pretty, and you’ll be fine.
+:::
+
+At some point classes become so big that
+you can no longer remember their details. Code navigation
+slows down to a crawl, and you have to scan through whole
+classes or even an entire program to find specific things.
 
 If a class does more than one job, it becomes coupled. A change to one responsibility results to modification of the other responsibility. This leads to fragile designs that break in many places.
-</details>
+Employee class has several reason to change over time and so does format to print report.
+```mermaid
+classDiagram
+    class Employee {
+        -name
+        +getName()
+        +printReport()
+    }
+```
+You can remove behaviour of printing report from Employee class and create a new class Report to print report.
+Thus extra work has its own class, we can use composition to add extra work to Employee class.
+
+```mermaid
+classDiagram
+    class Employee {
+        -name
+        +getName()
+    }
+
+    class Report {
+        +printReport()
+    }
+
+    Report-->Employee
+```
+<!-- </details> -->
+
+{/* <details> */}
+{/* <summary>Open Closed Principle</summary> */}
+## Open Closed Principle
+
+:::note
+The main idea of this principle is to keep existing code from
+breaking.
+
+A class is open if you can extend it, produce a subclass and do whatever you want with it—add new methods or fields,
+override base behavior, etc. g when you implement new features.
+:::
+
+For e.g. we have `Order` class which contains logic for shipping cost calculation. If you want to add a new feature to calculate discount, you can extend the `Order` class and add a new method to calculate discount.
+```mermaid
+classDiagram
+    class Order {
+        +getTotal()
+        +calculateShippingCost()
+        +getShippingDate()
+        +getShippingCost()
+    }
+```
+```java
+class Order {
+    double calculateShippingCost() {
+        // Calculate shipping cost
+        if(shipping == "GROUND"){
+            return 10;
+        }else if(shipping == "AIR"){
+            return 20;
+        }
+    }
+}
+```
+Now if you want to add a new feature to calculate discount, you can extend the `Order` class and add a new method to calculate discount.
+```mermaid
+classDiagram
+    class Order {
+        - Shipping
+        - Discount
+        +getTotal()
+    }
+
+    class Shipping {
+        <<interface>>
+        +calculateShippingCost()
+        +getShippingDate()
+        +getShippingCost()
+    }
+
+    class GroundShipping {
+        +calculateShippingCost()
+    }
+
+    class AirShipping {
+        +calculateShippingCost()
+    }
+
+    Order --o Shipping
+    AirShipping --|> Shipping
+    GroundShipping --|> Shipping
+
+```
+<!-- </details> -->
 
 
-<details>
-<summary>Open Closed Principle</summary>
-- A good design should follow the open closed principle.
-- Open closed principle means that the design should be open for extension but closed for modification.
-- This makes the design more extensible and maintainable.
-</details>
+{/* <details> */}
+{/* <summary>Liskov Substitution Principle</summary> */}
+## Liskov Substitution Principle
+:::note
+When extending a class, remember that you should be
+able to pass objects of the subclass in place of objects of
+the parent class without breaking the client code.
+:::
 
-
-<details>
-<summary>Liskov Substitution Principle</summary>
 - A good design should follow the Liskov substitution principle for inheritance.
 - Liskov substitution principle means that the objects of a superclass should be replaceable with objects of its subclasses without affecting the functionality of the program.
 - This makes the design more extensible and maintainable.
@@ -39,15 +138,8 @@ If a class does more than one job, it becomes coupled. A change to one responsib
 Parameter types of a subclass should match or be a superclass of the parameter types.
 If you have a class `RaceCare `that extends `Car`, there is a method to `startEngine` method to start engine,
 you should be able to replace `Car` with `RaceCar` without affecting the functionality of the program.
-```java
-class StartRace {
-    void startEngine(Car car) {
-        // Start the engine
-        // can accept any car
-    }
- }
-```
----
+<Tabs>
+    <TabItem value="Return Type">
 Return type of a method should be a match or subclass of the return type of the overridden method in the superclass.
 ```java
 class Car {
@@ -64,8 +156,8 @@ class RaceCar extends Car {
     }
 }
 ```
-
----
+    </TabItem>
+    <TabItem value="Exceptions">
 Exceptions thrown by a subclass should be the same or a subclass of the exceptions thrown by the superclass.
 ```java
 class Car {
@@ -81,8 +173,8 @@ class RaceCar extends Car {
     }
 }
 ```
-
----
+    </TabItem>
+    <TabItem value="Private fields">
 Subclass should not alter the private fields of the superclass.
 
 ```java
@@ -100,21 +192,120 @@ class RaceCar extends Car {
     }
 }
 ```
-</details>
+    </TabItem>
+    <TabItem value="Parameters">
+        Parameter Types of a method in a subclass should match or be a superclass of the parameter types of the overridden method in the superclass.
+        You overwrote the method to feed any Animal
+```java
+    class Cat extends Animal {
+        @Override
+        void feed(Animal animal) {
+            // Feed the animal
+        }
+    }
+```
+    </TabItem>
+</Tabs>
 
-<details>
-<summary>Interface Segregation Principle</summary>
+<!-- </details> -->
+
+{/* <details> */}
+{/* <summary>Interface Segregation Principle</summary> */}
+## Interface Segregation Principle
+:::note
+Clients shouldn’t be forced to depend on methods they do not use.
+:::
+
 - A good design should follow the interface segregation principle.
 - Interface segregation principle means that the interfaces should be segregated into smaller interfaces so that the clients only need to know about the methods that they are interested in.
 - This makes the design more extensible and maintainable.
 
-Consider example of an Automatic Transmission ElectricCar and a Manual Transmission Feul Car. Both of them have a method to change gears, but the Automatic Transmission RaceCar does not need a method to change gears.
-So, the interface should be segregated into two interfaces, one for the Automatic Transmission RaceCar and one for the Manual Transmission RaceCar.
-</details>
+Consider example of a Library that makes it easy to integrate with any CloudProvider, initially made for AWS it now has to support DropBox subclass.
+<Tabs>
+    <TabItem value="Problem">
+```mermaid
+classDiagram
+    class CloudProvider {
+        <<interface>>
+        +uploadFile()
+        +downloadFile()
+        +createServer()
+        +getServer()
+        +getCDNAddress()
+    }
 
+    class AWS {
+        +uploadFile()
+        +downloadFile()
+        +createServer()
+        +getServer()
+        +getCDNAddress()
+    }
 
-<details>
-<summary>Dependency Inversion Principle</summary>
+    class DropBox {
+        +uploadFile()
+        +downloadFile()
+        +createServer() - Not Implemented
+        +getServer() - Not Implemented
+        +getCDNAddress() - Not Implemented
+    }
+
+    Library --o CloudProvider
+    CloudProvider <|.. AWS
+    CloudProvider <|.. DropBox
+
+```
+    </TabItem>
+    <TabItem value="Solution">
+The better approach is to break down interfaces into parts.
+Classes can implement only the interfaces they need.
+```mermaid
+classDiagram
+    class CloudProvider {
+        <<interface>>
+        +uploadFile()
+        +downloadFile()
+    }
+
+    class ServerProvider {
+        <<interface>>
+        +createServer()
+        +getServer()
+    }
+
+    class CDNProvider {
+        <<interface>>
+        +getCDNAddress()
+    }
+
+    class AWS {
+        +uploadFile()
+        +downloadFile()
+        +createServer()
+        +getServer()
+        +getCDNAddress()
+    }
+
+    class DropBox {
+        +uploadFile()
+        +downloadFile()
+    }
+
+    Library --o CloudProvider
+    AWS --|> ServerProvider
+    AWS --|> CDNProvider
+    CloudProvider <|-- AWS
+    CloudProvider <|-- DropBox
+```
+    </TabItem>
+</Tabs>
+
+## Dependency Inversion Principle
+:::note
+High-level classes shouldn’t depend on low-level classes. Both should depend on abstractions. Abstractions
+shouldn’t depend on details. Details should depend on
+abstractions.
+:::
 - A good design should follow the dependency inversion principle.
 - Dependency inversion principle means that the high level modules should not depend on the low level modules.
 - Instead, both should depend on abstractions.
@@ -147,6 +338,8 @@ For instance, business logic should call a method `openPDFReport(file)` rather t
 `openFile(x)`, `readBytes(n)`, `closeFile(x)` . These interfaces
 count as high-level ones.
 
+<Tabs>
+    <TabItem value="Problem">
 Consider Highlevel class `SubscriberTrend `which is getting data from another class `DBService` for reading and
 persisting data. `DBService` is dependent on `DBConnection` and `DBConnection` is dependent on `DBConfig`.
 When you change the Database to a new vendor or change the database connection, you need to change the `DBService` class. This makes the design fragile and hard to maintain.
@@ -156,23 +349,37 @@ graph TD
     B -->|depends on| C[DBConnection]
     C -->|depends on| D[DBConfig]
 ```
+    </TabItem>
+    <TabItem value="Solution">
 Instead, the `DBService` class should depend on an abstraction of the `DBConnection` class. This makes the design more extensible and maintainable.
 ```mermaid
 classDiagram
-    SubscriberTrend --> DBService
-    DBService --> MySQLDatabase
-    DBService --> OracleDatabase
-    SubscriberTrend : +dbService
-    SubscriberTrend : +getTrendData()
-    DBService : +dbConnection
-    DBService : +getRecords()
-    MySQLDatabase : +dbConfig
-    MySQLDatabase : +getRecords()
-    OracleDatabase : +dbConfig
-    OracleDatabase : +getRecords()
-```
+    class SubscriberTrend{
+        - DBService
+        +getTrendData()
+    }
 
-</details>
+    class DBService{
+        <<Interface>>
+        +dbConnection
+        +getRecords()
+    }
+
+    class MySQLDatabase{
+        +dbConnection
+        +getRecords()
+    }
+
+    class OracleDatabase{
+        +dbConnection
+        +getRecords()
+    }
+    SubscriberTrend --o DBService
+    DBService --|> MySQLDatabase
+    DBService --|> OracleDatabase
+```
+    </TabItem>
+</Tabs>
 
 :::tip
 Using these principles mindlessly can cause more harm than good. The SOLID principles are guidelines, not rules. They are not meant to be followed blindly. They are meant to be used as a guide to help you create better designs.

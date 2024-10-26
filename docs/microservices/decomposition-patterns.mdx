@@ -1,0 +1,25 @@
+---
+title: Decomposition Patterns
+description : "Decomposition Patterns in Microservices"
+sidebar_position: 2
+---
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+
+The popular 3 layered architecture organizes the application’s classes into the following tiers or layers:
+- Presentation layer—Contains code that implements the user interface or external APIs
+- Business logic layer—Contains the business logic
+- Persistence layer—Implements the logic of interacting with the database
+
+Even though it is a great example of architecture style but has some significant drawbacks:
+- Single presentation layer: It doesn’t represent the fact that an application is likely
+to be invoked by more than just a single system.
+- Single persistence layer:It doesn’t represent the fact that an application is likely
+to interact with more than just a single database.
+- Defines the business logic layer as depending on the persistence layer—In theory, this
+dependency prevents you from testing the business logic without the database.
+
+
+A domain model is created using the Domain-Driven Design (DDD) approach. The domain model is a representation of the domain concepts and the relationships between them. It is a collection of classes that represent the domain concepts and the relationships between them.
+ The domain model is used to implement the business logic of the application.
