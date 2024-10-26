@@ -7,8 +7,7 @@ sidebar_position: 2
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-<details>
-<summary>Observer Pattern</summary>
+## Observer Pattern
 - The observer pattern is a software design pattern in which an object, called the subject, maintains a list of its dependents, called observers, and notifies them of any state changes, usually by calling one of their methods.
 - It is mainly used to implement distributed event handling systems, in "event driven" software.
 
@@ -22,97 +21,139 @@ import TabItem from '@theme/TabItem';
 
 
 In the below example, we have a Subject class and a list of Observer objects. Whenever the state of the Subject changes, it notifies the observers.
+<Tabs>
+    <TabItem value="Subject">
+        ```java
+        import java.util.ArrayList;
+        import java.util.List;
 
-```java
-import java.util.ArrayList;
-import java.util.List;
+        public class Subject {
+           private List<Observer> observers = new ArrayList<Observer>();
+           private int state;
 
-public class Subject {
-   private List<Observer> observers = new ArrayList<Observer>();
-   private int state;
+           public int getState() {
+              return state;
+           }
 
-   public int getState() {
-      return state;
-   }
+           public void setState(int state) {
+              this.state = state;
+              notifyAllObservers();
+           }
 
-   public void setState(int state) {
-      this.state = state;
-      notifyAllObservers();
-   }
+           public void attach(Observer observer){
+              observers.add(observer);
+           }
 
-   public void attach(Observer observer){
-      observers.add(observer);
-   }
+           public void notifyAllObservers(){
+              for (Observer observer : observers) {
+                 observer.update();
+              }
+           }
+        }
+        ```
+    </TabItem>
+    <TabItem value="Observer">
+        ```java
+        public abstract class Observer {
+           protected Subject subject;
+           public abstract void update();
+        }
+        ```
+        ```java
+        public class BinaryObserver extends Observer{
 
-   public void notifyAllObservers(){
-      for (Observer observer : observers) {
-         observer.update();
-      }
-   }
-}
+           public BinaryObserver(Subject subject){
+              this.subject = subject;
+              this.subject.attach(this);
+           }
+
+           @Override
+           public void update() {
+              System.out.println( "Binary String: " + Integer.toBinaryString( subject.getState() ) );
+           }
+        }
+        ```
+        ```java
+        public class OctalObserver extends Observer{
+
+           public OctalObserver(Subject subject){
+              this.subject = subject;
+              this.subject.attach(this);
+           }
+
+           @Override
+           public void update() {
+              System.out.println( "Octal String: " + Integer.toOctalString( subject.getState() ) );
+           }
+        }
+        ```
+        ```java
+        public class HexaObserver extends Observer{
+
+           public HexaObserver(Subject subject){
+              this.subject = subject;
+              this.subject.attach(this);
+           }
+
+           @Override
+           public void update() {
+              System.out.println( "Hex String: " + Integer.toHexString( subject.getState() ).toUpperCase() );
+           }
+        }
+        ```
+    </TabItem>
+    <TabItem value="Demo">
+        ```java
+        public class ObserverPatternDemo {
+           public static void main(String[] args) {
+              Subject subject = new Subject();
+
+              new HexaObserver(subject);
+              new OctalObserver(subject);
+              new BinaryObserver(subject);
+
+              System.out.println("First state change: 15");
+              subject.setState(15);
+              System.out.println("Second state change: 10");
+              subject.setstate(10);
+           }
+        }
+        ```
+    </TabItem>
+</Tabs>
+
+---
+
+## State
+State is a behavioral design pattern that lets an object alter its behavior when its internal state changes.
+ It appears as if the object changed its class.
+
+The State pattern is closely related to the concept of a FiniteState Machine.
+For e.g. `State` interface is being implemented by `Document` class and `State` interface has methods like `render` and `publish`.
+`Draft` is a concrete class that implements the `State` interface.
+
+```mermaid
+classDiagram
+    class Document {
+        <<interface>>
+        -state: State
+        +setState(State state)
+        +render()
+        +publish()
+    }
+
+    class State {
+        +render()
+        +publish()
+    }
+
+
+    class Draft {
+        - Document
+        +render()
+        +publish()
+    }
+
+    Document *-- State
+    Document <|-- Draft
 ```
-```java
-public abstract class Observer {
-   protected Subject subject;
-   public abstract void update();
-}
-```
-```java
-public class BinaryObserver extends Observer{
-
-   public BinaryObserver(Subject subject){
-      this.subject = subject;
-      this.subject.attach(this);
-   }
-
-   @Override
-   public void update() {
-      System.out.println( "Binary String: " + Integer.toBinaryString( subject.getState() ) );
-   }
-}
-```
-```java
-public class OctalObserver extends Observer{
-
-   public OctalObserver(Subject subject){
-      this.subject = subject;
-      this.subject.attach(this);
-   }
-
-   @Override
-   public void update() {
-      System.out.println( "Octal String: " + Integer.toOctalString( subject.getState() ) );
-   }
-}
-```
-```java
-public class HexaObserver extends Observer{
-
-   public HexaObserver(Subject subject){
-      this.subject = subject;
-      this.subject.attach(this);
-   }
-
-   @Override
-   public void update() {
-      System.out.println( "Hex String: " + Integer.toHexString( subject.getState() ).toUpperCase() );
-   }
-}
-```
-```java
-public class ObserverPatternDemo {
-   public static void main(String[] args) {
-      Subject subject = new Subject();
-
-      new HexaObserver(subject);
-      new OctalObserver(subject);
-      new BinaryObserver(subject);
-
-      System.out.println("First state change: 15");
-      subject.setState(15);
-      System.out.println("Second state change: 10");
-      subject.setstate(10);
-   }
-}
-```
-</details>
