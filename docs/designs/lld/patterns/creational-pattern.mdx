@@ -115,26 +115,411 @@ Singleton patterns violate the Single Responsibility Principle. They introduce g
 
 ## Factory Method
 A class should have one and only one reason to change, meaning that a class should have only one job.
+- Use the Factory Method when you want to save system resources by reusing existing objects instead of rebuilding
+  them each time.
 
 If a class does more than one job, it becomes coupled. A change to one responsibility results to modification of the other responsibility. This leads to fragile designs that break in many places.
-Consider a simple example of a `Vehicle` class. It has a method `drive()`. Now you want to add a new functionality to the `drive()` method. You add a new method `startEngine()` to the `Vehicle` class. This change affects the other functionality of the `Vehicle` class. To keep the `Vehicle` class simple, we can create a separate class `Engine` having its own `start()` method. Then we can use the `Engine` class in the `Vehicle` class. This way we can separate the vehicle’s functionality from the engine’s functionality.
+
+
+<Tabs>
+    <TabItem value = "Shape Example">
+Consider the example of a `Shape` interface and its implementation classes `Circle`, `Rectangle`, and `Square`. We will create a `ShapeFactory` class to get a `Shape` object. It will return the object of the corresponding class based on the input provided.
 
 <details>
-<summary>Abstract Factory Method</summary>
+    <summary>Shape</summary>
+```java
+
+public interface Shape {
+    void draw();
+}
+
+class Circle implements Shape {
+    public void draw() {
+        System.out.println("Inside Circle::draw() method.");
+    }
+}
+
+class Rectangle implements Shape {
+    public void draw() {
+        System.out.println("Inside Rectangle::draw() method.");
+    }
+}
+
+class Square implements Shape {
+    public void draw() {
+        System.out.println("Inside Square::draw() method.");
+    }
+}
+```
+</details>
+<details>
+    <summary>ShapeFactory</summary>
+```java
+public class ShapeFactory {
+    public Shape getShape(String shapeType) {
+        if (shapeType == null) {
+            return null;
+        }
+        if (shapeType.equalsIgnoreCase("CIRCLE")) {
+            return new Circle();
+        } else if (shapeType.equalsIgnoreCase("RECTANGLE")) {
+            return new Rectangle();
+        } else if (shapeType.equalsIgnoreCase("SQUARE")) {
+            return new Square();
+        }
+        return null;
+    }
+}
+```
+</details>
+
+<details>
+    <summary>**Client Code**</summary>
+
+```java
+public class FactoryPatternDemo {
+    public static void main(String[] args) {
+        ShapeFactory shapeFactory = new ShapeFactory();
+
+        Shape shape1 = shapeFactory.getShape("CIRCLE");
+        shape1.draw();
+
+        Shape shape2 = shapeFactory.getShape("RECTANGLE");
+        shape2.draw();
+
+        Shape shape3 = shapeFactory.getShape("SQUARE");
+        shape3.draw();
+    }
+}
+```
+</details>
+
+</TabItem>
+<TabItem value = "Vehicle Example">
+    Consider a simple example of a `Vehicle` class. It has a method `drive()`.
+     We will create a `VehicleFactory` class to get a `Vehicle` object.
+     It will return the object of the corresponding class based on the input provided.
+
+    <details>
+        <summary>Vehicle</summary>
+
+        ```java
+        public interface Vehicle {
+            void drive();
+        }
+
+        class Car implements Vehicle {
+            public void drive() {
+                System.out.println("Driving a car");
+            }
+        }
+
+        class Bike implements Vehicle {
+            public void drive() {
+                System.out.println("Driving a bike");
+            }
+        }
+        ```
+    </details>
+
+    <details>
+        <summary>VehicleFactory</summary>
+        ```java
+        public class VehicleFactory {
+            public Vehicle getVehicle(String vehicleType) {
+                if (vehicleType == null) {
+                    return null;
+                }
+                if (vehicleType.equalsIgnoreCase("CAR")) {
+                    return new Car();
+                } else if (vehicleType.equalsIgnoreCase("BIKE")) {
+                    return new Bike();
+                }
+                return null;
+            }
+        }
+        ```
+    </details>
+    <details>
+    <summary>**Client Code**</summary>
+    ```java
+    public class FactoryPatternDemo {
+        public static void main(String[] args) {
+            VehicleFactory vehicleFactory = new VehicleFactory();
+
+            Vehicle vehicle1 = vehicleFactory.getVehicle("CAR");
+            vehicle1.drive();
+
+            Vehicle vehicle2 = vehicleFactory.getVehicle("BIKE");
+            vehicle2.drive();
+        }
+    }
+    ```
+    </details>
+</TabItem>
+<TabItem value ="OrderService Example">
+        ```mermaid
+        classDiagram
+            direction TB
+
+            class PaymentService {
+                <<interface>>
+                +processPayment(amount: double)
+            }
+
+            class CreditCardPaymentService {
+                +processPayment(amount: double)
+            }
+
+            class PayPalPaymentService {
+                +processPayment(amount: double)
+            }
+
+            class PaymentServiceFactory {
+                +getPaymentService(type: String): PaymentService
+            }
+
+            class OrderService {
+                -paymentServiceFactory: PaymentServiceFactory
+                +placeOrder(paymentType: String, amount: double)
+            }
+
+            PaymentService <|-- CreditCardPaymentService
+            PaymentService <|-- PayPalPaymentService
+
+            OrderService --> PaymentServiceFactory : uses
+            PaymentServiceFactory --> PaymentService : creates
+        ```
+</TabItem>
+</Tabs>
+
+#### Relation with others
+- Builder focuses on constructing complex objects step by step.
+  Abstract Factory specializes in creating families of related
+  objects. Abstract Factory returns the product immediately,
+  whereas Builder lets you run some additional construction
+  steps before fetching the product.
+- Factory Method is a specialization of Template Method.
+- Factory Method is a specialization of Prototype.
+
+## Abstract Factory Method
 Every subclass or derived class should be substitutable for their base or parent class.
-</details>
+Imagine you are developing a GUI application that needs to support multiple operating systems (OS) like Windows and macOS.
+ Each OS has its own style of buttons and text fields.
+ The Abstract Factory Pattern allows you to create families of related objects (like buttons and text fields) without
+     specifying their concrete classes.
+<Tabs>
+    <TabItem value="Abstract Product Interfaces:">
+        ```java
+       public interface Button {
+           void paint();
+       }
+
+       public interface TextField {
+           void render();
+       }
+        ```
+    </TabItem>
+    <TabItem value="Concrete Products for Windows:">
+        ```java
+        public class WindowsButton implements Button {
+            @Override
+            public void paint() {
+                System.out.println("Rendering a button in Windows style.");
+            }
+        }
+
+        public class WindowsTextField implements TextField {
+            @Override
+            public void render() {
+                System.out.println("Rendering a text field in Windows style.");
+            }
+        }
+        ```
+    </TabItem>
+    <TabItem value="Concrete Products for Mac:">
+        ```java
+        public class MacOSButton implements Button {
+            @Override
+            public void paint() {
+                System.out.println("Rendering a button in macOS style.");
+            }
+        }
+
+        public class MacOSTextField implements TextField {
+            @Override
+            public void render() {
+                System.out.println("Rendering a text field in macOS style.");
+            }
+        }
+    ```
+    </TabItem>
+</Tabs>
 
 <details>
-<summary>Builder</summary>
-A client should never be forced to implement an interface that it doesn’t use or clients shouldn’t be forced to depend on methods they do not use.
-</details>
+    <summary>Abstract Factory Interface</summary>
+    ```java
+    public class WindowsFactory implements GUIFactory {
+        @Override
+        public Button createButton() {
+            return new WindowsButton();
+        }
 
+        @Override
+        public TextField createTextField() {
+            return new WindowsTextField();
+        }
+    }
+
+    public class MacOSFactory implements GUIFactory {
+        @Override
+        public Button createButton() {
+            return new MacOSButton();
+        }
+
+        @Override
+        public TextField createTextField() {
+            return new MacOSTextField();
+        }
+    }
+    ```
+</details>
 <details>
-<summary>Prototype</summary>
-Entities must depend on abstractions not on concretions. It states that the high-level module must not depend on the low-level module, but they should depend on abstractions.
+    <summary>Client code</summary>
+    ```java
+        public class Application {
+            private Button button;
+            private TextField textField;
+
+            public Application(GUIFactory factory) {
+                button = factory.createButton();
+                textField = factory.createTextField();
+            }
+
+            public void paint() {
+                button.paint();
+                textField.render();
+            }
+        }
+
+        // Usage example:
+        public class Main {
+            public static void main(String[] args) {
+                GUIFactory factory = new WindowsFactory(); // or new MacOSFactory()
+                Application app = new Application(factory);
+                app.paint();
+            }
+        }
+    ```
 </details>
 
-:::tip
-Using these principles mindlessly can cause more harm than good. The SOLID principles are guidelines, not rules. They are not meant to be followed blindly. They are meant to be used as a guide to help you create better designs.
-:::
+## Builder
+Builder pattern is a creational design pattern that lets you construct complex objects step by step.
+ The pattern allows you to produce different types and representations of an object using the same construction code.
 
+<Tabs>
+    <TabItem value="House example">
+        ```mermaid
+        classDiagram
+            direction TB
+
+            class House {
+                -foundation: String
+                -structure: String
+                -roof: String
+            }
+
+            class HouseBuilder {
+                +buildFoundation(): HouseBuilder
+                +buildStructure(): HouseBuilder
+                +buildRoof(): HouseBuilder
+                +build(): House
+            }
+
+            HouseBuilder <|-- House
+
+        ```
+    </TabItem>
+    <TabItem value="Houses example">
+        ```java
+        public class House {
+            private String foundation;
+            private String structure;
+            private String roof;
+
+            public House(HouseBuilder builder) {
+                this.foundation = builder.foundation;
+                this.structure = builder.structure;
+                this.roof = builder.roof;
+            }
+
+            public static class HouseBuilder {
+                private String foundation;
+                private String structure;
+                private String roof;
+
+                public HouseBuilder buildFoundation(String foundation) {
+                    this.foundation = foundation;
+                    return this;
+                }
+
+                public HouseBuilder buildStructure(String structure) {
+                    this.structure = structure;
+                    return this;
+                }
+
+                public HouseBuilder buildRoof(String roof) {
+                    this.roof = roof;
+                    return this;
+                }
+
+                public House build() {
+                    return new House(this);
+                }
+            }
+        }
+
+        ```
+    </TabItem>
+</Tabs>
+
+**Pros**
+    - You can construct object step by step, run construction steps recursively.
+    - You can reuse the same construction code when building various representations of products.
+
+**Cons**
+    - The overall complexity of the code increases since the pattern
+         requires creating multiple new classes.
+
+## Prototype
+Prototype pattern is a creational design pattern that lets you copy existing objects without making
+    your code dependent on their classes.
+
+Say you have an object, and you want to create an exact copy
+of it. How would you do it? First, you have to create a new
+object of the same class. Then you have to go through all the
+fields of the original object and copy their values over to the
+new object.
+```java
+public record Person(String name, int age) implements Cloneable {
+    @Override
+    public Person clone() {
+        try {
+            return (Person) super.clone(); // This will work since records are immutable
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError(); // Can't happen since we implement Cloneable
+        }
+    }
+}
+
+public class CloneableRecordExample {
+    public static void main(String[] args) {
+        Person original = new Person("Alice", 30);
+        Person cloned = original.clone();
+
+        System.out.println("Original: " + original);
+        System.out.println("Cloned: " + cloned);
+    }
+}
+
+```
