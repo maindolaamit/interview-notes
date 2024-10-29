@@ -157,3 +157,331 @@ classDiagram
     Document *-- State
     Document <|-- Draft
 ```
+
+## Strategy
+Strategy is a behavioral design pattern that lets you define a family of algorithms, put each of them into a separate class, and make their objects interchangeable.
+
+The Strategy pattern suggests that you take a class that does something specific in a lot of different ways and extract all of these algorithms into separate classes called strategies.
+
+```mermaid
+classDiagram
+    class Context {
+        -strategy: Strategy
+        +setStrategy(Strategy strategy)
+        +executeStrategy()
+    }
+
+    class Strategy {
+        +execute()
+    }
+
+    class ConcreteStrategyA {
+        +execute()
+    }
+
+    class ConcreteStrategyB {
+        +execute()
+    }
+
+    Context *-- Strategy
+    Context <|-- ConcreteStrategyA
+    Context <|-- ConcreteStrategyB
+```
+
+## Chain of Responsibility
+Chain of Responsibility is a behavioral design pattern that lets you pass requests along a chain of handlers.
+Upon receiving a request, each handler decides either to process the request or to pass it along the chain.
+
+#### Example Scenario
+Let’s create an example where we handle different levels of support tickets—basic support,
+ technical support, and managerial support.
+ Each type of support will handle certain issues, passing on those they cannot address to the next level.
+
+```mermaid
+classDiagram
+    class SupportHandler {
+        +setNextHandler(SupportHandler handler) void
+        +handleRequest(String issue) void
+        -SupportHandler nextHandler
+    }
+
+    class BasicSupport {
+        +handleRequest(String issue) void
+    }
+
+    class TechSupport {
+        +handleRequest(String issue) void
+    }
+
+    class ManagerSupport {
+        +handleRequest(String issue) void
+    }
+
+    SupportHandler <|-- BasicSupport
+    SupportHandler <|-- TechSupport
+    SupportHandler <|-- ManagerSupport
+    SupportHandler o-- SupportHandler : "nextHandler"
+```
+
+
+<Tabs>
+    <TabItem value="SupportHandler">
+        ```java
+        // Handler
+        abstract class SupportHandler {
+            protected SupportHandler nextHandler;
+
+            public void setNextHandler(SupportHandler handler) {
+                this.nextHandler = handler;
+            }
+
+            public abstract void handleRequest(String issue);
+        }
+        ```
+    </TabItem>
+    <TabItem value="Implementors">
+        ```java
+        // Concrete Handler for Basic Support
+        class BasicSupport extends SupportHandler {
+            @Override
+            public void handleRequest(String issue) {
+                if (issue.equalsIgnoreCase("basic")) {
+                    System.out.println("Basic Support: Handling basic issue.");
+                } else if (nextHandler != null) {
+                    nextHandler.handleRequest(issue);
+                } else {
+                    System.out.println("Basic Support: Unable to handle the issue.");
+                }
+            }
+        }
+
+        // Concrete Handler for Technical Support
+        class TechSupport extends SupportHandler {
+            @Override
+            public void handleRequest(String issue) {
+                if (issue.equalsIgnoreCase("technical")) {
+                    System.out.println("Tech Support: Handling technical issue.");
+                } else if (nextHandler != null) {
+                    nextHandler.handleRequest(issue);
+                } else {
+                    System.out.println("Tech Support: Unable to handle the issue.");
+                }
+            }
+        }
+
+        // Concrete Handler for Managerial Support
+        class ManagerSupport extends SupportHandler {
+            @Override
+            public void handleRequest(String issue) {
+                if (issue.equalsIgnoreCase("managerial")) {
+                    System.out.println("Manager Support: Handling managerial issue.");
+                } else {
+                    System.out.println("Manager Support: Issue could not be handled.");
+                }
+            }
+        }
+        ```
+    </TabItem>
+    <TabItem value="Demo">
+
+        - Basic Support handles only basic issues, Tech Support handles technical issues, and Manager Support handles managerial issues.
+        - If an issue cannot be handled, the request moves to the next handler in the chain.
+        - If no handler can process the issue, a message is displayed stating the issue couldn’t be handled.
+        ```java
+        public class ChainOfResponsibilityDemo {
+            public static void main(String[] args) {
+                // Create handlers
+                SupportHandler basicSupport = new BasicSupport();
+                SupportHandler techSupport = new TechSupport();
+                SupportHandler managerSupport = new ManagerSupport();
+
+                // Set up the chain
+                basicSupport.setNextHandler(techSupport);
+                techSupport.setNextHandler(managerSupport);
+
+                // Test the chain with different issues
+                System.out.println("Testing basic issue:");
+                basicSupport.handleRequest("basic");
+
+                System.out.println("\nTesting technical issue:");
+                basicSupport.handleRequest("technical");
+
+                System.out.println("\nTesting managerial issue:");
+                basicSupport.handleRequest("managerial");
+
+                System.out.println("\nTesting unknown issue:");
+                basicSupport.handleRequest("unknown");
+            }
+        }
+        ```
+    </TabItem>
+</Tabs>
+
+
+## Command
+Command is a behavioral design pattern that turns a request into a stand-alone object that contains all information about the request.
+This transformation lets you parameterize methods with different requests, delay or queue a request’s execution, and support undoable operations.
+
+```mermaid
+classDiagram
+    class Command {
+        +execute()
+    }
+
+    class ConcreteCommand {
+        -receiver: Receiver
+        +execute()
+    }
+
+    class Receiver {
+        +action()
+    }
+
+    class Invoker {
+        -command: Command
+        +setCommand(Command command)
+        +executeCommand()
+    }
+
+    Command <|-- ConcreteCommand
+    ConcreteCommand *-- Receiver
+    Invoker *-- Command
+```
+
+## Template Method
+Template Method is a behavioral design pattern that defines the skeleton of an algorithm in the superclass but lets subclasses override specific steps of the algorithm without changing its structure.
+
+```mermaid
+classDiagram
+    class AbstractClass {
+        +templateMethod()
+        +primitiveOperation1()
+        +primitiveOperation2()
+    }
+
+    class ConcreteClass {
+        +primitiveOperation1()
+        +primitiveOperation2()
+    }
+
+    AbstractClass <|-- ConcreteClass
+```
+
+:::tip
+Use the Chain of Responsibility pattern when your program
+is expected to process different kinds of requests in various
+ways, but the exact types of requests and their sequences are
+unknown beforehand.
+:::
+
+## Visitor
+Visitor is a behavioral design pattern that lets you separate algorithms from the objects on which they operate.
+
+```mermaid
+classDiagram
+    class Visitor {
+        +visitConcreteElementA(ConcreteElementA element)
+        +visitConcreteElementB(ConcreteElementB element)
+    }
+
+    class ConcreteVisitor1 {
+        +visitConcreteElementA(ConcreteElementA element)
+        +visitConcreteElementB(ConcreteElementB element)
+    }
+
+    class ConcreteVisitor2 {
+        +visitConcreteElementA(ConcreteElementA element)
+        +visitConcreteElementB(ConcreteElementB element)
+    }
+
+    class Element {
+        +accept(Visitor visitor)
+    }
+
+    class ConcreteElementA {
+        +accept(Visitor visitor)
+    }
+
+    class ConcreteElementB {
+        +accept(Visitor visitor)
+    }
+
+    Visitor <|-- ConcreteVisitor1
+    Visitor <|-- ConcreteVisitor2
+    Element <|-- ConcreteElementA
+    Element <|-- ConcreteElementB
+```
+
+## Mediator
+Mediator is a behavioral design pattern that lets you reduce chaotic dependencies between objects.
+The pattern restricts direct communications between the objects and forces them to collaborate only via a mediator object.
+
+```mermaid
+classDiagram
+    class Mediator {
+        +notify(sender: Component, event: string)
+    }
+
+    class ConcreteMediator {
+        +notify(sender: Component, event: string)
+    }
+
+    class Component {
+        -mediator: Mediator
+        +setMediator(Mediator mediator)
+        +notify(event: string)
+    }
+
+    Component *-- Mediator
+    Component <|-- ConcreteMediator
+```
+
+## Memento
+Memento is a behavioral design pattern that lets you save and restore the previous state of an object without revealing the details of its implementation.
+
+```mermaid
+classDiagram
+    class Originator {
+        -state: string
+        +setState(state: string)
+        +createMemento(): Memento
+        +restore(memento: Memento)
+    }
+
+    class Memento {
+        -state: string
+        +getState(): string
+    }
+
+    class Caretaker {
+        -memento: Memento
+        +setMemento(memento: Memento)
+    }
+
+    Originator *-- Memento
+    Caretaker *-- Memento
+```
+
+## Interpreter
+Interpreter is a behavioral design pattern that specifies how to evaluate sentences in a language.
+The basic idea is to have a class for each symbol (terminal or nonterminal) in a specialized computer language.
+
+```mermaid
+classDiagram
+    class Context {
+        -input: string
+        -output: string
+    }
+
+    class AbstractExpression {
+        +interpret(context: Context)
+    }
+
+    class TerminalExpression {
+        +interpret(context: Context)
+    }
+
+    class Nonterminal {
+        +interpret(context: Context)
+    }
+```
