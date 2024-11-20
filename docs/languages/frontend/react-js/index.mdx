@@ -4,10 +4,10 @@ description : "React Interview Questions"
 sidebar_position: 0
 ---
 
-### What is React?
-React is a JavaScript library for building user interfaces. It is maintained by Facebook and a community of individual developers and companies.
+# Basics
 
-### What are the features of React?
+### What is React? What are the features of React?
+React is a JavaScript library for building user interfaces. It is maintained by Facebook and a community of individual developers and companies.
 - It uses the virtual DOM instead of the real DOM.
 - It uses server-side rendering.
 - It follows unidirectional data flow or data binding.
@@ -29,13 +29,12 @@ ReactDOM is a package that provides DOM specific methods that can be used at the
 ### What is the use of render() in React?
 The `render()` method is the only required method in a class component. It is called by React to render the component. It returns a React element which is a lightweight description of what to render.
 
-### What is Props in React?
+### What are Props and State in React? and What is the difference between state and props in React?
 Props is a special keyword in React, which stands for properties and is being used for passing data from one component to another. But the important part is that data with props are being passed in a uni-directional flow. (one way from parent to child)
 
-### What is State in React?
-State is a built-in React object that contains data that influences the output of render. The state is mutable, i.e., it can be changed. The state must be kept in the parent component. It is used to store the data that the component may need to change over time.
+State is a built-in React object that contains data that influences the output of render. The state is mutable, i.e., it can be changed. The state must be kept in the parent component. It is used to store the data that the component may need to change over time. The `setState()` method is used to update the state of a component. It is used to update the state of the component. It will trigger the render method and the updated component will be displayed on the screen.
 
-### What is the difference between state and props in React?
+
 State | Props
 --- | ---
 State is mutable | Props are immutable
@@ -43,11 +42,11 @@ State is an object | Props are an argument
 State changes inside the component | Props are passed to the component
 State is local or owned by the component | Props are owned by the parent component
 
-### What is the use of setState() in React?
-The `setState()` method is used to update the state of a component. It is used to update the state of the component. It will trigger the render method and the updated component will be displayed on the screen.
-
 ### What is the use of keys in React?
 Keys are used to identify unique Virtual DOM Elements with their corresponding data driving the UI. It is used to identify which items have changed, are added, or are removed.
+
+### What is the use of Fragment in React?
+The `Fragment` component is used to group multiple children without adding extra nodes to the DOM. It is used to group multiple children without adding extra nodes to the DOM.
 
 ### What is the use of refs in React?
 Refs are used to get reference to a DOM (Document Object Model) node or an instance of a component in React. It is used to access the DOM nodes directly within React.
@@ -100,9 +99,6 @@ The `useDebugValue` hook is used to display a label for custom hooks in React De
 
 ### What is the use of forwardRef in React?
 The `forwardRef` function is used to forward the ref from the parent component to the child component. It is used to forward the ref from the parent component to the child component.
-
-### What is the use of Fragment in React?
-The `Fragment` component is used to group multiple children without adding extra nodes to the DOM. It is used to group multiple children without adding extra nodes to the DOM.
 
 ### What is the use of Profiler in React?
 The `Profiler` component is used to measure the cost of rendering a part of the application. It is used to measure the cost of rendering a part of the application.
