@@ -1,6 +1,7 @@
 import clsx from "clsx";
 import Heading from "@theme/Heading";
 import styles from "./styles.module.css";
+import {FeatureItem} from "@site/src/components/common/feature";
 
 const FeatureList: FeatureItem[] = [
   {

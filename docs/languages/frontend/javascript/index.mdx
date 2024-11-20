@@ -27,24 +27,6 @@ JavaScript is a high-level, interpreted programming language that conforms to th
 ### What is the difference between `function` and `arrow function`?
 Arrow functions are always anonymous. Arrow functions do not have their own `this`. Arrow functions do not have arguments.
 
-### What is a closure?
-In JavaScript, a closure is a fundamental concept that refers to the ability of a function to retain access to its 
-lexical scope, even when the function is executed outside that scope.
-This behavior allows functions to "remember" the environment in which they were created, enabling powerful programming patterns.
-```javascript
-function outerFunction() {
-    let outerVariable = 'I am from outer scope!';
-
-    function innerFunction() {
-        console.log(outerVariable); // Accesses outerVariable
-    }
-
-    return innerFunction; // Returns the inner function
-}
-
-const closureFunction = outerFunction(); // Executes outerFunction
-closureFunction(); // Outputs: I am from outer scope!
-```
 
 ### What is the difference between `find` and `filter`?
 `find` returns the first match. `filter` returns all matches.
@@ -99,8 +81,90 @@ myPromise
 ```
 </details>
 
+### What is a closure?
+In JavaScript, a closure is a fundamental concept that refers to the ability of a function to retain access to its 
+lexical scope, even when the function is executed outside that scope.
+This behavior allows functions to "remember" the environment in which they were created, enabling powerful programming patterns.
+```javascript
+function outerFunction() {
+    let outerVariable = 'I am from outer scope!';
 
-### What is a promise?
+    function innerFunction() {
+        console.log(outerVariable); // Accesses outerVariable
+    }
+
+    return innerFunction; // Returns the inner function
+}
+
+const closureFunction = outerFunction(); // Executes outerFunction
+closureFunction(); // Outputs: I am from outer scope!
+```
+
+Use cases of closures include data privacy, currying, and partial application.
+<details>
+<summary>Data Privacy</summary>
+
+They can create private variables that cannot be accessed from outside the function.
+```javascript
+function createCounter() {
+    let count = 0; // Private variable
+    return {
+        increment: () => ++count,
+        decrement: () => --count,
+        getCount: () => count
+    };
+}
+
+const counter = createCounter();
+console.log(counter.getCount()); // Outputs: 0
+counter.increment();
+console.log(counter.getCount()); // Outputs: 1
+```
+</details>
+
+<details>
+<summary>Currying/Partial Application</summary>
+
+They allow functions to be partially applied by retaining some arguments.
+```javascript
+function multiply(factor) {
+    return function(x) {
+        return x * factor;
+    };
+}
+
+const double = multiply(2);
+console.log(double(5)); // Outputs: 10
+```
+</details>
+
+<details>
+<summary>Event Handlers</summary>
+
+Closures are often used in event handling to maintain state.
+```javascript
+function setupButton(buttonId) {
+    let count = 0;
+    document.getElementById(buttonId).addEventListener('click', function() {
+        count++;
+        console.log(`Button clicked ${count} times`);
+    });
+}
+
+setupButton('myButton'); // Button clicks will increment count
+```
+</details>
 
 ### How can you optimize performance in a JavaScript application?
+Optimizing performance in a JavaScript application is crucial for delivering a fast and responsive user experience.
+Several strategies can be employed to enhance performance, such as:
+
+- Minimizing DOM manipulation
+- Reducing HTTP requests
+- Implementing efficient algorithms
+- Using event delegation
+- Caching data
+- Lazy loading resources
+- Compressing files
+
 
