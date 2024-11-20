@@ -20,12 +20,87 @@ JavaScript is a high-level, interpreted programming language that conforms to th
 - `let` is block-scoped.
 - `const` is a constant value and cannot be reassigned.
 
+### Describe how the this keyword works in different contexts (global, object methods, etc.).
+`this` refers to the object it belongs to. It has different values depending on where it is used. 
+
+
 ### What is the difference between `function` and `arrow function`?
 Arrow functions are always anonymous. Arrow functions do not have their own `this`. Arrow functions do not have arguments.
+
+### What is a closure?
+In JavaScript, a closure is a fundamental concept that refers to the ability of a function to retain access to its 
+lexical scope, even when the function is executed outside that scope.
+This behavior allows functions to "remember" the environment in which they were created, enabling powerful programming patterns.
+```javascript
+function outerFunction() {
+    let outerVariable = 'I am from outer scope!';
+
+    function innerFunction() {
+        console.log(outerVariable); // Accesses outerVariable
+    }
+
+    return innerFunction; // Returns the inner function
+}
+
+const closureFunction = outerFunction(); // Executes outerFunction
+closureFunction(); // Outputs: I am from outer scope!
+```
 
 ### What is the difference between `find` and `filter`?
 `find` returns the first match. `filter` returns all matches.
 
 ### What is the difference between `slice` and `splice`?
 `slice` does not modify the original array. `splice` modifies the original array.
+
+### How do you handle asynchronous operations in JavaScript?
+Handling asynchronous operations in JavaScript can be achieved through several methods,
+primarily using `callbacks`, `promises`, and `async/await`.
+Each approach has its own syntax and use cases, allowing developers to manage asynchronous code effectively.
+
+<details>
+<summary>Callbacks</summary>
+
+Callbacks are functions passed as arguments to another function, which are then invoked when the operation completes.
+
+```javascript
+function fetchData(callback) {
+    setTimeout(() => {
+        const data = "Data fetched";
+        callback(data);
+    }, 2000);
+}
+
+fetchData((data) => {
+    console.log(data); // Outputs: Data fetched
+});
+```
+</details>
+
+<details>
+<summary>Promise</summary>
+
+Promise is an object representing the eventual completion or failure of an asynchronous operation.
+```javascript
+
+const myPromise = new Promise((resolve, reject) => {
+    setTimeout(() => {
+        resolve("Data fetched");
+    }, 2000);
+});
+
+myPromise
+    .then((data) => {
+        console.log(data); // Outputs: Data fetched
+    })
+    .catch((error) => {
+        console.error(error);
+    });
+
+```
+</details>
+
+
+### What is a promise?
+
+### How can you optimize performance in a JavaScript application?
 
