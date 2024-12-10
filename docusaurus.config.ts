@@ -76,15 +76,15 @@ const config: Config = {
         },
         {
           type: "docSidebar",
-          sidebarId: "microServicesDesignSidebar",
-          position: "left",
-          label: "MicroServices & Patterns",
-        },
-        {
-          type: "docSidebar",
           sidebarId: "systemDesignSidebar",
           position: "left",
           label: "System Design",
+        },
+        {
+          type: "docSidebar",
+          sidebarId: "microServicesDesignSidebar",
+          position: "left",
+          label: "MicroServices",
         },
         {
           type: "docSidebar",

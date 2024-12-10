@@ -1,0 +1,71 @@
+---
+title: Java Persistance
+description: "High performance Java Persistance"
+sidebar_position: 2
+---
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# High performance Java Persistance
+
+--- 
+
+## Spring's Role in JDBC Performance Optimization
+
+Using various JDBC performance optimization techniques and Spring leverages and enhances these techniques, particularly through its transaction management and integration with connection pooling libraries. 
+
+<Tabs>
+    <TabItem value="Connection Pooling" label="Connection Pooling">
+        *   Understand the importance of connection pooling for reducing the overhead associated with establishing and closing database connections. 
+        *   connection pools act as bounded buffers, leveling traffic spikes and preventing the database from becoming overwhelmed. 
+        *   Note the significance of configuring the appropriate pool size based on application-specific database access patterns and connection usage monitoring.
+        *   Spring facilitates the integration of connection pooling solutions like HikariCP by providing configuration mechanisms to easily manage pool properties. 
+
+    For instance, Spring Boot applications using HikariCP can configure connection pool parameters like `maximumPoolSize`, `minimumIdle`, and `connectionTimeout` directly in the `application.properties` file.
+
+    </TabItem>
+    <TabItem value="Transaction Management" label="Transaction Management">
+
+        * Spring's declarative transaction management, using annotations like `@Transactional`, simplifies the handling of transactions and promotes better resource utilization. 
+        *   The `@Transactional(readOnly=true)` annotation optimizes read-only transactions by signaling to the underlying JPA provider and JDBC connection to potentially apply database-specific read-only optimizations.
+        *   Spring offers control over transaction isolation levels through the `isolation` attribute of the `@Transactional` annotation, allowing developers to fine-tune the level of concurrency and data consistency for their transactions.
+        *   The sources explain that while Java EE doesn't inherently support declarative read-only transactions or isolation level configuration, Spring provides these features, extending the capabilities of standard Java EE transaction management.
+    </TabItem>
+
+    <TabItem value="Batch Updates" label="Batch Updates">
+
+        *   Understand the benefits of using JDBC batch updates to group multiple DML statements into a single database request, reducing the number of database roundtrips and improving transaction response time.
+        *   Spring, particularly through Hibernate, supports transparent statement batching. 
+        *   This allows developers to enable batch updates without significant code changes, even after the data access logic is already implemented. 
+        *   Configuration properties like `spring.jpa.properties.hibernate.jdbc.batch_size` in Spring Boot allow for customizing the batch size to optimize performance further.
+
+    </TabItem>
+
+    <TabItem value="Statement Caching" label="Statement Caching">
+        *  Using caching, both server-side and client-side, can significantly improve performance by reusing parsed and optimized SQL statements.
+        *  They note that prepared statements, due to their parameterized nature, are more suitable for statement caching. 
+        *  Spring's reliance on prepared statements in data access operations, particularly through JPA and Hibernate, naturally promotes the utilization of statement caching mechanisms. 
+        *  The sources also highlight the importance of carefully managing statement cache size and configuration to prevent issues like cache eviction of frequently used statements.
+
+    </TabItem>
+
+    <TabItem value="Monitoring and Logging" label="Monitoring and Logging">
+
+    *   Advocate for monitoring database connections and logging SQL statements and parameters to gain insights into the performance of the data access layer.
+    *   They discuss tools like FlexyPool for connection monitoring and libraries like datasource-proxy and P6Spy for statement logging. 
+    *   Spring facilitates the integration of these monitoring and logging tools, providing the flexibility to incorporate them into applications to enhance performance analysis and debugging.
+
+    </TabItem>
+
+    <TabItem value="Delaying Connection Acquisition" label="Delaying Connection Acquisition">
+
+    *   Acquiring database connections prematurely can lead to performance penalties, especially when there are long-running tasks before the first SQL statement execution.
+    *   They suggest informing Hibernate to disable auto-commit and delay connection acquisition until necessary.
+    *   Spring supports this optimization by allowing developers to disable auto-commit in connection pool configurations and through the `spring.jpa.properties.hibernate.connection.provider_disables_autocommit` property.
+
+    In essence, Spring acts as a framework that simplifies and enhances the use of various JDBC performance optimization techniques. It provides developers with the tools and configuration options to leverage these techniques effectively, resulting in improved performance and scalability for data-intensive applications. 
+
+    </TabItem>
+</Tabs>
+
+--- 

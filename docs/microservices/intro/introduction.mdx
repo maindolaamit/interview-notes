@@ -14,6 +14,8 @@ You run multiple instances of application behind a load balancer. Each instance 
 
 ![Dimensions of Monolith](./img/load-balancer.svg)
 
+## A Comparison of Microservice Architecture and SOA
+
 MicroServices are quite similar to SOA (Service Oriented Architecture) but with a few differences. MicroServices are more fine-grained and lightweight compared to SOA. MicroServices are designed to be independently deployable and scalable. They are organized around business capabilities and can be developed, deployed, and scaled independently.
 <Tabs>
   <TabItem value={"SOA"}>
@@ -30,6 +32,53 @@ MicroServices are quite similar to SOA (Service Oriented Architecture) but with 
     - Decentralized and independently deployable services
   </TabItem>
 </Tabs>
+While both microservice architecture and service-oriented architecture (SOA) structure a system as a set of services, they exhibit significant differences in their approach to inter-service communication, data management, service size, and technology stacks.
+
+**Inter-Service Communication**
+
+* **SOA:** SOA typically employs "**smart pipes**," such as an **Enterprise Service Bus (ESB)**, to facilitate communication between services. The ESB acts as a central hub for routing, transforming, and enriching messages, often using heavyweight protocols like **SOAP and other WS* standards**.
+* **Microservices:** Microservices favor "**dumb pipes**," such as **message brokers** or **lightweight protocols like REST or gRPC**. This approach promotes simpler, direct communication between services, reducing the complexity and overhead associated with a centralized ESB.
+
+**Data Management**
+
+* **SOA:** SOA applications typically rely on a **global data model and shared databases**. This can lead to tight coupling between services and make it difficult to evolve services independently.
+* **Microservices:** In contrast, each microservice in a microservice architecture typically has its own **dedicated database and domain model**. This promotes loose coupling and allows services to evolve and scale independently. However, it also introduces challenges for maintaining data consistency and implementing queries that span multiple services.
+
+**Service Size**
+
+* **SOA:** SOA is typically used to integrate large, complex monolithic applications, resulting in a **smaller number of large services**.
+* **Microservices:** Microservices emphasize decomposing applications into **smaller, more focused services**, leading to a **larger number of services**. This fine-grained approach aims to improve maintainability, deployability, and scalability.
+
+**Technology Stacks**
+
+* **SOA:** SOA applications often utilize **heavyweight technologies** like **SOAP, WS* standards, and ESBs**.
+* **Microservices:** Microservices tend to embrace **lightweight, open-source technologies** like **REST, gRPC, and message brokers**. This focus on agility and simplicity aligns with the principles of continuous delivery and deployment.
+
+**Summary Table**
+
+The differences between SOA and microservice architecture are summarized in the following table from source:
+
+| Feature              | SOA                                                                       | Microservices                                                     |
+| ------------------- | ------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| Inter-service Comm. | Smart pipes (ESB), heavyweight protocols (SOAP, WS*)                     | Dumb pipes (message broker), lightweight protocols (REST, gRPC) |
+| Data                | Global data model, shared databases                                       | Data model and database per service                             |
+| Typical Service Size  | Larger, often integrating monolithic applications                            | Smaller, more focused                                          |
+
+**Microservices as a Form of Modularity**
+
+The sources highlight that microservices can be viewed as a form of modularity, promoting loose coupling and independent development and deployment. Each microservice has a clearly defined API, which acts as an "impermeable boundary" that encapsulates its internal implementation. This encapsulation enhances modularity by preventing developers from bypassing the API and accessing internal components directly.
+
+**Key Considerations**
+
+While microservices offer potential advantages over SOA for modern application development, choosing between the two architectures depends on the specific needs and constraints of a project. 
+
+Factors to consider include:
+
+* **Application complexity:** Microservices are generally more suitable for large, complex applications that benefit from independent scalability and deployability.
+* **Team structure and skills:** Microservices require a culture of autonomous teams and expertise in distributed systems development.
+* **Operational maturity:** Implementing and managing a microservice architecture demands a high level of operational automation and monitoring capabilities.
+
+**In conclusion, the microservice architecture represents an evolution of service-based architectures, emphasizing agility, scalability, and loose coupling through fine-grained services, lightweight communication protocols, and independent data management.** 
 
 ### What are the key characteristics of Micro-Services?
 - **Componentization via Services**: Micro-Services are organized around business capabilities

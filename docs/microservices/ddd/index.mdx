@@ -1,0 +1,124 @@
+---
+title: Domain-Driven Design
+description : "Domain-Driven Design"
+sidebar_position: 3
+---
+
+DDD is an approach to building complex software applications that prioritizes developing an object-oriented domain model. This model captures domain knowledge in a way that helps solve problems within that domain, establishing a shared vocabulary known as the Ubiquitous Language for the development team. 
+
+### Key Concepts in DDD for Microservices
+
+Here's a breakdown of key DDD concepts discussed in the sources, particularly in the context of microservices:
+
+*   **Subdomains and Bounded Contexts:**
+    *   DDD encourages breaking down a complex domain into smaller **subdomains**. These subdomains represent distinct areas of expertise within the overall business domain. 
+    *   Each subdomain is associated with a **bounded context**, which defines the scope of the domain model within that subdomain. Bounded contexts provide clear boundaries for the domain model and its associated code artifacts. In a microservice architecture, each bounded context typically corresponds to a service, or potentially a group of services.
+*   **Eliminating "God Classes"**:
+    *   Monolithic applications often suffer from "god classes", which are large, complex classes responsible for handling many different functionalities. These classes hinder modularity and make it difficult to decompose the application into smaller services.
+    *   DDD, by promoting separate domain models for each service, helps eliminate god classes by distributing responsibilities across smaller, more focused classes. This makes it easier to decompose the application into microservices with well-defined boundaries.
+*   **The Aggregate Pattern:**
+    *   **Aggregates** are clusters of domain objects treated as a single unit. They have clear boundaries, defined by an **aggregate root**, which is the only entry point for interacting with the aggregate from outside.
+    *   Using aggregates simplifies data consistency management by ensuring that a transaction only modifies objects within a single aggregate. This aligns well with the microservices principle of each service having its own database, promoting loose coupling and independent scalability.
+    *   The sources emphasize identifying aggregates and their boundaries as a crucial step in DDD. This process involves understanding the relationships between domain objects and determining which objects should be grouped together as a single unit.
+*   **Domain Events:**
+    *   **Domain events** are messages published by aggregates when their state changes. They act as a powerful mechanism for communication and data synchronization between services in a microservices architecture.
+    *   The sources stress the benefits of domain events for implementing choreography-based sagas, updating replicated data, notifying users and external systems, and even for tasks like publishing real-time updates to web browsers via WebSockets.
+
+### Applying DDD: An Example
+
+The sources offer several examples of how these DDD concepts are applied in real-world scenarios. For instance, the "FTGO" application example demonstrates how a monolithic application can be decomposed into microservices based on DDD subdomains. Each service, like the "Order Service" or "Delivery Service", has its own domain model with classes that specifically represent the concepts within that subdomain.
+
+### Implementing DDD
+
+While the sources provide a good theoretical foundation for DDD, it's important to note that they don't delve into specific implementation details or offer step-by-step guides. Implementing DDD effectively often involves learning additional patterns, techniques, and tools that are beyond the scope of these sources.
+
+### Benefits of DDD in Microservices
+
+The sources consistently highlight several advantages of using DDD when building microservices:
+
+*   **Improved Modularity**: DDD promotes creating smaller, more focused services that are easier to develop, maintain, and deploy independently.
+*   **Enhanced Data Consistency**: Aggregates and their rules help ensure data consistency within a service, while domain events enable consistent data synchronization across services.
+*   **Facilitates Collaboration**: The Ubiquitous Language established by DDD fosters better communication and understanding between developers and domain experts.
+*   **Aligns with Agile Principles**: DDD encourages iterative development, continuous refinement of the domain model, and close collaboration with stakeholders, aligning well with Agile methodologies.
+
+### Additional Resources
+
+To gain a deeper understanding of DDD and its practical application, consider exploring resources like the book "Domain-Driven Design: Tackling Complexity in the Heart of Software" by Eric Evans, which is referenced in the sources. This seminal work provides a comprehensive explanation of DDD principles, patterns, and techniques. 
+
+You may also want to investigate various DDD frameworks and tools that can assist with implementing DDD concepts in different programming languages. These frameworks often offer features like aggregate management, event sourcing support, and domain model validation. 
+
+
+There are two type of system operations:
+- **Queries**: Operations that return data without changing the state of the system.
+- **Commands**: Operations that change the state of the system.
+
+
+:::note
+A good way to identify System commands is to look for the verbs in the user stories.
+:::
+
+DDD and the microservice architecture are in almost perfect alignment. 
+The DDD concept of subdomains and bounded contexts maps nicely to services within a microservice architecture.
+
+**Decompose by subdomain and Decompose by business capability are the two 
+main patterns for defining an application’s microservice architecture**
+
+Consider, for example, the Place Order story. It clearly suggests that the system must provide a Create Order operation. 
+This is a Command operation because it changes the state of the system.
+
+Table below shows the mapping between user stories and system operations.
+
+| User Story | System Operation | Description | Actor | 
+|------------|------------------| ----------- | ----- |
+| Place Order | createOrder() | Create a new order | Customer |
+| Cancel Order | Cancel Order | Cancel the order | Customer |
+| Update Order | Update Order | Update the order | Customer |
+| Accept Order | Accept Order | Indicates that the restaurant has accepted the order by indicated time| Restaurant |
+| Order Ready for pickup | readyForPickup()| Indicates that the order is ready for pickup | Restaurant |
+| Delivery pickup | deliveryPickup() | Indicates that the order is picked up by the delivery person | Delivery |
+| Order Delivered | orderDelivered() | Indicates that the order is delivered | Delivery |
+| Update Location | Update Location | Update the location of the delivery person | Delivery |
+
+<details>
+<summary>More Operations</summary>
+
+| Get Order | Get Order | Get the order details | Customer |
+| Get Orders | Get Orders | Get all orders | Customer |
+| Get Order Status | Get Order Status | Get the status of the order | Customer |
+| Get Order History | Get Order History | Get the history of the order | Customer |
+| Get Order Invoice | Get Order Invoice | Get the invoice of the order | Customer |
+| Get Order Payment | Get Order Payment | Get the payment details of the order | Customer |
+| Get Order Shipping | Get Order Shipping | Get the shipping details of the order | Customer |
+| Get Order Tracking | Get Order Tracking | Get the tracking details of the order | Customer |
+| Get Order Returns | Get Order Returns | Get the return details of the order | Customer |
+| Get Order Refunds | Get Order Refunds | Get the refund details of the order | Customer |
+| Get Order Cancellation | Get Order Cancellation | Get the cancellation details of the order | Customer |
+| Get Order Exchange | Get Order Exchange | Get the exchange details of the order | Customer |
+</details>
+
+
+A `command` operation has behavior in terms of its domain classes and domain logic. 
+The behavioural document should have precondition which must be true. 
+and postcondition which must be true after the command is executed.
+invariants that must be true before and after the command is executed.
+
+Operation - `createOrder(ConsumerId, RestaurantId, OrderItems, DeliveryAddress, PaymentDetails, LineItems)`
+Returns - `OrderId`
+Precondition - `ConsumerId, RestaurantId, OrderItems, DeliveryAddress, PaymentDetails, LineItems`
+- Consumer exists and can place an order
+- Restaurant exists and can accept an order
+
+Postcondition - `OrderId`
+
+
+- **Single Responsibility**: A command should have a single responsibility.
+- **High Cohesion**: A command should have high cohesion.
+- **Low Coupling**: A command should have low coupling.
+- **Idempotent**: A command should be idempotent.
+- **Transactional**: A command should be transactional.
+
+
+<details>
+<summary>Example</summary>
+A good way to identify System commands is to look for the verbs in the user stories.
+</details>
