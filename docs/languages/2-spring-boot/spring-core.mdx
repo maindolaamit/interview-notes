@@ -8,91 +8,56 @@ import TabItem from '@theme/TabItem';
 
 # Spring Core
 
-### What is Spring Framework and what does it to in our application?
-Spring Framework is a comprehensive, open-source framework for building Java-based enterprise applications. It provides a wide range of features and services that simplify development, promote best practices, and enhance application performance and scalability.
 
-**Key Features and Capabilities:**
+`@SpringBootApplication` annotation marks the application class in as a configuration class.
+It then begins auto-scanning all the classes on the Java classpath for other Spring beans.
+```java
+
+@SpringBootApplication
+// @SpringBootApplication tells SpringBoot Framework it is Bootstrap class for the project
+// it then begin auto-scanning all classes on the java path for other Spring beans
+public class Example{
+  public static void main(String... args){
+    SpringApplication.run(Example.class, args);
+    // The above run starts a spring container and returns a Spring Application context
+  }
+}
+```
+
+Unlike the traditional Spring `@Controller` annotation, `@RestController` doesn’t require you to return a ResponseBody
+class from your method in the controller class.
+This is all handled by the presence of the `@RestController` annotation, which includes the `@ResponseBody` annotation.
+
 <details>
-<summary>Dependency Injection</summary>
-- Core principle of Spring, managing dependencies between objects effortlessly.
-- Reduces tight coupling and promotes loose coupling for flexibility and testability.
-- Injects dependencies through constructors, setter methods, or annotations.
+  <summary>Bean Factory</summary>
+
+  `BeanFactory` is the central interface in Spring’s core container. It is responsible for managing the lifecycle of beans, instantiating and configuring them, wiring them together, and handling their dependencies.
+  - **XmlBeanFactory:** Loads beans from an XML file.
+  - **ClassPathXmlApplicationContext:** Loads beans from an XML file located in the classpath.
+  - **FileSystemXmlApplicationContext:** Loads beans from an XML file in the filesystem.
+  - **AnnotationConfigApplicationContext:** Loads beans from Java-based configuration classes.
+
+  **BeanFactory Implementations**
 </details>
 
 <details>
-<summary>Aspect-Oriented Programming (AOP)</summary>
-- Enables cross-cutting concerns (like logging, security, transactions) to be modularized and applied across application components.
-- Reduces code duplication and improves maintainability.
+  <summary>Application Context</summary>
+
+  `ApplicationContext` is a sub-interface of BeanFactory. It is the central interface in Spring’s core container and is responsible for managing the lifecycle of beans, instantiating and configuring them, wiring them together, and handling their dependencies.
+  **ApplicationContext Implementations**
+  - **ClassPathXmlApplicationContext:** Loads beans from an XML file located in the classpath.
+  - **FileSystemXmlApplicationContext:** Loads beans from an XML file in the filesystem.
+  - **AnnotationConfigApplicationContext:** Loads beans from Java-based configuration classes.
 </details>
 
 <details>
-<summary>Data Access</summary>
-- Offers seamless integration with various data access technologies (JDBC, JPA, Hibernate, NoSQL databases).
-- Provides abstractions for simplified data access and transaction management.
+  <summary>Spring IoC Container</summary>
+
+  The Spring IoC container is responsible for managing the lifecycle of beans, instantiating and configuring them, wiring them together, and handling their dependencies.
 </details>
 
-<details>
-<summary>Web MVC</summary>
-- Facilitates building web applications with a structured model-view-controller pattern.
-- Handles requests, renders views, and manages application flows.
-</details>
-
-<details>
-<summary>Transaction Management</summary>
-- Manages transactions declaratively through annotations or XML configuration.
-- Ensures data consistency and integrity across multiple operations.
-</details>
-
-**Benefits of using Spring**
-- **Testing**: 
-Robust testing support with integrated testing frameworks (JUnit, TestNG).
-Encourages test-driven development (TDD) for reliable and maintainable code.
-Benefits of Using Spring:
-
-- **Reduced Development Effort:**
-Simplifies common tasks and eliminates boilerplate code.
-Improved Testability:
-Promotes loose coupling and dependency injection for easier unit testing.
-
-- **Enhanced Maintainability:**
-Modular architecture and clear separation of concerns.
-Increased Flexibility:
-Adaptable to various application architectures and technologies.
-
-- **Scalability:**
-Well-suited for large-scale, enterprise-level applications.
-Large Community and Support:
-Active community, extensive documentation, and abundant resources.
-How Spring Works in Applications:
-
-- **Component Scanning:** Automatically discovers and registers Spring-managed components (beans) within the application.
-Dependency Injection: Wires together components by injecting their dependencies through constructors, setters, or fields.
-- **Aspect Weaving:** Applies aspects (cross-cutting concerns) to specific points in the application code at runtime.
-Request Handling: Processes web requests through controllers, maps them to models and views, and renders responses.
-- **Transaction Management:**
-Manages database transactions declaratively, ensuring data consistency and integrity.
-In conclusion, Spring Framework offers a powerful and flexible foundation for building modern Java applications. It simplifies development, promotes best practices, and provides a wealth of features to address common enterprise application concerns, making it a popular choice among developers worldwide.
-
-### What is `Bean Factory`?
-`BeanFactory` is the central interface in Spring’s core container. It is responsible for managing the lifecycle of beans, instantiating and configuring them, wiring them together, and handling their dependencies.
-
-**BeanFactory Implementations**
-- **XmlBeanFactory:** Loads beans from an XML file.
-- **ClassPathXmlApplicationContext:** Loads beans from an XML file located in the classpath.
-- **FileSystemXmlApplicationContext:** Loads beans from an XML file in the filesystem.
-- **AnnotationConfigApplicationContext:** Loads beans from Java-based configuration classes.
-
-### What is `Application` Context?
-`ApplicationContext` is a sub-interface of BeanFactory. It is the central interface in Spring’s core container and is responsible for managing the lifecycle of beans, instantiating and configuring them, wiring them together, and handling their dependencies.
-
-**ApplicationContext Implementations**
-- **ClassPathXmlApplicationContext:** Loads beans from an XML file located in the classpath.
-- **FileSystemXmlApplicationContext:** Loads beans from an XML file in the filesystem.
-- **AnnotationConfigApplicationContext:** Loads beans from Java-based configuration classes.
-
-
-### What is `Spring IoC` Container?
-The Spring IoC container is responsible for managing the lifecycle of beans, instantiating and configuring them, wiring them together, and handling their dependencies.
+You can use `@RequestMapping` at class or method level to define an HTTP Endpoint that service is going to expose.
+When defined at class level, you are establishing the root of the Endpoint for all other endpoints in the controller.
 
 ### What is `Spring Bean`?
 In Spring, a bean represents a managed object within your application. It can be any object you want to manage, like a service, a repository, a controller, or even a database connection. Spring handles the creation, configuration, and lifecycle of these beans, simplifying development and promoting best practices.
@@ -148,13 +113,9 @@ Below are the three methods we can use to invoke Bean Lifecycle.
 </div>
 </details>
 
-<details>
-<summary>**What is the difference between a Spring bean and a Java bean?**</summary>
-<div>
+:::note **Difference between a Spring bean and a Java bean?**
 - A Spring bean is an object that is instantiated, assembled, and managed by the Spring IoC container. It is the basic building block of a Spring application.
 - A Java bean is a reusable software component that conforms to certain design conventions. It is a Java class that should follow the JavaBeans naming conventions (e.g., getters/setters, Serializable interface, etc.).
-</div>
-</details>
 
 
 

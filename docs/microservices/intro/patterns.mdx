@@ -4,8 +4,108 @@ description : "Patterns for Cross Cutting concerns"
 sidebar_position: 4
 ---
 
-## Service Discovery?
+When we start working with microservice solutions, it is essential to apply best practices to keep the architecture
+as efficient and scalable as possible to avoid performance issues, bottlenecks, or
+operational problems.
 
+Adhering to best practices also makes it easier for new developers to come up to speed with our systems.
+
+### Service Discovery
+With microservices, we have many services that need to communicate with each other.
+One of the challenges is how to locate the services. This is where service discovery comes in.
+Service discovery is a mechanism that allows services to find and communicate with each other without hardcoding their locations.
+Some of the popular services used are :
+- `Eureka` : Netflix's service discovery service
+- `Consul` : HashiCorp's service discovery service
+- `Zookeeper` : Apache's service discovery service
+
+<details>
+  <summary>**Spring Cloud Service Discovery Code Example**</summary>
+
+```xml
+<dependencies>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-webflux</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+    </dependency>
+</dependencies>
+```
+
+In the below Code example we are using `@EnableDiscoveryClient` annotation to enable service discovery in our application.
+This annotation tells your microservice to register itself with a Eureka service discovery agent because
+you’re going to use service discovery to look up remote REST service endpoints.
+
+Note that the configuration happens in a property file, giving the simple service the location and port number of a Eureka server to contact.
+
+```java
+@SpringBootApplication
+// Tells the service to look up the location of remote services
+@EnableDiscoveryClient
+public class ServiceDiscoveryApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(ServiceDiscoveryApplication.class, args);
+    }
+
+    public String remoteServiceCall(String name){
+      // Use the service discovery client to look up the location of the remote service
+      // and make a call to it
+      webClient.get()
+      // Logical service id will be resolved to the actual location of the service by the service discovery agent
+      .uri("http://logical-service-id/" + name)
+      .retrieve()
+      .bodyToMono(String.class)
+      .block();
+    }
+}
+```
+```java
+@SpringBootApplication
+// Tells the service to register with a Eureka service discovery agent to look up the location
+// of remote services
+@EnableEurekaServer
+public class ServiceDiscoveryApplication {
+  public static void main(String[] args) {
+    SpringApplication.run(ServiceDiscoveryApplication.class, args);
+  }
+}
+```
+
+</details>
+
+### Load Balancer
+Spring Load Balancer is a client-side load balancer that allows you to define the load balancing logic in your application.
+It is a part of the Spring Cloud project and is used to distribute the load between multiple instances of a service.
+It integrates with service discovery to locate the instances of a service and distribute the load between them.
+
+
+### API Gateway
+An API Gateway is a server that acts as an API front-end, receiving API requests,
+enforcing throttling and security policies, passing requests to the back-end service,
+and then passing the response back to the requester.
+
+### Spring Cloud Sleuth
+Spring Cloud Sleuth is a distributed tracing solution for Spring Cloud, designed to work with Spring Cloud and Spring Boot applications.
+It provides a way to trace requests as they flow through a distributed system.
+
+These tracking numbers sometimes refered as `correlation IDs` or `trace IDs` allows you to track a request as it flows through a distributed system.
+Trace Ids are automatically generated and added to logs and HTTP headers.
+
+:::tip
+The real beauty of Spring Cloud Sleuth is seen when it’s combined with logging aggregation technology tools like
+the [ELK Stack](https://www.elastic.co/what-is/elk-stack) and tracking tools like [Zipkin](http://zipkin.io).
+ELK Stack is a combination of three open-source projects:
+- **Elasticsearch**: A search and analytics engine.
+- **Logstash**: A server-side data processing pipeline that ingests data from multiple sources simultaneously,
+transforms it, and then sends it to a "stash" like Elasticsearch.
+- **Kibana**: A visualization layer that works on top of Elasticsearch.
+
+Open Zipkin takes data produced by Spring Cloud Sleuth and allows you to visualize the flow of your service
+calls involved for a single transaction.
+:::
 
 ## Observability patterns
 Understanding and diagnosing problem in a microservice architecture is much more complicated.
