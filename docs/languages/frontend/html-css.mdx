@@ -1,0 +1,60 @@
+---
+title: CSS & HTML
+description : "CSS & HTML"
+sidebar_position: 0
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<Tabs>
+    <TabItem value="HTML">
+
+### Explain the difference between `<section>`, `<div>`, and `<article>` tags. When would you use each?
+- `<div>`: A generic container for grouping elements. It has no semantic meaning.
+- `<section>`: Represents a thematic grouping of content, typically with a heading.
+- `<article>`: Represents an independent piece of content that can be distributed and reused independently.
+
+
+###	What are data attributes in HTML, and how can they be used?
+Data attributes allow you to store extra information on standard HTML elements. They are prefixed with `data-` and can be accessed using JavaScript.
+
+```html 
+<div id="user" data-id="123" data-name="John Doe"></div>
+```
+
+```javascript
+const user = document.getElementById('user');
+const userId = user.dataset.id; // Outputs: 123
+const userName = user.dataset.name; // Outputs: John Doe
+```
+
+###	What are semantic tags, and why are they important?
+Semantic tags are HTML elements that describe the meaning of the content they contain, rather than their appearance. They provide context to both the browser and the developer, making the code more readable and accessible.
+
+    </TabItem>
+
+    <TabItem value="CSS">
+
+### What is the difference between relative, absolute, fixed, and sticky positioning?
+- `Relative`: Positioned relative to its normal position.
+- `Absolute`: Positioned relative to the nearest positioned ancestor.
+- `Fixed`: Positioned relative to the viewport.
+- `Sticky`: Acts like `relative` until it reaches a specified threshold, then acts like `fixed`.
+
+### How do CSS Grid and Flexbox differ, and when would you use one over the other?
+- `Flexbox`: One-dimensional layout, ideal for arranging items in a single row or column.
+- `Grid`: Two-dimensional layout, ideal for creating grid-based structures with rows and columns.
+
+### What are pseudo-elements and pseudo-classes? Provide examples.
+- Pseudo-elements: Allow you to style certain parts of an element. e.g `::before`, `::after`.
+- Pseudo-classes: Define the special state of an element. 
+e.g `:hover`, `:focus`, `:first-child`.
+
+### How do you approach responsive design? Discuss any frameworks/tools you prefer.
+A responsive design approach involves creating web pages that adapt to various screen sizes and devices.
+Examples of responsive design tools/frameworks include Bootstrap and Materialize CSS.
+
+    </TabItem>
+</Tabs>
+

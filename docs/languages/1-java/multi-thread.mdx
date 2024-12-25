@@ -113,6 +113,12 @@ Choice between Thread and Runnable: Extend Thread for self-contained thread logi
 - Synchronization: Ensure thread safety when accessing shared resources using synchronized blocks, Lock objects, or atomic variables.
 :::
 
+To control concurrent modifications, the Java programming language defines the 
+`synchronized` keyword for two purposes:
+- It can restrict access to a shared Object (to preserve invariants),
+    so only a Thread can execute a routine at any given time.
+- It propagates changes from the current Thread local memory to the global memory,
+    that’s available to all running threads of executions.
 
 ### What is `Thread Pool`?
 A thread pool is a collection of threads that can be reused. Thread pools are used in multi-threaded applications. **Thread pools are also known as a thread executor framework.**
