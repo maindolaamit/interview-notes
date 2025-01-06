@@ -6,26 +6,10 @@ sidebar_position: 2
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-# Collections
-```mermaid
-classDiagram
-    class GameObject {
-        -String Name
-        -int PosX
-        -int PosY
-        +Despawn() void
-    }
-    class Player {
-        -int Health
-        +Heal(int amount) void
-    }
-```
-
-
 ### What is the difference between `Array` and `ArrayList` in Java?
 `Array` is a fixed length data structure while `ArrayList` is a dynamic length data structure.
 
-We have defined an ArrayList with size 2 and inserting the 3rd element in it, what will happen? The new element will be added as ArrayList size will be grown dynamically. 
+We have defined an ArrayList with size 2 and inserting the 3rd element in it, what will happen? The new element will be added as ArrayList size will be grown dynamically.
 
 <details>
 <summary>ArrayList</summary>
@@ -41,7 +25,7 @@ System.out.println(list.size()); // 3
 
 #### While trying to insert one million elements in the list with no size predefined will it be faster if we initialize the list with size of a million?
 With size defined taken taken will be significantly faster due to following reasons.
-- While adding a new element the List size will be checked and grow() method will be called to increase the size. This will not happen as we know the size already. 
+- While adding a new element the List size will be checked and grow() method will be called to increase the size. This will not happen as we know the size already.
 - Each time the List is grown the elements will be copied from old capacity to new Capacity. This memory allocation will happen earlier, and multiple copies will be avoided.
 <Tabs>
 <TabItem value="Without Size">
@@ -78,13 +62,13 @@ System.out.printf("Time taken : %s (ms)",(end.getTime()-start.getTime()));
 </TabItem>
 </Tabs>
 
-<details> 
+<details>
 <summary>What is the difference between List.of() and Arrays.asList() method?</summary>
 ```java title="List.of() vs Arrays.asList()"
 // returns immutable list
 // allows null values
 // throws UnsupportedOperationException
-List<Integer> list = List.of("Amit","Prashant","Suresh"); 
+List<Integer> list = List.of("Amit","Prashant","Suresh");
 list.add("Ramesh");
 
 // returns modifiable list
@@ -152,6 +136,8 @@ for(String s: list){
 
 <details>
 <summary>Answer </summary>
+
+It will give the `ConcurrentModificationException`, to save memory Java creates a subList as viewed on the original list.
 ```java title="Iterator"
 Iterator iterator = list.iterator();
 while(iterator.hasNext()){
@@ -161,8 +147,7 @@ while(iterator.hasNext()){
 }
 
 ```
-It will give the `ConcurrentModificationException`, to save memory Java creates a subList as viewed on the original list.
-</details> 
+</details>
 ----
 
 ### What is Hashing and how it is implemented in Java?
@@ -185,7 +170,7 @@ Hashing has a ton of applications, here are a few key ones:
 </details>
 
 #### How `Hashing` is implemented in Java?
-`Hashing` is implemented in Java using `hashCode()` and `equals()` methods. `hashCode()` method returns an integer value and `equals()` method returns a boolean value. 
+`Hashing` is implemented in Java using `hashCode()` and `equals()` methods. `hashCode()` method returns an integer value and `equals()` method returns a boolean value.
 
 <Tabs>
 <TabItem value="Hash Functions">
@@ -201,7 +186,7 @@ Common Java hash functions:
 - **String.hashCode():** Specifically for strings.
 </TabItem>
 <TabItem value="Hash Code">
-`Hashing` is a technique to convert a range of key values into a range of indexes of an array. We're going to use the remainder operator `%` to get a range of key values. 
+`Hashing` is a technique to convert a range of key values into a range of indexes of an array. We're going to use the remainder operator `%` to get a range of key values.
 - Represent: The output of a hash function, typically an integer.
 - Usage: Serve as indices within hash tables to efficiently store and retrieve data.
 ```java
@@ -226,7 +211,7 @@ Allows multiple values to be stored at the same index.
 </Tabs>
 
 
-:::note Default `hashCode()`: 
+:::note Default `hashCode()`:
 Typically returns a value based on the object's memory address.
 Reason: It's a unique identifier for each object instance, ensuring different objects usually have different hash codes.
 ::::
@@ -247,16 +232,13 @@ Reason: It's a unique identifier for each object instance, ensuring different ob
 - `HashTable` is synchronized while `HashMap` is not synchronized.
 - `HashTable` does not allow null key or value while `HashMap` allows one null key and multiple null values.
 </TabItem>
+    <TabItem value="HashSet">
+        `HashSet` is a key-value pair data structure.
+        - `HashSt` is a key-value pair while `HashSet` is a set of unique values.
+        - `HashMap` allows one null key and multiple null values while `HashSet` does not allow null values.
+    </TabItem>
 </Tabs>
-
-#### What is the difference between `HashMap` and `HashSet` in Java? 
-- `HashMap` is a key-value pair while `HashSet` is a set of unique values.
-- `HashMap` allows one null key and multiple null values while `HashSet` does not allow null values.
-
-
-
 ----
-
 
 ### What are different kinds of `Maps` in Java?
 `Map Interface`: Represents a collection of key-value pairs, where each key is unique.
@@ -283,7 +265,7 @@ Provides methods for storing, retrieving, and managing these pairs.
 - Order: Preserves insertion order of elements.
 - Performance: Similar to HashMap for basic operations.
 - Internal structure: Uses a hash table and a linked list.
-- Allows null keys and values.
+- **Can be used to implement LRU (Least Recently Used) cache.**
 </TabItem>
 <TabItem value="EnumMap">
 `EnumMap` is a key-value pair data structure. It is ordered and does not allow null key or value.
@@ -296,16 +278,6 @@ Provides methods for storing, retrieving, and managing these pairs.
 - LinkedHashMap: When insertion order needs to be preserved.
 - Hashtable: Thread safety is a primary concern, but performance is less critical.
 - EnumMap: Working with maps of enum keys.
-</TabItem>
-</Tabs>
-
-
-<Tabs>
-<TabItem value="String">
-StringBuffer is mutable and high performant for modifying String.
-</TabItem>
-<TabItem value="StringBuilder">
-StringBuffer is mutable and high performant for modifying String.
 </TabItem>
 </Tabs>
 

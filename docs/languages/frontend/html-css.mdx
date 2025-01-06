@@ -11,13 +11,33 @@ import TabItem from '@theme/TabItem';
     <TabItem value="HTML">
 
 ### Explain the difference between `<section>`, `<div>`, and `<article>` tags. When would you use each?
-- `<div>`: A generic container for grouping elements. It has no semantic meaning.
-- `<section>`: Represents a thematic grouping of content, typically with a heading.
-- `<article>`: Represents an independent piece of content that can be distributed and reused independently.
+1. `<div>`: A generic container for grouping elements.
+    It has no semantic meaning and used primarily for grouping elements for styling or scripting purposes.
+2. `<section>`: Represents a thematic grouping of content, typically with a heading.
+The `<section>` tag is used to group related content under a single theme or topic. It is more semantic than `<div>` and should include a heading (`<h1>-<h6>`).
 
+    ```html
+    <section>
+      <h2>Our Services</h2>
+      <p>We offer web development, design, and consulting services.</p>
+    </section>
+    ```
 
+3. `<article>`: The `<article>` tag is used for self-contained, independent pieces of content that are meaningful on their own.
+Used for blog post, news article, product descriptions.
+
+    ```html
+    <article>
+      <h1>How to Learn HTML</h1>
+      <p>HTML is the foundation of web development...</p>
+      <p>Start by understanding basic tags...</p>
+    </article>
+    ```
+
+---
 ###	What are data attributes in HTML, and how can they be used?
 Data attributes allow you to store extra information on standard HTML elements. They are prefixed with `data-` and can be accessed using JavaScript.
+These attributes do not affect the presentation or behavior of the element but can be accessed and manipulated using JavaScript or styled with CSS. They always start with `data-` followed by a custom name.
 
 ```html 
 <div id="user" data-id="123" data-name="John Doe"></div>
@@ -29,8 +49,35 @@ const userId = user.dataset.id; // Outputs: 123
 const userName = user.dataset.name; // Outputs: John Doe
 ```
 
+---
 ###	What are semantic tags, and why are they important?
-Semantic tags are HTML elements that describe the meaning of the content they contain, rather than their appearance. They provide context to both the browser and the developer, making the code more readable and accessible.
+
+**Semantic tags** in HTML are elements that clearly describe their meaning and role within a webpage's structure, both to developers and browsers. Unlike non-semantic tags (e.g., `<div>` or `<span>`), semantic tags provide context about the content they contain, making the code more meaningful and easier to understand for humans, search engines, and assistive technologies.
+
+#### Examples of Semantic Tags:
+- **Structural Tags**: `<header>`, `<footer>`, `<main>`, `<section>`, `<article>`
+- **Textual Tags**: `<h1>` to `<h6>`, `<p>`, `<blockquote>`
+- **Interactive Tags**: `<nav>`, `<button>`, `<form>`
+
+Why Are Semantic Tags Important?
+
+1. **Improved Accessibility**: Semantic tags help screen readers and assistive devices understand the structure and purpose of content, improving the experience for visually impaired users.
+
+2. **Better SEO**: Search engines use semantic tags to determine the hierarchy and relevance of content on a page, improving indexing and potentially boosting rankings.
+
+Examples of Semantic Tag Usage
+
+**Using `<header>` for Page Headers**
+```html
+<header>
+  <h1>Welcome to My Website</h1>
+  <nav>
+    <a href="#about">About</a>
+    <a href="#services">Services</a>
+  </nav>
+</header>
+```
+
 
     </TabItem>
 
