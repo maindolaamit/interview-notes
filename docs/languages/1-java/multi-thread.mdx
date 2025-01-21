@@ -239,7 +239,43 @@ Flux.just(1, 2, 3)
 Blocking is when the execution of additional JavaScript in the Node.js process must wait until a non-JavaScript operation completes. This happens because the event loop is unable to continue running JavaScript while a blocking operation is occurring.
 </details>
 
-
+---
+### What are `Callable`?
+Callable is an interface in Java that is similar to Runnable. It is used to create a thread that returns a result.
+- It is a task that returns a result and may throw an exception.
+- It is a part of the java.util.concurrent package. It is a functional interface that contains only one abstract method call().
+- It is used to create a thread that returns a result.
+```java
+public class Main {
+    public static void main(String[] args) {
+        Callable<String> callable = () -> {
+            return "Callable's Result";
+        };
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Future<String> future = executor.submit(callable);
+        String result = future.get();
+        System.out.println(result);
+    }
+}
+```
+---
+<details>
+    <summary>What are `Lock`?</summary>
+    ```java
+    public class Main {
+        public static void main(String[] args) {
+            Lock lock = new ReentrantLock();
+            lock.lock();
+            try {
+                System.out.println("Thread running...");
+            } finally {
+                lock.unlock();
+            }
+        }
+    }
+    ```
+    Lock is an interface in Java that is used to control access to a shared resource by multiple threads. It is a synchronization aid that allows threads to take turns acquiring and releasing locks. It is a part of the java.util.concurrent package. It is a synchronization aid that allows threads to take turns acquiring and releasing locks.
+</details>
 ### What are `BlockingQueue` in Java?
 A BlockingQueue is a queue that supports operations that wait for the queue to become non-empty when retrieving an element and wait for space to become available in the queue when storing an element. 
 
@@ -341,6 +377,7 @@ public class MyApplication {
 - Flexibility: Adjust queue size and implementation based on your application's needs.
 - Error Handling: Implement proper error handling to address potential issues like queue overflow or database errors.
 
+---
 ### What are `parrallelStreams`?
 Parallel streams use a common ForkJoinPool available via the static ForkJoinPool.commonPool() method. The size of the underlying thread-pool uses up to five threads - depending on the number of available processors - to process the elements of the stream in parallel. The following example demonstrates the usage of parallel streams:
 ```java
@@ -418,41 +455,37 @@ public class Main {
 </Tabs>
 
 ### What are Atomic and Volatile variables?
+Both variables are used in concurrent programming to avoid data inconsistency issues caused by concurrent access to the same variable.
 <Tabs>
 <TabItem value="Atomic">
-- Atomic variables are used in concurrent programming to avoid data inconsistency issues caused by concurrent access to the same variable.
-- Atomic variables are thread-safe and can be used without synchronization.
-- Atomic variables are available in the java.util.concurrent.atomic package.
-- Atomic variables are used to perform atomic operations on single variables.
-- Atomic variables are used to perform atomic operations on single variables.
+    - Atomic variables are thread-safe and can be used without synchronization. Atomic variables are available in the java.util.concurrent.atomic package. Atomic variables are used to perform atomic operations on single variables. Volatile variables are used to indicate that a variable's value will be modified by different threads.
+    - Ensures changes made to the variable is visible to other threads.
+    - Useful for counters, accumulators, and flags that are accessed by multiple threads.
+    ```java
+    volatile int counter = 0;
+
+    public void increment() {
+        counter++; // Not atomic: read -> increment -> write
+    }
+    ```
 </TabItem>
 <TabItem value="Volatile">
-- Volatile variables are used in concurrent programming to avoid data inconsistency issues caused by concurrent access to the same variable.
-- Volatile variables are thread-safe and can be used without synchronization.
-- Volatile variables are available in the java.util.concurrent.atomic package.
-- Volatile variables are used to perform atomic operations on single variables.
+    - Volatile variables are used to perform atomic operations on single variables. Archives this by preventingg compiler and and CPU from caching.
+    - Lightweight & faster than synchronization mechanism, since it does not involve locking.
+    - Useful for simple flags or counters that are accessed by multiple threads.
+    - Does not guaranteee atomicity for compound oprations like incrementing a counter.
+
+    ```java
+    AtomicInteger counter = new AtomicInteger(0);
+
+    public void increment() {
+        counter.incrementAndGet(); // Atomic operation
+    }
+    ```
 </TabItem>
 </Tabs>
+---
 
-
-### What are `Callable`?
-Callable is an interface in Java that is similar to Runnable. It is used to create a thread that returns a result.
-- It is a task that returns a result and may throw an exception.
-- It is a part of the java.util.concurrent package. It is a functional interface that contains only one abstract method call().
-- It is used to create a thread that returns a result.
-```java
-public class Main {
-    public static void main(String[] args) {
-        Callable<String> callable = () -> {
-            return "Callable's Result";
-        };
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        Future<String> future = executor.submit(callable);
-        String result = future.get();
-        System.out.println(result);
-    }
-}
-```
 
 ### What are `ThreadLocal` variables?
 ThreadLocal is a class in Java that allows you to store data that will be accessible only by a specific thread. It is a thread-local variable. Each thread that accesses the variable (via its get or set method) has its own, independently initialized copy of the variable. ThreadLocal instances are typically private static fields in classes that wish to associate state with a thread (e.g., a user ID or Transaction ID).
@@ -524,8 +557,7 @@ public class Main {
     }
 }
 ```
-CyclicBarrier is a class in Java that allows a set of threads to wait for each other to reach a common barrier point. It is a synchronization aid that allows a set of threads to wait for each other to reach a common barrier point. It is a part of the java.util.concurrent package.
-It is a synchronization aid that allows a set of threads to wait for each other to reach a common barrier point.
+CycleBarrier is a class in Java that allows a set of threads to wait until all threads reach a common barrier point. It is a synchronization aid that allows a set of threads to wait until all threads reach a common barrier point. It is a part of the java.util.concurrent package.
 </details>
 
 <details>
@@ -578,20 +610,3 @@ public class Main {
 Exchanger is a class in Java that is used to exchange objects between two threads. It is a synchronization point at which two threads can exchange objects. It is a part of the java.util.concurrent package. It is a synchronization point at which two threads can exchange objects.
 </details>
 
-<details>
-<summary>What are `Lock`?</summary>
-```java
-public class Main {
-    public static void main(String[] args) {
-        Lock lock = new ReentrantLock();
-        lock.lock();
-        try {
-            System.out.println("Thread running...");
-        } finally {
-            lock.unlock();
-        }
-    }
-}
-```
-Lock is an interface in Java that is used to control access to a shared resource by multiple threads. It is a synchronization aid that allows threads to take turns acquiring and releasing locks. It is a part of the java.util.concurrent package. It is a synchronization aid that allows threads to take turns acquiring and releasing locks.
-</details>

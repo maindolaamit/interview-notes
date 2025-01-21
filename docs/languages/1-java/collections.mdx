@@ -24,7 +24,7 @@ System.out.println(list.size()); // 3
 </details>
 
 #### While trying to insert one million elements in the list with no size predefined will it be faster if we initialize the list with size of a million?
-With size defined taken taken will be significantly faster due to following reasons.
+With size defined time taken will be significantly faster due to following reasons.
 - While adding a new element the List size will be checked and grow() method will be called to increase the size. This will not happen as we know the size already.
 - Each time the List is grown the elements will be copied from old capacity to new Capacity. This memory allocation will happen earlier, and multiple copies will be avoided.
 <Tabs>
@@ -65,13 +65,13 @@ System.out.printf("Time taken : %s (ms)",(end.getTime()-start.getTime()));
 <details>
 <summary>What is the difference between List.of() and Arrays.asList() method?</summary>
 ```java title="List.of() vs Arrays.asList()"
-// returns immutable list
+// returns fixed size list immutable list, we can not add or remove elements.
 // allows null values
 // throws UnsupportedOperationException
 List<Integer> list = List.of("Amit","Prashant","Suresh");
 list.add("Ramesh");
 
-// returns modifiable list
+// returns fixed size modifiable list, we can not add or remove elements
 // allows null values
 List<Integer> list = Arrays.asList("Amit","Prashant","Suresh");
 list.add("Ramesh");
@@ -119,8 +119,8 @@ We can wrap the `new LinkedList(Arrays.asList())` to get the modifiable collecti
 </TabItem>
 </Tabs>
 
-
 ### What will be the output of the below Code?
+
 ```java
 List<String> list = new ArrayList<>();
 list.add("amit");
@@ -261,7 +261,7 @@ Provides methods for storing, retrieving, and managing these pairs.
 </TabItem>
 <TabItem value="LinkedHashMap">
 `LinkedHashMap` is a key-value pair data structure. It is ordered and does not allow null key or value.
-- Combines features of HashMap and LinkedHashMap:
+- Combines features of HashMap and LinkedList.
 - Order: Preserves insertion order of elements.
 - Performance: Similar to HashMap for basic operations.
 - Internal structure: Uses a hash table and a linked list.
@@ -271,6 +271,20 @@ Provides methods for storing, retrieving, and managing these pairs.
 `EnumMap` is a key-value pair data structure. It is ordered and does not allow null key or value.
 - Specialized implementation for maps with enum keys: Very efficient.
 - Internal structure: Optimized for enum keys.
+
+```java
+class Example{
+    public static void main(){
+        enum Days {MONDAY, TUESDAY, WEDNESDAY}
+        EnumMap<Days, String> map = new EnumMap<>(Days.class);
+        map.put(Days.MONDAY, "First day of the week");
+        map.put(Days.TUESDAY, "Second day of the week");
+        map.put(Days.WEDNESDAY, "Third day of the week");
+
+        System.out.println(map);
+    }
+}
+```
 </TabItem>
 <TabItem value="Choosing the right Map">
 - HashMap: General-purpose, fast, doesn't require ordering.
@@ -281,6 +295,7 @@ Provides methods for storing, retrieving, and managing these pairs.
 </TabItem>
 </Tabs>
 
+----
 
 ### What will be the output of the below Codes?
 ```java

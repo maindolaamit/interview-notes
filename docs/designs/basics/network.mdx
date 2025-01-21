@@ -24,7 +24,8 @@ Asynchronous systems try to deliver packets as soon as possible, but there is no
 This is called an `unbounded delay`.
 
 <details>
-<summary>If a timeout is the only sure way of detecting a fault, then how long should the timeout be?</summary>
+<summary>**If a timeout is the only sure way of detecting a fault, then how long should the timeout be?**</summary>
+
     ** There is unfortunately no simple answer. **
     - A short timeout will detect faults quickly, but it might also generate false positives.
     - A long timeout will generate fewer false positives, but it will take longer to detect actual faults.

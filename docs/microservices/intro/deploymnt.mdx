@@ -43,6 +43,29 @@ This traditional approach involves deploying services as executable packages, su
 </details>
 
 ---
+
+#### General steps in a deployment pipeline:
+- **Build:** Compile the source code, run tests, and package the application.
+- **Containerize:** Create a Docker image containing the application and its dependencies.
+- **Deploy:** Deploy the containerized application to a container orchestration platform like Kubernetes.
+- **Monitor:** Monitor the application's health, performance, and resource usage.
+- **Scale:** Scale the application based on demand, using features like auto-scaling in Kubernetes.
+
+In GitHub Actions, you can define these steps in a workflow file, which automates the deployment process when code changes are pushed to the repository.
+- **Build and Test:** Run Maven commands to build the application and execute tests.
+- **Docker Build:** Build a Docker image containing the application.
+- **Docker Push:** Push the Docker image to a container registry.
+- **Kubernetes Deployment:** Deploy the application to a Kubernetes cluster.
+
+**We use different branches for different environments, such as `main` for production and `develop` for staging.
+This allows us to test changes in a staging environment before deploying them to production.**
+
+:::tip
+If you are perpetually making changes across multiple services, It's likely your microservices are too tightly coupled.
+It may be worth considering merging the services
+:::
+
+---
 ### Benefits of Using a Microservice Chassis
 
 A microservice chassis is a framework or set of frameworks that provide a foundation for building microservices,
@@ -92,6 +115,9 @@ circuit breakers, and distributed tracing. The sources detail three key benefits
 
 **Istio**, **Linkerd**, and **Conduit** as prominent service mesh implementations.
 They recommend Istio for its robust features and integration with Kubernetes.
+
+A `Control Plane` would sit on top of the service mesh, providing a centralized management interface for configuring and monitoring the mesh.
+![control plane](./img/control-plane.svg)
 
 ### Best Cases for Implementing a Service Mesh
 

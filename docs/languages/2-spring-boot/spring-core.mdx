@@ -59,6 +59,13 @@ This is all handled by the presence of the `@RestController` annotation, which i
 You can use `@RequestMapping` at class or method level to define an HTTP Endpoint that service is going to expose.
 When defined at class level, you are establishing the root of the Endpoint for all other endpoints in the controller.
 
+:::tip
+`@SpringBootApplication` annotation is used to mark the application class in Spring Boot. It is a convenience annotation that adds the following annotations:
+- `@Configuration`: Indicates that the class is a configuration class.
+- `@EnableAutoConfiguration`: Enables Spring Boot’s auto-configuration feature.
+- `@ComponentScan`: Tells Spring to scan the current package and all sub-packages for components.
+:::
+
 ### What is `Spring Bean`?
 In Spring, a bean represents a managed object within your application. It can be any object you want to manage, like a service, a repository, a controller, or even a database connection. Spring handles the creation, configuration, and lifecycle of these beans, simplifying development and promoting best practices.
 
@@ -66,11 +73,23 @@ A Spring bean is an object that is instantiated, assembled, and managed by the S
 
 Bean creation and management are governed by the Spring Bean Life Cycle:
 
-- Bean Instantiation: Spring creates an instance of the bean based on its configuration. This can be done through various methods, like using a constructor, a static factory method, or even instantiating the class directly.
-- Bean Properties: After creating the bean, Spring injects dependencies into its properties through Dependency Injection (DI). This means it wires together the objects your bean needs to function, reducing tight coupling and making your code more modular and testable.
-- Bean Initialization: You can define custom initialization logic for your beans using methods like init() or annotations like **@PostConstruct**. This is where you can perform setup tasks like opening database connections or initializing internal state.
-- Bean Usage: The bean is now ready to be used throughout your application. You can access it from other beans or inject it into controllers, services, or any other component that needs it.
-- Bean Destruction: When your application finishes or a bean is no longer needed, Spring performs bean destruction. This might involve closing resources, ending background tasks, or performing any necessary cleanup. You can customize destruction logic using methods like **destroy()** or **@PreDestroy**.
+- Bean Instantiation: Spring creates an instance of the bean based on its configuration.
+This can be done through various methods, like using a constructor, a static factory method, or even instantiating the class directly.
+- Bean Properties: After creating the bean, Spring injects dependencies into its properties through Dependency Injection (DI).
+This means it wires together the objects your bean needs to function, reducing tight coupling and making your code more modular and testable.
+- Bean Initialization: You can define custom initialization logic for your beans using methods like init() or annotations like **@PostConstruct**.
+This is where you can perform setup tasks like opening database connections or initializing internal state.
+- Bean Usage: The bean is now ready to be used throughout your application.
+You can access it from other beans or inject it into controllers, services, or any other component that needs it.
+- Bean Destruction: When your application finishes or a bean is no longer needed, Spring performs bean destruction.
+This might involve closing resources, ending background tasks, or performing any necessary cleanup. You can customize destruction logic using methods like **destroy()** or **@PreDestroy**.
+
+:::tip
+Below are the three methods we can use to invoke Bean Lifecycle.
+- Using the Annotation @PostConstruct and @PreDestroy can define the bean lifecycle hooks.
+- Configuring the method names in XML properties files, generally by giving the init and destroy methods. If you have so many beans then methods can be declared at the  config level rather than property level for every bean.
+- Implementing the Interfaces InitializingBean and DisposableBean from org.springframework.beans.factory. This approach is not recommended but only for interview purposes.
+:::
 
 
 **`Bean Scopes`**: Spring provides different scopes for beans, this determines how many instances of your bean exist and how Spring manages their lifecycle.
@@ -94,28 +113,32 @@ Learn about annotations like **@Component, @Autowired, @PostConstruct, and @PreD
 - All requests for the bean will return a shared instance, so it is not thread-safe.
 </TabItem>
 </Tabs>
+
 :::note
 Spring also provides other scopes like session, application, and websocket. However, these are only available in a web-aware ApplicationContext.
 **You can also define custom scopes by implementing the Scope interface.**
 :::
 
-:::tip
-Below are the three methods we can use to invoke Bean Lifecycle.
-- Using the Annotation @PostConstruct and @PreDestroy can define the bean lifecycle hooks. 
-- Configuring the method names in XML properties files, generally by giving the init and destroy methods. If you have so many beans then methods can be declared at the  config level rather than property level for every bean.  
-- Implementing the Interfaces InitializingBean and DisposableBean from org.springframework.beans.factory. This approach is not recommended but only for interview purposes.  
-:::
-
 <details>
-<summary>What is Bean Wiring?</summary>
-<div>
-**Bean wiring** is the process of connecting beans together to form an application. It is achieved by declaring dependencies between beans in the configuration metadata (XML, Java annotations, or Java code).
-</div>
+    <summary>What is Bean Wiring?</summary>
+    <div>
+        **Bean wiring** is the process of connecting beans together to form an application. It is achieved by declaring dependencies between beans in the configuration metadata (XML, Java annotations, or Java code).
+    </div>
 </details>
 
+:::note **Difference between a Spring Singleton and a Java Singleton?**
+- A Spring Singleton is a bean that is instantiated once per application context. It is the default scope in Spring and is cached in the Spring IoC container.
+- A Java Singleton is a design pattern that ensures a class has only one instance and provides a global point of access to it. It is implemented using static methods or static fields in the class.
+:::
+
 :::note **Difference between a Spring bean and a Java bean?**
-- A Spring bean is an object that is instantiated, assembled, and managed by the Spring IoC container. It is the basic building block of a Spring application.
-- A Java bean is a reusable software component that conforms to certain design conventions. It is a Java class that should follow the JavaBeans naming conventions (e.g., getters/setters, Serializable interface, etc.).
+- A Spring bean is an object that is instantiated, assembled, and managed by the Spring IoC container.
+It is the basic building block of a Spring application.
+- Spring bean is scoped to IoC, multiple IoC containers exist in an application.
+- A Java bean is a reusable software component that conforms to certain design conventions, managed by class itself.
+It is a Java class that should follow the JavaBeans naming conventions (e.g., getters/setters, Serializable interface, etc.).
+- Java bean is scoped to JVM or classloader
+:::
 
 
 
