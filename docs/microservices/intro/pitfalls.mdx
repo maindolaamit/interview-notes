@@ -1,0 +1,80 @@
+---
+title: Pitfalls in Microservices
+description: "Pitfalls in microservices"
+sidebar_position: 11
+---
+
+### Schema breakage
+
+Consider the below request and response schema for a service:
+#### Request
+```json
+// PUT /users/{id}/pref
+{
+  "firstname": "John",
+  "lastname": "John",
+  "email": "John",
+  "age": 30,
+  "phone": "+1-234-567-890",
+  "currency": "USD" // One of USD, GBP, INR
+}
+```
+#### Response
+```json
+{
+  "date": "2021-01-01",
+  "age": "30",
+  "country": "US" // One of US, UK, IN
+}
+```
+
+<details>
+<summary>How can we cause a breaking change, forcing clients to update</summary>
+
+    - Renaming any field for e.g. the `firstname` field to `first_name` will break the service.
+    - Removing any field for e.g. the `phone` field will break the service.
+    - If the service is expecting the `currency` field to be one of `USD`, `GBP`, `INR` and the client sends `EUR`, the service will break.
+    - If the service is expecting the `country` field to be one of `US`, `UK`, `IN` and the client sends `USA`, the service will break.
+    - Changing the date format from `YYYY-MM-DD` to `DD-MM-YYYY` will break the service.
+    - Changing the data-type of the `age` field from `number` to `string` will break the service.
+    - Instead of taking single value for `phone` and `email` fields, if the service starts taking an array of values.
+    - Changing HTTP method from `PUT` to `POST` will break the service.
+</details>
+
+---
+
+### Using the same DTO for Get and Post
+Consider the below request and response schema for a service:
+```java
+@GetMapping("/products/{id}")
+public Product getProduct(@PathVariable Long id) {
+  return productService.getProduct(id);
+}
+
+@PostMapping("/products")
+public Product createProduct(@RequestBody Product product) {
+  return productService.createProduct(product);
+}
+```
+
+#### Request/Response Body
+```json
+{
+  "id": 1,
+  "name": "John",
+  "supplierId": 1,
+  "supplierName": "Supplier1",
+  "description": "Description",
+  "price": 100,
+  "status": null,
+  "activationDate": "2021-01-01",
+  "createdBy": "John",
+  "createdDate": "2021-01-01"
+}
+```
+The above contract is misleading for the clients if used for both GET and POST requests. For a GET request, the `id`, `status`, `activationDate`, `createdBy`, and `createdDate` fields are not required.
+- `id` is the unique identifier for the product and will always be null for a POST request.
+- `status` is not required for a POST request.
+- `activationDate` is not required for a POST request.
+- `createdBy` is not required for a POST request.
+

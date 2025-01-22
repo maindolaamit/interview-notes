@@ -385,6 +385,21 @@ backend gets more details about the client and the user.
 `JWT` is composed of three parts: the header, the payload, and the signature.
 The data in the header and body is JSON formatted, then encoded as Base64 to make it smaller and easier to transfer.
 
+:::tip Session vs Token
+<Tabs>
+    <TabItem value="Session">
+        - **Session** is a server-side storage of the user’s state. Often stored in a database and then linked to the user’s browser with a cookie.
+        - **Session** requires server-side storage. This makes it **stateful** and harder to scale.
+        - **Session** is more secure because the user’s state is stored on the server and can be revoked.
+    </TabItem>
+    <TabItem value="Token">
+        - **Token** is a client-side storage of the user’s state. Often stored in the browser’s local storage or in a cookie.
+        - **Token** does not require server-side storage, making it **stateless** and scaling easier.
+        - **Token** is less secure because the user’s state is stored on the client and can be stolen.
+    </TabItem>
+</Tabs>
+:::
+
 ##### When to use Opaque Tokens
 Non-opaque tokens are the most frequently used today because they don’t require introspection to validate them.
 However, non-opaque tokens contain data, and the client sends this data over the wire to its backend,
