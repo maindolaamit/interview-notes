@@ -83,7 +83,13 @@ const config: Config = {
           type: "docSidebar",
           sidebarId: "langSidebar",
           position: "left",
-          label: "Programming",
+          label: "Languages",
+        },
+        {
+            type: "docSidebar",
+            sidebarId: "programmingSidebar",
+            position: "left",
+            label: "Programming",
         },
         {
           type: "docSidebar",
