@@ -43,6 +43,12 @@ This traditional approach involves deploying services as executable packages, su
 
 ---
 
+<details>
+    <summary>**Deployment Pipeline:**</summary>
+
+    **Deployment Pipeline:** A critical aspect of microservice deployment is a robust deployment pipeline that automates the process from code commit to production release. This pipeline typically includes stages for building, testing, packaging, and deploying the service, often using tools like Jenkins or similar CI/CD platforms.
+</details>
+
 #### General steps in a deployment pipeline:
 - **Build:** Compile the source code, run tests, and package the application.
 - **Containerize:** Create a Docker image containing the application and its dependencies.
@@ -65,7 +71,7 @@ It may be worth considering merging the services
 :::
 
 ---
-### Benefits of Using a Microservice Chassis
+## Microservice Chassis
 
 A microservice chassis is a framework or set of frameworks that provide a foundation for building microservices,
 addressing common concerns such as externalized configuration, health checks, application metrics, service discovery,
@@ -126,23 +132,43 @@ A `Control Plane` would sit on top of the service mesh, providing a centralized 
   * **Performance Overhead:**  The sidecar proxies introduce some performance overhead, but it's typically minimal and acceptable given the benefits.
   * **Learning Curve:**  Teams need to learn new concepts and tools associated with the chosen service mesh.
 
-###  Evolution of Microservice Chassis
+##  Externalized Configuration
+**Externalized Configuration:** In microservices, externalized configuration allows for environment-specific settings to be applied without modifying the application code. This can be achieved through mechanisms like environment variables,
+configuration files, or dedicated configuration servers. The deployment environment supplies the configuration properties when creating a service instance,
+typically read by the service instance upon startup.
 
-The sources highlight a trend where service meshes are taking over some of the responsibilities traditionally handled
-by microservice chassis frameworks like Spring Cloud.
-As service meshes mature, microservice chassis frameworks may focus more on application-level concerns,
-while infrastructure-related tasks are delegated to the service mesh.
+**Best Practices for Externalized Configuration:**
+*   **Complete Separation**: Configuration should be entirely separate from the deployable service. This means not embedding configurations within the source code. This prevents the need to redeploy services for configuration changes, which can be time consuming and lead to inconsistencies.
+*   **Runtime Supply:** Configuration properties should be supplied at runtime, ensuring that the service adapts to its environment. This can be done via environment variables, configuration files, or a configuration server.
+*   **Centralized Management:** It's beneficial to manage configurations in one place, making them easier to oversee. This can be done with a configuration server, that can store configuration information for a group of microservices in one location, with settings for different environments.
+*   **Secure Storage of Sensitive Data:** Sensitive information, such as credentials, should be stored securely using a secrets storage mechanism like Hashicorp Vault or AWS Parameter Store. The configuration server should be able to decrypt sensitive data before providing it to the service.
+*   **Version Control:** Configuration data needs to be tracked and version controlled to avoid bugs and unplanned outages.
+*   **Abstraction**: Access to configuration data should be abstracted behind a service interface. Use a REST-based service to retrieve the application's configuration data instead of directly reading from the repository.
+*   **Dynamic Reconfiguration:** Services should be able to detect updated property values and reconfigure themselves, potentially via polling.
 
+**Methods of Implementation:**
 
-<details>
-  <summary>**Deployment Pipeline:**</summary>
+*   **Push Model:** The deployment infrastructure supplies configuration properties to the service instance, using methods like environment variables or configuration files. The service then reads these properties when it starts up.
+*   **Environment Variables:** Properties are passed as environment variables.
+*  **Configuration Files:** Properties are supplied using configuration files.
+*   **Pull Model:** The service instance reads its configuration properties from a configuration server. On startup, the service queries the configuration service to retrieve its configuration. The configuration server’s location is usually provided to the service instance using a push-based configuration method.
+*   **Configuration Server**: Uses a central repository, making configurations easier to manage, and enabling global defaults that can be overridden. Spring Cloud Config is a tool that can be used to implement a configuration server.
 
-  **Deployment Pipeline:** A critical aspect of microservice deployment is a robust deployment pipeline that automates the process from code commit to production release. This pipeline typically includes stages for building, testing, packaging, and deploying the service, often using tools like Jenkins or similar CI/CD platforms.
-</details>
+**Pitfalls and Challenges:**
+*   **Scattered Configuration:** Configuration values may be scattered throughout the definitions of numerous services, making it difficult to manage.
+*  **Complexity**: If not handled properly, externalized configuration can lead to an external dependency that will need to be managed and version controlled.
+*  **Security Vulnerabilities:** Hard-wiring configurations into the source code can introduce security vulnerabilities, and limit where the service can be deployed.
+*   **Reconfiguration Challenges:** Reconfiguring a running service using a push model can be difficult, if not impossible, without restarting it.
+*   **Single Point of Failure:** Using a pull model with a configuration server can introduce a single point of failure if there is no redundancy. Using a service discovery mechanism like Netflix Eureka can help mitigate this issue by registering multiple config server instances.
+* **Initial Connection**: It should be decided whether the client connects first to the config server to retrieve its configuration, or first to the discovery server.
+*   **Configuration Drift:** It is possible for configuration to drift and become inconsistent if not managed properly. The Phoenix Server pattern encourages tearing down and setting up servers to drive out configuration drift.
+* **Managing many microservices**: Keeping the configuration up to date for many small components can be challenging.
 
-<details>
-  <summary>**Externalized Configuration:**</summary>
+**Tools and Technologies:**
+*   **Spring Cloud Config:** Provides centralized management of configuration files. It supports storing files in Git, and other backends, and encrypting sensitive information.
+*   **HashiCorp Vault:** A secrets management tool for securely storing and managing sensitive data.
+*   **AWS Parameter Store:** A service for managing configuration data and secrets.
+*   **Docker Compose:** Can be used to specify externalized configuration properties using a YAML file, especially useful during development.
+*   **Kubernetes ConfigMap:** A named collection of name-value pairs that defines the externalized configuration for one or more application services. ConfigMap can be used to define a container's environment variables and create configuration files inside the container.
 
-  **Externalized Configuration:** In microservices, externalized configuration allows for environment-specific settings to be applied without modifying the application code. This can be achieved through mechanisms like environment variables, configuration files, or dedicated configuration servers. The deployment environment supplies the configuration properties when creating a service instance, typically read by the service instance upon startup.
-</details>
-
+By implementing externalized configuration effectively, microservices can be more flexible, secure, and easier to manage across various environments.

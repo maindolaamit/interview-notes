@@ -1,9 +1,21 @@
 ---
-title: SAGA 
+title: SAGA Pattern
 description : "SAGA pattern"
 sidebar_position: 31
 ---
+import TabItem from "@theme/TabItem";
+import Tabs from "@theme/Tabs";
 
+
+The Saga pattern is a crucial concept in microservices architecture, designed to manage transactions that span multiple services, thereby ensuring **data consistency** across a distributed system.
+Unlike traditional ACID transactions, which are not well-suited for microservices due to their tight coupling and performance issues, sagas provide a way to maintain consistency through a sequence of local transactions coordinated by asynchronous messaging.
+
+**Understanding the Saga Pattern**
+
+*   **Definition:** A saga is a sequence of local transactions. Each local transaction updates data within a single service.
+*   **Coordination:** Sagas are coordinated through asynchronous messaging, where the completion of one local transaction triggers the next.
+*   **ACD Properties:** Unlike ACID transactions, sagas are considered ACD (Atomicity, Consistency, Durability) and lack the isolation property. This means that the updates made by each local transaction are immediately visible to other sagas once that transaction commits, which can lead to concurrency issues.
+*   **Compensating Transactions**: Because each local transaction in a saga commits its changes, a saga must be rolled back using compensating transactions. If one step in the saga fails, the effects of the previous steps must be undone by executing the corresponding compensating transactions in reverse order.
 **A Saga is a sequence of local transactions. Each local transaction updates the data within a single service. The sequence of local transactions is coordinated using messaging.**
 
 :::note SAGA Pattern
@@ -29,43 +41,118 @@ Instead of relying on a single, global transaction, a saga orchestrates a sequen
 * **Rollback with Compensating Transactions:** If a step in the saga fails, the saga must explicitly undo the changes made by previous steps. Since each local transaction commits its changes, the saga employs **compensating transactions** to reverse these updates in reverse order.
 * **Eventual Consistency:**  Sagas achieve eventual consistency, meaning that the system will eventually reach a consistent state even if some intermediate states are inconsistent. This contrasts with the immediate consistency of ACID transactions, which can be a limitation in some scenarios requiring strict atomicity.
 
-**Example: The Create Order Saga**
+### **Example: The Create Order Saga**
 
-The sources illustrate the Saga pattern through the example of a "Create Order Saga". This saga involves multiple services:
+Below example illustrates the Saga pattern through the example of a "Create Order Saga".
+This saga involves multiple services:
 
-1. **Order Service:** Creates an order in a pending state.
-2. **Consumer Service:** Verifies the consumer's ability to place the order.
-3. **Kitchen Service:** Validates order details and creates a ticket.
-4. **Accounting Service:** Authorizes the consumer's credit card (this acts as the **pivot transaction**).
-5. **Kitchen Service:** Approves the ticket.
-6. **Order Service:** Approves the order.
+1.  **Initiation:** The saga is initiated by an external request to create an order, this starts the first local transaction.
+2.  **Order Creation:** The Order Service creates an order in a `PENDING_APPROVAL` state.
+3.  **Consumer Verification:** The Order Service then sends a message to the Consumer Service to verify the consumer details.
+4.  **Restaurant Verification:** After verifying the consumer, the Order Service sends a message to the Restaurant Service to verify order details.
+5.   **Ticket Creation:** The Order Service sends a message to the Kitchen Service to create a ticket for the order.
+6.  **Credit Card Authorization:** The Accounting Service receives the `TicketCreated` event and `ConsumerVerified` events and then charges the consumer's credit card and publishes a `CreditCardAuthorized` event or a `CreditCardAuthorizationFailed` event.
+7. **Order Rejection:** If credit card authorization fails, the Kitchen Service and Order Service consumes the `Credit Card Authorization Failed` event and change the state of the Ticket and Order to `REJECTED` respectively.
+8.  **Delivery Scheduling:**  If all previous steps are successful, the Order Service sends a message to the Delivery Service to schedule the delivery.
 
 If the credit card authorization fails, compensating transactions would be executed to reject the ticket and order, effectively rolling back the saga.
 
-**Challenges and Countermeasures**
+<details>
+    <summary>
+        **Key Saga Terminology**
+    </summary>
 
-Sagas, however, present some challenges due to their lack of isolation compared to ACID transactions:
+    *   **Compensatable Transaction:** A transaction that can be rolled back using a compensating transaction.
+    *   **Pivot Transaction:** The point of no return in a saga. If the pivot transaction commits, the saga will run to completion.
+    *  **Retriable Transaction:** A transaction that is guaranteed to complete after the pivot transaction and doesn't need to be rolled back.
+</details>
 
-* **Anomalies:** Without isolation, data can be read or written in ways that lead to inconsistent results. Examples include lost updates (overwriting changes by another saga) and dirty reads (reading uncommitted data from another saga).
-* **Complexity:** Designing and implementing sagas, especially handling compensation logic and potential anomalies, can be more complex than traditional transactions.
+## Saga Coordination Methods
+There are two primary ways to coordinate sagas: choreography and orchestration.
+<Tabs>
+    <TabItem value="Choreography">
 
-To address these challenges, various countermeasures can be employed:
+        In this approach, there is no central coordinator. Instead, each service publishes events when it updates its data, and other services subscribe to these events and react accordingly.
+        *   **Example:** In the Create Order Saga, the Order Service publishes an event when an order is created. The Kitchen Service, Delivery Service, and Accounting Service subscribe to this event and react accordingly, such as creating a ticket or scheduling a delivery.
+        *   **Benefits:** Simple, loosely coupled services.
+        *   **Drawbacks**: Difficult to understand the overall saga flow, risk of cyclic dependencies between services, and risk of tight coupling because services need to subscribe to all relevant events.
+    </TabItem>
+    <TabItem value="Orchestration">
 
-* **Semantic Locks:** Using application-level flags, like "_PENDING" states in the Order example, to indicate an ongoing saga and prevent conflicting updates.
-* **Commutative Updates:** Designing operations so they can be executed in any order, mitigating the impact of interleaving transactions.
-* **Pessimistic View:** Reordering saga steps to minimize the risk of inconsistencies.
-* **Reread Value:** Preventing lost updates by verifying data hasn't changed before updating it.
-* **Version File:** Recording operations on a record to allow for reordering and handling non-commutative operations.
-* **By Value:** Dynamically choosing the concurrency mechanism based on the business risk of a request.
+        A central saga orchestrator class manages the coordination logic. The orchestrator sends command messages to saga participants telling them what operations to perform.
+        *   **Example:** A `CreateOrderSaga` class acts as the orchestrator, sending messages to the Consumer Service, Kitchen Service, and Accounting Service to perform their respective tasks. The orchestrator keeps track of the process and determines the next step.
+        *   **Benefits:** Simpler dependencies and easier to understand the overall saga flow as the logic is centralized.
+        *   **Drawbacks**: Adds a new service to the system, meaning increased complexity.
+    </TabItem>
+</Tabs>
 
-**Sagas and Event Sourcing**
+---
 
-The sources also discuss how the Saga pattern integrates with event sourcing, a technique that persists an application's state as a sequence of events. This combination provides a robust framework for implementing sagas by leveraging:
+## Challenges and Countermeasures
+By understanding the saga pattern, its coordination methods, and its challenges, you can effectively manage transactions across your microservices and maintain data consistency in a distributed system.
+
+<details>
+    <summary>
+    **Advantages of the Saga Pattern**
+    </summary>
+
+    *   **Data Consistency**: Sagas ensure data consistency in distributed systems without the limitations of distributed transactions.
+    *   **Loose Coupling**: They promote loose coupling between services, as services communicate via asynchronous messages rather than direct calls.
+    *   **Flexibility**: Sagas can be used to implement complex workflows that span multiple services.
+    *  **Improved Availability**: Asynchronous messaging improves the availability of a system by reducing the impact of partial failures.
+</details>
+
+<details>
+    <summary>
+        **Pitfalls and Challenges of the Saga Pattern**
+    </summary>
+    Sagas, however, present some challenges due to their lack of isolation compared to ACID transactions:
+
+    * **Lack of Isolation:** Sagas lack the isolation property of ACID transactions, which can lead to anomalies if not handled carefully.
+    Without isolation, data can be read or written in ways that lead to inconsistent results.
+    Examples include lost updates (overwriting changes by another saga) and dirty reads (reading uncommitted data from another saga).
+    * **Complexity**: Implementing sagas can be complex, particularly when it comes to handling compensating transactions and implementing countermeasures to deal with the lack of isolation.
+    * **Dirty Reads**: One saga may read data that another saga has modified but not yet committed.
+    * **Lost Updates**: Two sagas may attempt to update the same data, leading to one update being lost.
+    * **Eventual Consistency**: Sagas provide eventual consistency, meaning data might be temporarily inconsistent before all updates are applied, which can be an issue for some applications.
+    * **Difficult to debug**: It can be more difficult to understand a given saga when it’s implemented using choreography, because the logic is distributed across multiple services, rather than in one central place like an orchestrator.
+</details>
+
+<details>
+    <summary>**Countermeasures**</summary>
+
+    To address these challenges, various countermeasures can be employed:
+    * **Semantic Locks:** Using application-level flags, like "_PENDING" states in the Order example, to indicate an ongoing saga and prevent conflicting updates.
+    Setting an order to a `PENDING_APPROVAL` state while the `CreateOrderSaga` is in progress.
+    * **Commutative Updates:** Designing operations, so they can be executed in any order, mitigating the impact of interleaving transactions.
+    * **Pessimistic View:** Reordering saga steps to minimize the risk of inconsistencies.
+    * **Reread Value:** Preventing lost updates by verifying data hasn't changed before updating it.
+    * **Version File:** Recording operations on a record to allow for reordering and handling non-commutative operations.
+    * **By Value:** Dynamically choosing the concurrency mechanism based on the business risk of a request.
+</details>
+
+---
+## **Sagas and Event Sourcing**
+
+Event sourcing can be a powerful pattern for use with sagas.
+Event sourcing, A technique that persists an application's state as a sequence of events,
+persists each aggregate as a sequence of events representing state changes,
+which is useful for auditing and can reliably publish domain events.
+Here’s how event sourcing is used in sagas:
+
+This combination provides a robust framework for implementing sagas by leveraging:
 
 * **Event-Driven Nature:** Event sourcing's reliance on events aligns well with choreography-based sagas.
 * **Messaging and De-duplication:** Event sourcing frameworks typically provide messaging-based communication and mechanisms for detecting and discarding duplicate messages, crucial for saga reliability.
 * **Atomic Updates:** Event sourcing frameworks often facilitate atomic updates to application state and event publishing, simplifying saga coordination.
 
-The sources provide detailed explanations of how event sourcing can be used to create saga orchestrators and participants, highlighting its potential as a foundation for saga-based systems. 
+
+*   **Choreography-Based Sagas:** When an aggregate is updated, it emits an event. Other services can consume this event and update their respective aggregates. Each event handler is idempotent, which means it can be processed multiple times without causing side effects.
+*   **Saga Orchestrators:**  Saga orchestrators can also be implemented using event sourcing. This is done by persisting events such as `SagaOrchestratorCreated` and `SagaOrchestratorUpdated`.
+The sources provide detailed explanations of how event sourcing can be used to create saga orchestrators and participants, highlighting its potential as a foundation for saga-based systems.
 
 **In conclusion, the Saga pattern is essential for maintaining data consistency in microservice architectures. By orchestrating local transactions and employing countermeasures to address the lack of isolation, sagas provide a way to achieve eventual consistency in complex, distributed systems.**
+
+
+
+

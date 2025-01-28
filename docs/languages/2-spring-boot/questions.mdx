@@ -1,0 +1,117 @@
+---
+title: Questions
+description: "Spring Boot Interview Questions"
+sidebar_position: 12
+---
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+### What is the difference between `context.close()` and `context.registerShutdownHook `?
+
+`context.close()` is used to close the application context and release all resources. It is a synchronous operation. `context.registerShutdownHook()` is used to register a shutdown hook with the JVM runtime. It is an asynchronous operation.
+
+### What ways can we invoke the Bean Life Cycle methods ?
+
+There are three ways to invoke the Bean Life Cycle methods:
+
+1. **Using `@PostConstruct` and `@PreDestroy` annotations**: These annotations are used to define the init and destroy methods.
+2. **Implementing `InitializingBean` and `DisposableBean` interfaces**: These interfaces are used to define the init and destroy methods.
+3. **Using `init-method` and `destroy-method` attributes in the XML configuration**: These attributes are used to define the init and destroy methods.
+
+### What is the difference between Application Context and Web Application Context?
+`ApplicationContext` is the central interface in Spring’s core container and is responsible for managing the lifecycle of beans,
+instantiating and configuring them, wiring them together, and handling their dependencies.
+It is used in standalone applications and non-web environments.
+
+`WebApplicationContext` is a sub-interface of `ApplicationContext` and is used in web applications. It provides additional features specific to web applications,
+such as support for themes, file uploads, and internationalization. It is created by the `ContextLoaderListener` or `DispatcherServlet` in a web application.
+
+The key difference between `ApplicationContext` and `WebApplicationContext` is that the latter is designed for web applications and provides additional features specific to web environments.
+
+### 4.	How to set profile at the runtime in SpringBoot Framework? We can take WebApplication context, modify the container and register it.
+    ```java
+    ConfigurableApplicationContext context = new ClassPathXmlApplicationContext("applicationContext.xml");
+    context.getEnvironment().setActiveProfiles("dev");
+    context.refresh();
+    ```
+
+
+
+### What is the difference between `@Component`, `@Repository`, `@Service`, and `@Controller` annotations?
+
+`@Component` is a generic stereotype annotation for any Spring-managed component.
+`@Repository` is a stereotype annotation for a DAO component.
+`@Service` is a stereotype annotation for a service component.
+`@Controller` is a stereotype annotation for a controller component.
+
+Basically, all Beans are extending @Component but providing extra features like Exception Handling etc. based on the Annotation.
+For e.g., Repository adds DataException over JDBC to handle exceptions.
+
+### What is the difference between `@ComponentScan` and `@SpringBootApplication` annotations?
+
+`@ComponentScan` is used to scan the packages for Spring components. `@SpringBootApplication` is a convenience annotation that adds all the following:
+
+- `@Configuration`: Tags the class as a source of bean definitions for the application context.
+- `@EnableAutoConfiguration`: Tells Spring Boot to start adding beans based on classpath settings, other beans, and various property settings.
+- `@ComponentScan`: Tells Spring to look for other components, configurations, and services in the package, allowing it to find the controllers.
+
+### What is the difference between `@Autowired` and `@Qualifier` annotations?
+
+`@Autowired` is used to autowire a bean on the basis of type. `@Qualifier` is used to autowire a bean on the basis of the name of the bean.
+
+### What is the difference between `@RequestParam` and `@PathVariable` annotations?
+
+`@RequestParam` is used to extract query parameters from the URL. `@PathVariable` is used to extract values from the URI.
+
+### What is the difference between `@GetMapping` and `@PostMapping` annotations?
+
+`@GetMapping` is used to handle HTTP GET requests. `@PostMapping` is used to handle HTTP POST requests.
+
+### What is the difference between `@Transactional` and `@EnableTransactionManagement` annotations?
+
+`@Transactional` is used to mark a method as transactional. `@EnableTransactionManagement` is used to enable transaction management.
+
+### What is the difference between `@Bean` and `@Component` annotations?
+
+`@Bean` is used to define a bean explicitly. `@Component` is a generic stereotype annotation for any Spring-managed component.
+
+### What is the difference between `@Configuration` and `@Component` annotations?
+
+`@Configuration` is used to define a configuration class. `@Component` is a generic stereotype annotation for any Spring-managed component.
+
+### What is the difference between `@Scope` and `@Profile` annotations?
+
+`@Scope` is used to define the scope of a bean. `@Profile` is used to define the profile of a bean.
+
+### What is the difference between `@Value` and `@PropertySource` annotations?
+
+`@Value` is used to inject values from properties files. `@PropertySource` is used to define the properties file.
+
+### What is the difference between `@EnableWebMvc` and `@SpringBootApplication` annotations?
+
+`@EnableWebMvc` is used to enable Spring MVC. `@SpringBootApplication` is a convenience annotation that adds all of the following:
+
+- `@Configuration`: Tags the class as a source of bean definitions for the application context.
+- `@EnableAutoConfiguration`: Tells Spring Boot to start adding beans based on classpath settings, other beans, and various property settings.
+- `@ComponentScan`: Tells Spring to look for other components, configurations, and services in the package, allowing it to find the controllers.
+
+### What is the difference between `@EnableScheduling` and `@Scheduled` annotations?
+
+`@EnableScheduling` is used to enable scheduling. `@Scheduled` is used to define the schedule of a method.
+
+### What is the difference between `@EnableCaching` and `@Cacheable` annotations?
+
+`@EnableCaching` is used to enable caching. `@Cacheable` is used to cache the result of a method.
+
+### What is the difference between `@EnableAsync` and `@Async` annotations?
+
+`@EnableAsync` is used to enable asynchronous processing. `@Async` is used to define a method as asynchronous.
+
+###	How do you create your own custom Annotation in Java?
+```java
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface MyAnnotation {
+    String value();
+}
+```
