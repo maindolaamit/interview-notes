@@ -1,0 +1,276 @@
+---
+title: Cab Booking
+description: "System Interview Questions"
+sidebar_position: 11
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Design a Cab Booking service
+Cab Booking service like Uber connects users with drivers. Users can book a cab, track the cab in real-time, and pay for the ride. Drivers can accept ride requests, navigate to the user's location, and complete the ride. The system should match users with the nearest available driver and handle payments and receipts.
+
+### Requirements and Goals of the System
+Let's discuss what features we will be designing so that we can come up with a set of useful requirements.
+
+<details>
+    <summary>**Functional Requirements**</summary>
+    - The system should allow users to book a cab.
+    - Drivers should regularly update their availability.
+    - Users should be able to see available cabs in their vicinity.
+    - The system should match users with the nearest available driver.
+    - Users should be able to track the cab in real-time when ride is accepted.
+    - The system should handle payments and provide receipts.
+    - Users should be able to rate drivers and provide feedback.
+</details>
+
+<details>
+    <summary>**Non-Functional Requirements**</summary>
+    - The system should be highly available and reliable.
+    - The system should have low latency to provide a smooth user experience.
+    - The system should be scalable to handle a large number of users and drivers.
+    - The system should ensure data consistency and integrity.
+</details>
+
+<details>
+    <summary>**Extended Requirements**</summary>
+    - The system should provide analytics and reporting features.
+    - The system should support multiple payment methods.
+    - The system should have a robust notification system for ride updates.
+</details>
+
+### Capacity Estimation and Constraints
+Let’s consider below assumptions:
+- We have **1M daily active users**.
+- On average, each user books **2 rides per day**.
+- Each ride generates **10 events** (e.g., booking, driver assignment, ride start, ride end, payment, etc.).
+
+<details>
+    <summary>**Traffic**</summary>
+    - Total rides per day: 1M * 2 = 2M
+    - Total events per day: 2M * 10 = 20M
+    - Events per second: 20M / (24 * 3600) ≈ 231
+</details>
+
+<details>
+    <summary>**Storage**</summary>
+    - Assuming each event takes 1KB of storage, daily storage requirement: 20M * 1KB = 20GB
+    - Monthly storage requirement: 20GB * 30 = 600GB
+    - Yearly storage requirement: 600GB * 12 = 7.2TB
+</details>
+
+<details>
+    <summary>**Bandwidth**</summary>
+    - Incoming data: 20M * 1KB = 20GB per day
+    - Outgoing data: 20M * 1KB = 20GB per day
+</details>
+
+<details>
+    <summary>**Memory**</summary>
+    - If we want to cache 10% of the hot data, we would need to cache 10% of 20M events, i.e., 2M events.
+    - Size of each event would be 1KB, so we would need 2M * 1KB = 2GB of memory to cache hot data.
+</details>
+
+### API Design
+This problem can be decomposed into several main components:
+- **User Management:** Handles user registration, authentication, and profile management.
+- **Driver Management:** Handles driver registration, authentication, and profile management.
+- **Ride Management:** Handles ride booking, matching, tracking, and completion.
+- **Payment Management:** Handles payment processing and receipts.
+- **Rating and Feedback:** Handles user and driver ratings and feedback.
+
+```java
+record Location(double latitude, double longitude) {}
+/**
+POST API to book a ride
+api/v1/book
+    user_id - ID of the user booking the ride
+    pickup_location - Location where the user wants to be picked up
+    dropoff_location - Location where the user wants to be dropped off
+    payment_method - Payment method for the ride
+returns: ride_id or error message
+*/
+String bookRide(String user_id, Location pickup_location,
+    Location dropoff_location, String payment_method)
+    {
+        return ride_id;
+}
+
+enum RideStatus {
+    WAITING_FOR_DRIVER,
+    IN_PROGRESS,
+    COMPLETED,
+    CANCELLED
+}
+/**
+GET API to get ride status
+api/v1/status/<ride_id>
+    ride_id - ID of the ride
+returns: ride_status or error message
+*/
+RideStatus getRideStatus(String ride_id){
+    return ride_status;
+}
+
+/**
+POST API to complete a ride
+api/v1/complete
+    ride_id - ID of the ride
+    payment_info - Payment information for the ride
+returns: receipt or error message
+*/
+String completeRide(String ride_id, String payment_info){
+    return receipt;
+}
+
+/**
+POST API to rate a ride
+api/v1/rate
+    ride_id - ID of the ride
+    rating - Rating given by the user
+    feedback - Feedback provided by the user
+returns: success or error message
+*/
+String rateRide(String ride_id, Integer rating, String feedback){
+    return status;
+}
+```
+
+### Database Design
+We need to store data about users, drivers, rides, payments, and ratings.
+
+- We need to store user and driver profiles, ride details, payment information, and ratings/feedback.
+- We need to support millions of writes and reads per second.
+- Our service is read-heavy.
+- Data consistency and integrity are crucial.
+
+#### What kind of database should we use?
+- **Relational Database:** SQL databases can be used for user and driver profiles where relationships are important. A relational database like MySQL or PostgreSQL would be a good choice.
+- **NoSQL Database:** NoSQL databases like MongoDB or Cassandra can be used for storing ride details, payments, and ratings. These databases can handle large amounts of data and are horizontally scalable.
+
+
+#### Schema Design
+Let's discuss the schema for each entity.
+
+<details>
+    <summary>**User**</summary>
+    - user_id (PK)
+    - name
+    - email
+    - phone_number
+    - created_at
+</details>
+
+<details>
+    <summary>**Driver**</summary>
+    - driver_id (PK)
+    - name
+    - email
+    - phone_number
+    - car_details
+    - created_at
+</details>
+
+<details>
+    <summary>**Ride**</summary>
+    - ride_id (PK)
+    - user_id (FK)
+    - driver_id (FK)
+    - pickup_location
+    - dropoff_location
+    - status
+    - created_at
+</details>
+
+<details>
+    <summary>**Payment**</summary>
+    - payment_id (PK)
+    - ride_id (FK)
+    - amount
+    - payment_method
+    - created_at
+</details>
+
+<details>
+    <summary>**Rating**</summary>
+    - rating_id (PK)
+    - ride_id (FK)
+    - user_id (FK)
+    - driver_id (FK)
+    - rating
+    - feedback
+    - created_at
+</details>
+
+### High Level Design
+We can have the following components in our system:
+- **API Gateway:** Handles API requests, authentication, and routing.
+- **User Service:** Manages user profiles, authentication, and registration.
+- **Driver Service:** Manages driver profiles, authentication, and registration.
+- **Ride Service:** Manages ride booking, matching, tracking, and completion.
+- **Payment Service:** Manages payment processing and receipts.
+- **Rating Service:** Manages user and driver ratings and feedback.
+- **Notification Service:** Sends notifications to users and drivers about ride updates.
+
+
+
+### Detailed Component Design
+
+
+### Fault Tolerance
+
+### Data Partitioning
+
+
+### Cache
+To improve the performance of our system, we can use caching. We can cache the following:
+- **User and Driver Profiles:** We can cache user and driver profiles to reduce database reads.
+- **Ride Details:** We can cache ride details to reduce database reads.
+- **Payment Information:** We can cache payment information to reduce database reads.
+- **Ratings and Feedback:** We can cache ratings and feedback to reduce database reads.
+
+### Load Balancer
+
+
+### Monitoring
+
+
+### Security
+
+
+### Rate Limiting
+
+
+### Data Sharding
+
+### Topics of Discussion
+- **How to handle surge pricing?**
+- **How to handle ride cancellations?**
+- **How to handle driver unavailability?**
+- **How to handle payment failures?**
+- **How to handle ride tracking?**
+- **How to handle driver ratings?**
+- **How to handle user feedback?**
+- **How to handle user authentication?**
+- **How to handle driver verification?**
+- **How to handle ride history?**
+- **How to handle ride analytics?**
+- **How to handle driver incentives?**
+- **How to handle user incentives?**
+- **How to handle driver tracking?**
+- **How to handle user tracking?**
+- **How to handle driver earnings?**
+- **How to handle user payments?**
+- **How to handle user refunds?**
+- **How to handle driver disputes?**
+- **How to handle user disputes?**
+- **How to handle driver ratings?**
+- **How to handle user ratings?**
+- **How to handle driver earnings?**
+- **How to handle user payments?**
+- **How to handle user refunds?**
+- **How to handle driver disputes?**
+- **How to handle user disputes?**
+- **How to handle driver ratings?**
+
+

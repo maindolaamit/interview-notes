@@ -1,0 +1,151 @@
+---
+title: Coroutines vs. Virtual Threads
+description : "Kotlin Interview Questions"
+sidebar_position: 3
+---
+
+### **How Do Java Virtual Threads Handle Context Switching Compared to Kotlin Coroutines?**
+
+Java Virtual Threads (introduced in **Project Loom**) and Kotlin Coroutines both aim to improve concurrency and resource efficiency, but they differ significantly in how they handle **context switching** and manage execution.
+
+---
+
+### **1. Context Switching in Java Virtual Threads**
+**What Are Virtual Threads?**
+- Virtual threads are lightweight threads managed by the JVM, not the OS. They are mounted onto a small pool of platform threads (carrier threads) when active.
+- When a virtual thread encounters a blocking operation (e.g., I/O), it is unmounted from the carrier thread, freeing the carrier thread to execute another virtual thread.
+
+**How Context Switching Works:**
+- The JVM handles context switching internally, avoiding expensive OS-level context switches.
+- When a virtual thread blocks (e.g., on I/O), its stack is stored in the heap, and the carrier thread picks up another virtual thread.
+- This approach reduces latency and resource usage compared to traditional threads.
+
+**Key Features:**
+- **Heap-Based Stack Management**: The stack of a suspended virtual thread is stored in the heap rather than the kernel stack. This makes suspending and resuming virtual threads lightweight.
+- **Dynamic Stack Growth**: The stack size of a virtual thread can grow dynamically, unlike the fixed-size stacks of traditional threads.
+- **No OS Involvement**: Context switching is entirely managed by the JVM, avoiding kernel-level overhead.
+
+**Example:**
+```java
+public static void main(String[] args) throws InterruptedException {
+    ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+    for (int i = 0; i < 1000; i++) {
+        executor.submit(() -> {
+            Thread.sleep(1000); // Non-blocking for the carrier thread
+            System.out.println("Hello from Virtual Thread!");
+        });
+    }
+    executor.shutdown();
+}
+  ```
+Here, `Thread.sleep()` suspends only the virtual thread, allowing the carrier thread to execute other tasks.
+
+---
+
+### **2. Context Switching in Kotlin Coroutines**
+**What Are Coroutines?**
+Coroutines are lightweight, cooperative tasks managed by Kotlin's runtime. They use `suspend` functions to pause execution without blocking threads.
+
+**How Context Switching Works:**
+- Coroutines rely on **suspension points** (`suspend` functions) to yield control back to the dispatcher.
+- The dispatcher determines which coroutine runs next on which thread. For example:
+- `Dispatchers.IO` uses a shared pool of threads optimized for I/O tasks.
+- `Dispatchers.Default` uses a pool optimized for CPU-intensive tasks.
+
+**Key Features:**
+- **No Stack Copying**: Coroutines do not copy their stack; instead, they maintain state using continuations (a data structure that stores execution state).
+- **Structured Concurrency**: Parent coroutines manage child coroutines, ensuring proper cancellation and resource cleanup.
+- **Non-blocking Suspension**: Suspension points (`delay`, `withContext`) allow other coroutines to run on the same thread.
+
+**Example:**
+```kotlin
+import kotlinx.coroutines.*
+
+fun main() = runBlocking {
+    repeat(1000) {
+        launch {
+            delay(1000L) // Non-blocking suspension
+            println("Hello from Coroutine!")
+        }
+    }
+}
+  ```
+Similar to Java’s example, `delay()` suspends only the coroutine, allowing other coroutines to execute on the same thread.
+
+---
+
+### **3. Key Differences Between Virtual Threads and Coroutines**
+
+| Feature                  | Java Virtual Threads                                | Kotlin Coroutines                                 |
+|--------------------------|----------------------------------------------------|-------------------------------------------------|
+| **Context Switching**    | Managed by JVM by saving/restoring stacks on heap. | Managed by Kotlin runtime using continuations.   |
+| **Stack Management**     | Stack is copied to/from heap during suspension.    | No stack copying; state is stored in continuations. |
+| **Scheduling**           | Cooperative scheduling within JVM.                 | Cooperative scheduling by coroutine dispatcher. |
+| **Blocking Operations**  | Blocking calls (e.g., `Thread.sleep`) are non-blocking for carrier threads. | Suspension points (`suspend`) are non-blocking. |
+| **Resource Efficiency**  | Optimized for high concurrency with minimal memory overhead. | Optimized for structured concurrency and task management. |
+| **Interop with Libraries** | Seamless with existing Java libraries using `Thread`. | Requires coroutine-aware libraries or adapters for interop. |
+
+---
+
+### **4. Practical Scenarios**
+
+#### Scenario A: High-Concurrency I/O Tasks
+Use Java Virtual Threads if:
+- You need seamless integration with existing Java libraries that rely on blocking calls.
+- Example: Handling thousands of HTTP requests using traditional blocking APIs.
+
+Use Kotlin Coroutines if:
+- You want structured concurrency and fine-grained control over task management.
+- Example: Asynchronous data processing with non-blocking I/O operations.
+
+Example:
+```kotlin
+suspend fun fetchData(): String {
+    delay(1000L) // Simulate network call
+    return "Data fetched"
+}
+
+fun main() = runBlocking {
+    val result = async { fetchData() }
+    println(result.await()) // Output: Data fetched
+}
+    ```
+
+#### Scenario B: CPU-Bound Tasks
+- Both approaches work well, but Kotlin's structured concurrency may simplify error handling and cancellation.
+
+---
+
+### **5. Challenges**
+
+#### Java Virtual Threads:
+1. Overhead of copying stacks between heap and kernel space during suspension/resumption.
+2. Limited benefits when interacting with non-blocking APIs (e.g., asynchronous frameworks like `CompletableFuture`).
+
+#### Kotlin Coroutines:
+1. Requires coroutine-aware libraries for seamless interop (e.g., replacing `ThreadLocal` with `CoroutineContext`).
+2. Learning curve for developers unfamiliar with functional programming paradigms.
+
+---
+
+### **6. Conclusion**
+
+#### When to Use Java Virtual Threads:
+- If you are working in a pure Java environment with existing libraries that rely on blocking operations.
+- If you want minimal changes to your codebase while achieving high concurrency.
+
+#### When to Use Kotlin Coroutines:
+- If you are building new applications or working in a Kotlin-first environment.
+- If you need structured concurrency or fine-grained control over task lifecycles.
+
+Both approaches are excellent for modern concurrent programming but cater to different use cases and ecosystems!
+
+Sources
+[1] Java Virtual Threads: A Case Study - Hacker News https://news.ycombinator.com/item?id=40959140
+[2] Coroutines, Java Virtual Threads and Scoped Values https://discuss.kotlinlang.org/t/coroutines-java-virtual-threads-and-scoped-values/28004
+[3] Java Virtual Threads vs Kotlin Coroutines - DEV Community https://dev.to/devsegur/java-virtual-threads-vs-kotlin-coroutines-4ma8
+[4] Exploring the design of Java's new virtual threads - Oracle Blogs https://blogs.oracle.com/javamagazine/post/java-virtual-threads
+[5] Java virtual threads vs Kotlin coroutines - Stack Overflow https://stackoverflow.com/questions/77053797/java-virtual-threads-vs-kotlin-coroutines
+[6] A simple benchmark comparing java loom virtual thread and kotlin ... https://www.reddit.com/r/Kotlin/comments/mt3h11/a_simple_benchmark_comparing_java_loom_virtual/
+[7] Java Virtual Threads vs. Kotlin Coroutines - Riccardo Lippolis https://www.youtube.com/watch?v=0VB57WnVSTs
+[8] Kotlin Coroutines vs Java Virtual Threads — A good story, but just ... https://dev.to/jofisaes/kotlin-coroutines-vs-java-virtual-threads-a-good-story-but-just-that-48bf

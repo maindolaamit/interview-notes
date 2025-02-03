@@ -312,40 +312,40 @@ We should use interface when we only know the specification but Abstract when we
     - `Interface` cannot have constructor.
     ```java
     public interface InterfaceExample {
-      int i = 10;
+       int i = 10;
 
-      void method();
+       void method();
 
-      default void method2() {
-      // some code
+       default void method2() {
+          // some code
+       }
     }
-  }
 
-  // implements InterfaceExample
-  public class InterfaceExampleImpl implements InterfaceExample {
+    // implements InterfaceExample
+    public class InterfaceExampleImpl implements InterfaceExample {
       @Override
         public void method() {
         // some code
       }
-  }
+    }
     ```
 
     #### How to implement multiple interfaces with same method name?
     ```java
     interface Interface1 {
       void myMethod(String arg);
-  }
+    }
 
     interface Interface2 {
       void myMethod(String arg);
-  }
+    }
 
     public class MyClass implements Interface1, Interface2 {
-      @Override
+        @Override
         public void myMethod(String arg) {
-        System.out.println("Implementing method from both interfaces: " + arg);
-      }
-  }
+            System.out.println("Implementing method from both interfaces: " + arg);
+        }
+    }
     ```
 
   </TabItem>
@@ -355,29 +355,29 @@ We should use interface when we only know the specification but Abstract when we
     - `Abstract` Class can have constructor.
     ```java
     public abstract class AbstractClassExample {
-    private int i;
+       private int i;
 
-    public AbstractClassExample(int i) {
-    this.i = i;
-  }
+       public AbstractClassExample(int i) {
+         this.i = i;
+       }
 
-    public abstract void method();
+       public abstract void method();
 
-    public void method2() {
-    // some code
-  }
-  }
+       public void method2() {
+         // some code
+       }
+    }
 
     // extends AbstractClassExample
     public class AbstractClassExampleImpl extends AbstractClassExample {
-    public AbstractClassExampleImpl(int i) {
-    super(i);
-  }
+       public AbstractClassExampleImpl(int i) {
+           super(i);
+       }
 
-    @Override
-    public void method() {
-    // some code
-  }
+       @Override
+       public void method() {
+        // some code
+       }
   }
     ```
   </TabItem>
@@ -385,6 +385,25 @@ We should use interface when we only know the specification but Abstract when we
 
 
 ### What is `serialization` in java
+`Serialization` is a process in Java where we convert an object into a byte stream which can be saved in a file or sent over the network. We can use `ObjectInputStream` and `ObjectOutputStream` to serialize and deserialize the object.
+
+```java
+public class SerializationExample {
+    public static void main(String[] args) throws Exception {
+        SerializationExample s = new SerializationExample();
+        FileOutputStream fileOutputStream = new FileOutputStream("file.txt");
+        ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream);
+        objectOutputStream.writeObject(s);
+        objectOutputStream.close();
+
+        FileInputStream fileInputStream = new FileInputStream("file.txt");
+        ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
+        SerializationExample s1 = (SerializationExample) objectInputStream.readObject();
+        objectInputStream.close();
+    }
+}
+```
+
 
 ### What is the difference between `final`, `finally` and `finalize` in Java?
 `final` is used to make a variable constant, `finally` is used to execute a block of code irrespective of the exception and `finalize` is a method which is called by the Garbage Collector before destroying the object.

@@ -1,0 +1,243 @@
+---
+title: Advanced
+description : "Kotlin Interview Questions"
+sidebar_position: 2
+---
+
+Let’s dive into **advanced Kotlin concepts** like **coroutines** and **delegation**, with clear explanations, examples, and comparisons to Java.
+
+---
+
+## **1. Coroutines**
+
+### **What Are Coroutines?**
+Coroutines in Kotlin are a way to write asynchronous, non-blocking code that is lightweight and easy to read. Unlike Java threads, coroutines are managed by the Kotlin runtime and can be suspended and resumed without blocking the underlying thread.
+
+---
+
+### **Comparison: Coroutines vs Threads (Java)**
+
+| Feature                  | Kotlin Coroutines                               | Java Threads (or Virtual Threads in Loom)          |
+|--------------------------|------------------------------------------------|---------------------------------------------------|
+| **Creation Cost**        | Lightweight; thousands of coroutines can run on a few threads. | Expensive; even virtual threads have some overhead. |
+| **Execution Model**      | Cooperative scheduling (suspension points).    | Preemptive scheduling (managed by the OS or JVM). |
+| **Syntax**               | Uses `suspend`, `launch`, `async`.             | Uses `Thread` or `ExecutorService`.              |
+| **Blocking**             | Non-blocking.                                  | Blocking or non-blocking depending on implementation. |
+| **Context Switching**    | Minimal overhead using `CoroutineContext`.     | Higher overhead due to thread state management.  |
+
+---
+
+### **Example: Coroutines in Kotlin vs Threads in Java**
+
+#### Kotlin Coroutine Example:
+```kotlin
+import kotlinx.coroutines.*
+
+fun main() = runBlocking {
+    launch(Dispatchers.Default) { // Launch a coroutine
+        delay(1000L) // Non-blocking suspension
+        println("Kotlin Coroutine: Task completed!")
+    }
+    println("Kotlin Coroutine: Waiting...")
+}
+```
+
+#### Java Thread Example:
+```java
+public class Main {
+    public static void main(String[] args) throws InterruptedException {
+        Thread thread = new Thread(() -> {
+            try {
+                Thread.sleep(1000); // Blocking
+                System.out.println("Java Thread: Task completed!");
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        });
+        thread.start();
+        System.out.println("Java Thread: Waiting...");
+        thread.join();
+    }
+}
+```
+
+**Key Difference**: In Kotlin, `delay` is non-blocking, while `Thread.sleep` in Java blocks the thread.
+
+---
+
+### **Advanced Coroutine Features**
+
+#### **1. Coroutine Context**
+Coroutines run within a `CoroutineContext`, which defines their behavior.
+
+Key components:
+- **Dispatcher**: Determines the thread(s) used (`Dispatchers.IO`, `Dispatchers.Default`, etc.).
+- **Job**: Represents the lifecycle of a coroutine.
+
+Example:
+```kotlin
+launch(Dispatchers.IO) { // For IO-intensive tasks
+    println("Running on IO Dispatcher")
+}
+```
+
+#### **2. Structured Concurrency**
+- Ensures that coroutines are properly scoped and canceled when their parent scope is canceled.
+```kotlin
+coroutineScope {
+    launch {
+        delay(1000L)
+        println("Child coroutine completed!")
+    }
+}
+println("Parent scope completed!")
+  ```
+
+#### **3. Suspension Functions**
+- Functions marked with `suspend` can pause execution without blocking the thread.
+```kotlin
+suspend fun fetchData(): String {
+    delay(2000L) // Simulate network call
+    return "Data fetched"
+}
+  ```
+
+---
+
+### **Common Challenges in Coroutines vs Java Virtual Threads**
+
+#### Challenge: Interop with Java Libraries Using ThreadLocals
+- Java libraries often use `ThreadLocal` for context propagation (e.g., OpenTelemetry).
+- Coroutines may switch threads during suspension, breaking `ThreadLocal` behavior.
+- Solution:
+- Use libraries like [kotlinx-coroutines-jdk8](https://github.com/Kotlin/kotlinx.coroutines) for better interop.
+- Avoid relying on `ThreadLocal` when using coroutines.
+
+#### Key Insight from Search Results:
+- Virtual Threads in Java's Loom provide preemptive scheduling but don’t replace coroutines' structured concurrency model.
+- Kotlin's coroutine dispatchers are optimized for minimal context switching, unlike virtual threads.
+
+---
+
+## **2. Delegation**
+
+### **What Is Delegation?**
+Delegation in Kotlin allows an object to delegate functionality to another object using the `by` keyword. It simplifies code by reusing behavior without inheritance.
+
+---
+
+### **Comparison: Delegation in Kotlin vs Composition in Java**
+
+| Feature                  | Kotlin Delegation                              | Java Composition                                   |
+|--------------------------|-----------------------------------------------|--------------------------------------------------|
+| **Syntax**               | Uses the `by` keyword for concise delegation. | Requires manually implementing methods.          |
+| **Boilerplate Code**     | Minimal; handled by the compiler.             | Requires explicit delegation logic.              |
+| **Flexibility**          | Easy to switch or extend behavior.            | More verbose but equally flexible.               |
+
+---
+
+### **Example: Delegation in Kotlin vs Composition in Java**
+
+#### Kotlin Delegation Example:
+```kotlin
+interface Printer {
+    fun print()
+}
+
+class DefaultPrinter : Printer {
+    override fun print() = println("Printing from DefaultPrinter")
+}
+
+class CustomPrinter(printer: Printer) : Printer by printer
+
+fun main() {
+    val printer = CustomPrinter(DefaultPrinter())
+    printer.print() // Output: Printing from DefaultPrinter
+}
+```
+
+#### Java Composition Example:
+```java
+interface Printer {
+    void print();
+}
+
+class DefaultPrinter implements Printer {
+    @Override
+    public void print() {
+        System.out.println("Printing from DefaultPrinter");
+    }
+}
+
+class CustomPrinter implements Printer {
+    private final Printer printer;
+
+    public CustomPrinter(Printer printer) {
+        this.printer = printer;
+    }
+
+    @Override
+    public void print() {
+        printer.print();
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        Printer printer = new CustomPrinter(new DefaultPrinter());
+        printer.print(); // Output: Printing from DefaultPrinter
+    }
+}
+```
+
+- **Key Difference**: Kotlin’s `by` keyword eliminates boilerplate code for delegation.
+
+---
+
+### **Advanced Use Case for Delegation**
+
+#### Property Delegation:
+Kotlin allows delegation of property getters and setters using built-in delegates like `lazy`.
+
+Example:
+```kotlin
+class User {
+    val name: String by lazy {
+        println("Computing name...")
+        "John Doe"
+    }
+}
+
+fun main() {
+    val user = User()
+    println(user.name) // Output: Computing name... John Doe
+}
+```
+
+In Java, you would need to implement lazy initialization manually.
+
+---
+
+## Conclusion
+
+### Why Use Coroutines?
+1. Lightweight and efficient compared to threads.
+2. Structured concurrency simplifies resource management.
+3. Better suited for modern asynchronous programming than virtual threads (for now).
+
+### Why Use Delegation?
+1. Reduces boilerplate compared to manual composition.
+2. Enhances code readability and maintainability.
+3. Ideal for property delegation and behavior reuse.
+
+Would you like more examples or a deeper dive into coroutine builders (`launch`, `async`) or advanced delegation patterns? 😊
+
+Sources
+[1] Coroutines, Java Virtual Threads and Scoped Values https://discuss.kotlinlang.org/t/coroutines-java-virtual-threads-and-scoped-values/28004
+[2] Java virtual threads vs Kotlin coroutines - Stack Overflow https://stackoverflow.com/questions/77053797/java-virtual-threads-vs-kotlin-coroutines
+[3] Java Virtual Threads vs Kotlin Coroutines - DEV Community https://dev.to/devsegur/java-virtual-threads-vs-kotlin-coroutines-4ma8
+[4] Threads vs Coroutines in Kotlin - Baeldung https://www.baeldung.com/kotlin/threads-coroutines
+[5] Kotlin coroutines or jvm virtual threads? - Libraries https://discuss.kotlinlang.org/t/kotlin-coroutines-or-jvm-virtual-threads/24050
+[6] Java Virtual Threads vs. Kotlin Coroutines - Riccardo Lippolis https://www.youtube.com/watch?v=0VB57WnVSTs
+[7] Kotlin vs. modern Java - Page 3 https://discuss.kotlinlang.org/t/kotlin-vs-modern-java/26859?page=3
+[8] Threads vs coroutines for IO extensive task? : r/Kotlin - Reddit https://www.reddit.com/r/Kotlin/comments/18dz463/threads_vs_coroutines_for_io_extensive_task/

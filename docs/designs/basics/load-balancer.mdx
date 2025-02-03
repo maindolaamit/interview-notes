@@ -36,31 +36,12 @@ A load balancer is a device that acts as a reverse proxy and distributes network
 - **Layer 7 Load Balancer**: A layer 7 load balancer operates at the application level, and can make routing decisions based on various characteristics of the HTTP header, cookies, or data within the application message itself.
  Layer 7 load balancers are more powerful, but also more resource intensive.
 
-### What is a Reverse Proxy ?
-A reverse proxy is a web server that centralizes internal services and provides unified interfaces to the public. Requests from clients are forwarded to a server that can fulfill it before the reverse proxy returns the server's response to the client.
-
-Additional benefits include:
-
-- Increased security - Hide information about backend servers, blacklist IPs, limit number of connections per client
-- Increased scalability and flexibility - Clients only see the reverse proxy's IP, allowing you to scale servers or change their configuration
-- SSL termination - Decrypt incoming requests and encrypt server responses so backend servers do not have to perform these potentially expensive operations
-  - Removes the need to install X.509 certificates on each server
-- Compression - Compress server responses
-- Caching - Return the response for cached requests
-- Static content - Serve static content directly
-  - HTML/CSS/JS
-  - Photos
-  - Videos
-  - Etc
 
 #### Load balancer vs reverse proxy
 - Deploying a load balancer is useful when you have multiple servers. Often, load balancers route traffic to a set of servers serving the same function.
 - Reverse proxies can be useful even with just one web server or application server, opening up the benefits described in the previous section.
 - Solutions such as NGINX and HAProxy can support both layer 7 reverse proxying and load balancing.
 
-##### Disadvantage(s): reverse proxy
-Introducing a reverse proxy results in increased complexity.
-A single reverse proxy is a single point of failure, configuring multiple reverse proxies (ie a failover) further increases complexity.
 ### What is Consistent Hashing?
 Consistent hashing is a special kind of hashing such that when a hash table is resized, only `K/n` keys need to be remapped on average, where `K` is the number of keys, and `n` is the number of slots.
 - Consistent hashing is a scheme that provides hash table functionality in a way that the addition or removal of one slot does not significantly change the mapping of keys to slots.
@@ -100,3 +81,12 @@ Consistent hashing is a special kind of hashing such that when a hash table is r
 
 ![Virtual Nodes](./img/virtual-nodes.png)
 
+::: tip
+A problem with Round Robin LB is that it doesn't consider the server's capacity.
+If a server is overloaded or slow, it will still receive the same number of requests.
+
+To handle this, we can use Weighted Round Robin, where each server is assigned a weight based on its capacity.
+Or an Intelligent Load Balancer that considers the server's capacity and load.
+
+Virtual Nodes in Consistent Hashing can solve this problem.
+:::
