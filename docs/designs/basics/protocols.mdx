@@ -4,6 +4,29 @@ description: "High Level Design concepts"
 sidebar_position: 6
 ---
 
+### HTTP vs HTTPS
+
+HTTP and HTTPS are protocols used for communication between a web browser and a server. While they serve similar purposes, they differ significantly in terms of security, functionality, and usage.
+
+#### **Key Differences**
+
+| Feature                  | HTTP (Hypertext Transfer Protocol)       | HTTPS (Hypertext Transfer Protocol Secure)  |
+|--------------------------|------------------------------------------|---------------------------------------------|
+| **Security**             | No encryption; data is transmitted as plaintext, making it vulnerable to interception (e.g., man-in-the-middle attacks). | Encrypts data using SSL/TLS, ensuring secure communication and protecting sensitive information. |
+| **URL Format**           | URLs start with `http://`.        | URLs start with `https://` and display a padlock icon in the browser. |
+| **Port**                 | Uses port 80 by default .          | Uses port 443 by default.            |
+| **Certificate Requirement** | Does not require any certificates.      | Requires an SSL/TLS certificate issued by a trusted Certificate Authority (CA). The server provides an SSL certificate to the browser, which verifies the server's identity.|
+| **Use Cases**            | Suitable for non-sensitive data or older websites. | Essential for websites handling sensitive data like passwords, financial transactions, or personal information. |
+| **SEO Benefits**         | No direct impact on search rankings.     | Improves website authority and rankings in search engines like Google. |
+
+#### **Why HTTPS is Preferred**
+1. **Security**: Protects against eavesdropping, tampering, and man-in-the-middle attacks.
+2. **Trust**: Users are more likely to trust websites with HTTPS due to visible security indicators like the padlock icon.
+3. **Compliance**: Many regulations (e.g., GDPR) mandate secure data transmission.
+4. **Performance**: Modern HTTPS implementations using HTTP/2 can improve website loading times compared to older HTTP versions [4].
+
+---
+
 
 REST is not a protocol, but rather a design philosophy that builds upon the principles
 of HTTP. It emphasizes simple data formats, using URLs for identifying
@@ -17,14 +40,12 @@ synchronous request-response communication.
 REST excels in a situation where we want large scale effective caching of requests.
 :::
 
-:::warn
+:::warning
 Though we can build asynchronous systems using REST, it is not the best choice for such systems compared to
 alternatives for general microservices communication like gRPC, Kafka, RabbitMQ etc.
 :::
 
-
-
-::: tip
+:::tip
 GraphQL's sweet spot is when we have a lot of clients that need different data from the same API.
 These clients are usually GUI & mobile devices where we want to minimize the data.
 :::
@@ -39,6 +60,34 @@ Workaround this issue is associate an ID with every returned resource and use it
 
 While GraphQL can handle writes, it doesn't seem to fit as well as for reads. This often leads to situation where
 we have to use REST for writes and GraphQL for reads.
+
+#### Shifting from REST's Endpoint-Based Approach to GraphQL’s Schema
+
+
+<details>
+    <summary>
+#### Schema Definition
+    </summary>
+- **Challenge**: REST is structured around multiple endpoints(e.g. `\users`, `\posts`, `\comments`) and each endpoint has its own error-handling mechanism.
+Whereas, GraphQL has a single endpoint and a single response format, which makes it challenging to implement a consistent error-handling mechanism.
+- **Solution**: Define a GraphQL schema (.graphqls files) that represents types, queries, and mutations to replace multiple REST endpoints.
+</details>
+
+<details>
+    <summary>
+#### Error Handling Differences
+    </summary>
+- **Challenge**: REST uses HTTP status codes (200 OK, 404 Not Found, 500 Internal Server Error), but GraphQL always returns 200 OK with errors inside the response body.
+- **Solution**: Implement a custom error-handling mechanism using GraphQLErrorHandler to ensure consistency in error reporting.
+</details>
+
+<details>
+    <summary>
+#### Authentication and Authorization Differences
+    </summary>
+- **Challenge**: In REST, security is usually enforced at the endpoint level (e.g., @PreAuthorize("hasRole('ADMIN')")), but in GraphQL, authorization must be handled inside resolvers.
+- **Solution**: Use GraphQL Context to manage authentication and enforce role-based access control at the resolver level.
+</details>
 
 ### SOAP
 The API of a SOAP web service is described using an XML-based language called the

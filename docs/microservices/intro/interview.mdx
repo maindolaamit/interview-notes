@@ -154,14 +154,14 @@ JSON Response Body:
 ### What is GraphQL?
 GraphQL is a query language for APIs and a runtime for fulfilling those queries with your existing data. It provides a more efficient, powerful, and flexible alternative to REST.
 
-### What are the main features of GraphQL?
+#### What are the main features of GraphQL?
 The main features of GraphQL are:
 1. **Hierarchical**: A GraphQL query is hierarchical and composed of fields. The query is shaped just like the data it returns.
 2. **Strongly Typed**: A GraphQL query is a string, and is parsed into a tree of fields. The tree is validated against a type system.
 3. **Client-Specified Queries**: A GraphQL query is a string, and is parsed into a tree of fields. The tree is validated against a type system.
 4. **Introspective**: A GraphQL query can be introspective. It can query the schema for details about the schema.
 
-### What are the main components of GraphQL?
+#### What are the main components of GraphQL?
 The main components of GraphQL are:
 1. **Schema**: A Schema in GraphQL is a collection of types. It defines the types and fields that can be queried.
 2. **Query**: It is used to read or fetch values.
@@ -176,24 +176,61 @@ The main components of GraphQL are:
 ### What is gRPC?
 gRPC is a high-performance, open-source universal RPC framework. It is based on HTTP/2 and Protocol Buffers.
 
-### What are the main features of gRPC?
+#### What are the main features of gRPC?
 The main features of gRPC are:
 1. **Simple Service Definition**: It uses Protocol Buffers to define services and messages.
 2. **Bi-directional Streaming**: It supports streaming requests and responses.
 3. **Pluggable**: It supports authentication, load balancing, and health checking.
 4. **Language Agnostic**: It supports multiple languages.
 
-### What are the main components of gRPC?
+#### What are the main components of gRPC?
 The main components of gRPC are:
 1. **Service**: It defines the methods that can be called remotely.
 2. **Protocol Buffers**: It defines the messages that can be sent and received.
 3. **Server**: It listens for requests and sends responses.
 4. **Client**: It sends requests and listens for responses.
 
-### What is a Service Definition in gRPC?
+#### What is a Service Definition in gRPC?
 A Service Definition in gRPC is defined using Protocol Buffers. It defines the methods that can be called remotely.
 
-### What is Protocol Buffers?
+#### What is Protocol Buffers?
 Protocol Buffers is a method of serializing structured data. It is used to define the messages that can be sent and received in gRPC.
 
+</details>
+
+### If your REST endpoint only supports **JSON output** and the client requests **XML format**, what error code your API should return :
+<details>
+    <summary>
+        Answer
+    </summary>
+
+#### **1. 406 Not Acceptable**
+- **Use this if the client requests XML via the `Accept` header** and your API does not support XML.
+- **Example Response:**
+```http
+HTTP/1.1 406 Not Acceptable
+Content-Type: application/json
+
+{
+  "error": "Not Acceptable",
+  "message": "This API only supports application/json responses."
+}
+  ```
+
+#### **2. 415 Unsupported Media Type**
+- **Use this if the client is sending data in XML format (`Content-Type: application/xml`)** but your API only accepts JSON.
+- **Example Response:**
+```http
+HTTP/1.1 415 Unsupported Media Type
+Content-Type: application/json
+
+{
+  "error": "Unsupported Media Type",
+  "message": "This API only supports application/json input."
+}
+  ```
+
+#### **Which One to Use?**
+- **If the client is sending a request and expects XML (`Accept: application/xml`) → Use `406 Not Acceptable`.**
+- **If the client is sending XML in the request body (`Content-Type: application/xml`) → Use `415 Unsupported Media Type`.**
 </details>

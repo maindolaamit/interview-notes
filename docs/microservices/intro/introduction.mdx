@@ -8,7 +8,6 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
 
-
 You run multiple instances of application behind a load balancer. Each instance is identical and can handle any request. This is horizontal scaling.
 
 ![Dimensions of Monolith](./img/load-balancer.svg)
@@ -95,7 +94,10 @@ and independent data management.
 - **API gateway:** Consider using an API gateway to manage and secure external access to your microservices.
 - **Service discovery:** Employ a service discovery mechanism to enable services to find each other dynamically.
 - **Configuration management:** Implement a configuration management strategy to manage individual service configurations.
-- **Remember:** Adopting a microservices architecture requires careful planning, development, and operational practices. While it offers several benefits like agility and resilience, it also presents challenges around complexity and distributed system management. Ensure you have the necessary resources and expertise before embarking on a microservices journey.
+
+:::note Remember:
+Adopting a microservices architecture requires careful planning, development, and operational practices. While it offers several benefits like agility and resilience, it also presents challenges around complexity and distributed system management. Ensure you have the necessary resources and expertise before embarking on a microservices journey.
+:::
 
 ### A Comparison of Microservice Architecture and SOA
 
@@ -125,23 +127,3 @@ MicroServices are quite similar to SOA (Service Oriented Architecture) but with 
 While both microservice architecture and service-oriented architecture (SOA) structure a system as a set of services,
 they exhibit significant differences in their approach to inter-service communication,
 data management, service size, and technology stacks.
-
-<details>
-<summary>**Comparison Table**</summary>
-<Tabs>
-  <TabItem value={"SOA"}>
-    - Uses heavy protocols like SOAP and other WS-* standards
-    - Typically uses Smart pipes such as ESB (Enterprise Service Bus) for communication
-    - Global Data Model and shared databases often integrating Monolithic applications
-  </TabItem>
-
-  <TabItem value={"MicroService"}>
-    - Uses lightweight protocols like REST, JSON, and HTTP
-    - Typically uses dumb pipes like messaging brokers such as Kafka or RabbitMQ
-    - Data Model and databases are private to each service
-    - Decentralized and independently deployable services
-  </TabItem>
-</Tabs>
-</details>
----
-

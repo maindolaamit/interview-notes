@@ -409,7 +409,56 @@ anyone getting the token can also see the data the token carries. In the majorit
 In such case Opaque tokens are the best choice.
 
 
-::: note
+:::note Token Revocation
 Token revocation is a process where the authorization server invalidates a token before it expires.
 Normally, an access token lifespan is short, so stealing a token still makes it difficult for one to use it.
 But sometimes you want to be extra cautious.
+:::
+
+
+## Questions
+
+### How to implement a custom login page in Spring Boot?
+```java
+@Configuration
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http
+            .authorizeRequests()
+                .antMatchers("/login").permitAll()
+                .anyRequest().authenticated()
+                .and()
+            .formLogin()
+                .loginPage("/login")
+                .permitAll()
+                .and()
+            .logout()
+                .permitAll();
+    }
+}
+```
+
+### How to implement a custom filter in Spring Boot?
+```java
+@Component
+public class CustomFilter implements Filter {
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+        // Custom logic
+        chain.doFilter(request, response);
+    }
+}
+```
+
+### How to implement a custom interceptor in Spring Boot?
+```java
+@Component
+public class CustomInterceptor implements HandlerInterceptor {
+    @Override
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        // Custom logic
+        return true;
+    }
+}
+```

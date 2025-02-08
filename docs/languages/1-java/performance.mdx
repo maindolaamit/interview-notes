@@ -1,0 +1,269 @@
+---
+title: Performance Tuning
+description : "Java Interview Questions"
+sidebar_position: 8
+---
+
+As a **performance tuning expert**, you must be able to identify memory leaks in Java applications and resolve them effectively. Here are some **real-world scenarios** where memory leaks occur and their corresponding **solutions**:
+
+---
+
+<details>
+    <summary>
+    ### Unclosed Resources (Streams, Connections, Buffers)
+    </summary>
+    **Problem:**
+- Forgetting to close **database connections, file streams, sockets, or buffered readers** can cause memory leaks as they remain open indefinitely.
+- Improper Use of Finalizers**
+
+Example:
+
+```java
+public void readFile() throws IOException {
+    BufferedReader reader = new BufferedReader(new FileReader("data.txt"));
+    String line = reader.readLine();
+    System.out.println(line);
+    // reader.close(); // ❌ Not closing the resource leads to a memory leak
+}
+    ```
+
+    **Fix:**
+- Use **try-with-resources** to ensure automatic closure.
+```java
+public void readFile() throws IOException {
+    try (BufferedReader reader = new BufferedReader(new FileReader("data.txt"))) {
+        String line = reader.readLine();
+        System.out.println(line);
+    } // ✅ Automatically closes the reader
+}
+```
+**`finalize()` methods** slow down GC because the JVM queues objects for finalization instead of collecting them immediately.
+```java
+protected void finalize() throws Throwable {
+    System.out.println("Finalizer called"); // ❌ Delays garbage collection
+}
+```
+- Use `try-with-resources` or **explicit cleanup methods** instead of `finalize()`.
+```java
+public void close() {
+    // ✅ Cleanup logic here
+}
+    ```
+
+</details>
+
+<details>
+    <summary>
+    ### Static Collections Holding References
+    </summary>
+**Problem:**
+- Static **lists, maps, or sets** retain references to objects that are no longer needed, preventing garbage collection.
+
+Example:
+```java
+public class MemoryLeak {
+    private static final List<String> cache = new ArrayList<>();
+
+    public static void addToCache(String data) {
+        cache.add(data); // ❌ Objects never removed, causing a leak
+    }
+}
+  ```
+
+**Fix:**
+- Use **WeakHashMap** for key-based caching or **remove entries manually**.
+```java
+public class MemoryLeak {
+    private static final Map<String, String> cache = new WeakHashMap<>();
+
+    public static void addToCache(String data) {
+        cache.put(data, data); // ✅ Weak references allow GC to clear them
+    }
+}
+```
+</details>
+
+<details>
+    <summary>
+        ### Inner Classes Holding Outer Class References
+    </summary>
+**Problem:**
+- Non-static inner classes hold a reference to their outer class, preventing garbage collection.
+
+Example:
+
+```java
+public class OuterClass {
+    private String data = "Memory Leak";
+
+    class InnerClass {
+        public void print() {
+            System.out.println(data);
+        }
+    }
+}
+```
+**Fix:**
+- Use **static nested classes** instead of inner classes.
+```java
+public class OuterClass {
+    private String data = "No Leak";
+
+    static class InnerClass {
+        public void print() {
+            System.out.println("Static class avoids memory leak");
+        }
+    }
+}
+```
+</details>
+
+<details>
+    <summary>
+        ### Listeners and Observers Not Removed
+    </summary>
+**Problem:**
+- Registered **event listeners** in GUI applications or Pub-Sub systems are **never unregistered**.
+- Example:
+```java
+public class EventPublisher {
+    private static final List<EventListener> listeners = new ArrayList<>();
+
+    public static void addListener(EventListener listener) {
+        listeners.add(listener); // ❌ Not removing listeners causes memory leaks
+    }
+}
+  ```
+
+**Fix:**
+- Remove listeners when they are no longer needed.
+```java
+public static void removeListener(EventListener listener) {
+    listeners.remove(listener); // ✅ Proper cleanup
+}
+  ```
+</details>
+
+<details>
+    <summary>
+        ### ThreadLocal Variables Not Removed
+    </summary>
+**Problem:**
+- **ThreadLocal** variables retain objects in memory **even after the thread is terminated**.
+```java
+public class ThreadLocalExample {
+    private static final ThreadLocal<List<String>> threadLocalCache = new ThreadLocal<>();
+
+    public static void addData(String data) {
+        threadLocalCache.get().add(data); // ❌ Memory leak if not removed
+    }
+}
+```
+
+**Fix:**
+- Use `threadLocal.remove()` after use.
+```java
+public static void removeData() {
+    threadLocalCache.remove(); // ✅ Proper cleanup
+}
+  ```
+</details>
+
+<details>
+    <summary>
+        ### Large Objects Retained in Memory
+    </summary>
+**Problem:**
+- Holding **large objects (images, byte arrays, JSON data)** for too long increases heap usage.
+
+Example:
+```java
+public class ImageProcessor {
+    private static byte[] imageData = new byte[1024 * 1024 * 100]; // ❌ 100MB stays in memory
+}
+  ```
+
+**Fix:**
+- Set **large objects to null** when no longer needed.
+```java
+public void clearImageData() {
+    imageData = null; // ✅ Helps garbage collector free memory
+}
+  ```
+</details>
+
+<details>
+    <summary>
+        ### Memory Leaks in Caching Systems
+    </summary>
+
+**Problem:**
+- Unbounded caches can cause excessive memory consumption.
+- Example:
+```java
+private static final Map<String, String> cache = new HashMap<>();
+
+public static void addToCache(String key, String value) {
+    cache.put(key, value); // ❌ Entries never removed
+}
+  ```
+
+**Fix:**
+- Use **LRUCache** or **Guava Cache** to auto-remove unused items.
+```java
+Cache<String, String> cache = CacheBuilder.newBuilder()
+    .maximumSize(1000) // ✅ Limits cache size
+    .expireAfterWrite(10, TimeUnit.MINUTES)
+    .build();
+  ```
+</details>
+
+
+<details>
+    <summary>
+        ### Memory Leak Due to Incorrect ClassLoader Usage
+    </summary>
+**Problem:**
+- Loading classes dynamically **without unloading them** leads to **Metaspace memory leaks**.
+- Example:
+```java
+URLClassLoader loader = new URLClassLoader(urls);
+Class<?> clazz = loader.loadClass("com.example.MyClass");
+// ❌ Forgetting to close the classloader
+  ```
+
+**Fix:**
+- Close the classloader after use.
+```java
+loader.close(); // ✅ Prevents memory leak
+  ```
+</details>
+
+## **How to Detect Memory Leaks in Java**
+
+**1. Use Java Profilers** : **JVisualVM**, **Eclipse Memory Analyzer (MAT)**, and **JProfiler** can help detect memory leaks.
+
+**2. Monitor Heap Usage** : Enable **Garbage Collection (GC) Logs**:
+```bash
+-XX:+PrintGCDetails -XX:+PrintGCTimeStamps
+  ```
+**3. Run Heap Dump Analysis** : Generate a **heap dump** and analyze it using **MAT**:
+```bash
+jmap -dump:file=heap_dump.hprof <PID>
+  ```
+
+**4. Use Java Flight Recorder (JFR)** : Run JFR to detect memory issues in real-time:
+```bash
+java -XX:+UnlockCommercialFeatures -XX:+FlightRecorder -jar myapp.jar
+  ```
+
+---
+
+## **Conclusion**
+Memory leaks in Java often arise from **unclosed resources, static collections, inner classes, ThreadLocal misuse, and caching issues**. To **fix** them:
+- Always close **I/O resources**.
+- Remove **unused references from collections**.
+- Use **WeakReferences** for caching.
+- Regularly **profile memory** using tools like **JVisualVM, MAT, and JProfiler**.
+
+Would you like **practical examples** on debugging memory leaks in a running Java application? 🚀

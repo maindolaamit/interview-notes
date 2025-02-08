@@ -148,26 +148,6 @@ It is a Java class that should follow the JavaBeans naming conventions (e.g., ge
 
 `ServletContext` is an interface that defines a set of methods that a servlet uses to communicate with its servlet container. It is an object that contains a servlet’s view of the web application within which the servlet is running.
 
-### Web Service Deployment Architecture
-
-When deploying a web service, it is hosted inside a **server** (e.g., JBoss, Tomcat).
-The server contains a **Servlet Container**, which manages a **Servlet Context**.
-The Servlet Context is used to configure one or more **Dispatcher Servlets**.
-
-### Dispatcher Servlet:
-- Acts as the front controller in the application.
-- It is registered with the Servlet Container.
-- Handles incoming web requests based on the URL mappings and descriptors defined in the `web.xml` file located in the `WEB-INF` folder.
-- Routes requests to the appropriate controllers for processing.
-Here’s a rephrased version of the given content for inclusion in a `README.md`:
-
-The `Dispatcher Servlet` in a web application is responsible for processing incoming requests and generating the appropriate responses. It operates based on configurations defined in the `web.xml` file located in the `META-INF` folder. The servlet uses a `ViewResolver` to determine the correct view for rendering responses. Servers such as Tomcat automatically load this configuration and activate the Dispatcher Servlet.
-
----
-
-
-
-### Servlet Context:
 - An interface provided by the web server vendor (e.g., Tomcat is the default vendor for Spring Boot).
 - The Servlet Container provides an implementation of `ServletContext` and creates one instance per web application.
 - Shared across all servlets in the application, making it useful for sharing information (e.g., configuration or data) between servlets.
@@ -206,6 +186,21 @@ including the relationships between the **Server**, **Servlet Container**, **Ser
 +-------------------------+
 ```
 
+### Web Service Deployment Architecture
+
+When deploying a web service, it is hosted inside a **server** (e.g., JBoss, Tomcat).
+The server contains a **Servlet Container**, which manages a **Servlet Context**.
+The Servlet Context is used to configure one or more **Dispatcher Servlets**.
+
+### Dispatcher Servlet:
+- Acts as the front controller in the application.
+- It is registered with the Servlet Container.
+- Handles incoming web requests based on the URL mappings and descriptors defined in the `web.xml` file located in the `WEB-INF` folder.
+- Routes requests to the appropriate controllers for processing.
+Here’s a rephrased version of the given content for inclusion in a `README.md`:
+
+The `Dispatcher Servlet` in a web application is responsible for processing incoming requests and generating the appropriate responses. It operates based on configurations defined in the `web.xml` file located in the `META-INF` folder. The servlet uses a `ViewResolver` to determine the correct view for rendering responses. Servers such as Tomcat automatically load this configuration and activate the Dispatcher Servlet.
+
 ### Key Components:
 1. **Web Server**: Hosts the application and provides the runtime environment for the servlet container (e.g., Tomcat, JBoss) [3][6].
 2. **Servlet Container**: Manages servlets and provides an implementation of `ServletContext`, which is shared across servlets in the application [3][6].
@@ -216,3 +211,6 @@ including the relationships between the **Server**, **Servlet Container**, **Ser
 - Delegates requests to appropriate controllers for processing.
 
 We can have one WebApplication context registered with a Dispatcher Servlet, it is a one-to-one mapping.
+
+---
+

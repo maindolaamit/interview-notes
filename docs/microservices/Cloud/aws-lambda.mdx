@@ -1,0 +1,134 @@
+---
+title: AWS Lambda Bootstrap
+description : "AWS Services for Microservices"
+sidebar_position: 3
+---
+
+AWS Lambda is a serverless compute service that allows you to run code without provisioning or managing servers.
+It is ideal for building event-driven applications, microservices, and serverless architectures.
+Lambda functions can be triggered by various AWS services, such as API Gateway, S3, DynamoDB, and SNS, as well as custom events.
+
+To improve the **bootstrap time** (cold start) of a Java-based AWS Lambda function, you can apply several optimization strategies. Java is known for having higher cold start latencies compared to other runtimes due to the JVM initialization process, but AWS provides tools and best practices to mitigate these delays.
+
+---
+
+### **Strategies to Improve Bootstrap Time**
+
+<details>
+    <summary>
+        ### **1. Use AWS Lambda SnapStart**
+    </summary>
+- **What It Does**: SnapStart creates a snapshot of the Lambda execution environment after initialization and reuses it for subsequent invocations. This can reduce cold start times by up to 10x.
+- **How to Enable**:
+    - Enable SnapStart in the Lambda configuration for supported Java runtimes (Java 11 and Java 17).
+- **Benefits**:
+    - Minimizes JVM startup time.
+    - Reduces latency for cold starts.
+- **Reference**: SnapStart is particularly effective for Java Lambdas using frameworks like Spring Boot or Quarkus.
+</details>
+
+<details>
+    <summary>
+    ### **2. Optimize JVM Settings**
+    </summary>
+- **What to Do**:
+- Configure JVM options to reduce startup overhead:
+    - Use `-XX:+TieredCompilation` for faster warm-up.
+    - Use `-XX:TieredStopAtLevel=1` to prioritize faster compilation over peak performance during initialization.
+    - Reduce heap size with `-Xms` and `-Xmx` settings to fit your workload requirements.
+- **Why It Helps**:
+    - Smaller heap sizes reduce memory allocation time during startup.
+    - Tiered compilation speeds up code execution during cold starts.
+</details>
+
+<details>
+    <summary>
+    ### **3. Use GraalVM Native Image**
+    </summary>
+- **What It Does**: GraalVM compiles Java applications into native executables, eliminating the need for JVM initialization.
+- **Benefits**:
+    - Significantly reduces cold start times compared to traditional JVM-based Lambdas.
+    - Ideal for lightweight microservices or event-driven applications.
+- **Trade-Offs**:
+    - Increased build complexity and longer deployment times.
+</details>
+
+<details>
+    <summary>
+    ### **4. Minimize Dependencies**
+    </summary>
+- **What to Do**:
+    - Reduce the size of your deployment package by removing unused libraries and dependencies.
+    - Use lightweight frameworks like Micronaut or Quarkus instead of heavier ones like Spring Boot.
+- **Why It Helps**:
+    - Smaller packages load faster during the initialization phase.
+</details>
+
+<details>
+    <summary>
+        ### **5. Provisioned Concurrency**
+    </summary>
+- **What It Does**: Keeps a specified number of Lambda instances pre-warmed and ready to handle requests, eliminating cold starts entirely.
+- **How to Enable**:
+    - Configure provisioned concurrency in the Lambda settings.
+- **Trade-Offs**:
+    - Increases cost as you pay for pre-warmed instances, even when idle.
+</details>
+
+<details>
+    <summary>
+    ### **6. Optimize AWS SDK Usage**
+    </summary>
+- **What to Do**:
+    - Use AWS SDK v2.x with CRT-based HTTP clients (`AwsCrtHttpClient`) for faster initialization.
+    - Avoid unnecessary service client lookups by reusing clients across invocations.
+- **Why It Helps**:
+    - Reduces latency caused by initializing AWS service clients.
+</details>
+
+<details>
+    <summary>
+    ### **7. Keep Functions Warm**
+    </summary>
+- **What to Do**:
+    - Use CloudWatch Events or EventBridge rules to invoke your function periodically (e.g., every few minutes).
+    - Alternatively, use tools like the Serverless WarmUp Plugin for automated warming.
+- **Why It Helps**:
+    - Reduces the likelihood of cold starts by keeping execution environments active.
+</details>
+
+<details>
+    <summary>
+        ### **9. Optimize Code Structure**
+    </summary>
+- **What to Do**:
+    - Move heavy initialization logic (e.g., database connections) outside the handler function into global variables or static blocks that are executed only once per container lifecycle.
+    - Break down large functions into smaller, single-purpose functions.
+- **Why It Helps**:
+    - Reduces the work done during each invocation and leverages warm starts effectively.
+</details>
+
+---
+
+### Summary of Strategies
+
+| Strategy                          | Benefit                                                                                     | Trade-Offs                                                                                   |
+|-----------------------------------|---------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------|
+| SnapStart                         | Up to 10x faster cold starts; minimal configuration required                                | Supported only for Java 11/17; not suitable for all workloads                               |
+| JVM Optimization                  | Faster startup with tiered compilation and reduced heap size                               | May require tuning specific to workload                                                    |
+| GraalVM Native Image              | Minimal cold start latency                                                                  | Longer build times; increased complexity                                                   |
+| Minimize Dependencies             | Smaller package size reduces load time                                                     | Requires careful dependency management                                                     |
+| Provisioned Concurrency           | Eliminates cold starts entirely                                                            | Higher cost due to pre-warmed instances                                                    |
+| Optimize AWS SDK Usage            | Faster initialization of AWS service clients                                               | Minor code changes required                                                                |
+| Increase Memory Allocation        | Faster execution during initialization                                                     | Higher cost per invocation                                                                 |
+| Keep Functions Warm               | Reduces likelihood of cold starts                                                          | Increased operational complexity; additional costs                                         |
+| Optimize Code Structure           | Efficient use of warm starts; faster handler execution                                     | Requires refactoring code                                                                  |
+
+---
+
+### Recommended Approach
+1. Start with enabling **SnapStart**, as it provides significant improvements with minimal effort for Java Lambdas.
+2. Combine with other optimizations like minimizing dependencies, optimizing JVM settings, and using lightweight frameworks (e.g., Micronaut).
+3. For latency-critical applications, consider using Provisioned Concurrency or GraalVM Native Image.
+
+By applying these strategies, you can significantly reduce the bootstrap time of your Java-based AWS Lambda functions while balancing performance, cost, and complexity.

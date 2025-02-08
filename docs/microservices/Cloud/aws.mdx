@@ -1,0 +1,179 @@
+---
+title: AWS Services
+description : "AWS Services for Microservices"
+sidebar_position: 1
+---
+
+When deploying a **microservices architecture** on AWS,
+you will use a combination of services to handle different aspects of the system,
+such as compute, networking, storage, monitoring, and communication.
+
+Below is a categorized list of AWS services commonly used for deploying microservices:
+
+---
+
+### **1. Compute Services**
+These services provide the infrastructure to run your microservices.
+
+- **Amazon ECS (Elastic Container Service)**:
+    - A fully managed container orchestration service for deploying containerized applications.
+    - Works well with AWS-native integrations.
+
+- **Amazon EKS (Elastic Kubernetes Service)**:
+    - A managed Kubernetes service for running Kubernetes clusters on AWS.
+    - Ideal for teams already familiar with Kubernetes.
+
+- **AWS Fargate**:
+    - A serverless compute engine for containers that works with ECS and EKS.
+    - Eliminates the need to manage servers or clusters.
+
+- **AWS Lambda**:
+    - A serverless compute service for running microservices without provisioning infrastructure.
+    - Suitable for event-driven architectures or lightweight services.
+
+- **Amazon EC2 (Elastic Compute Cloud)**:
+    - Virtual machines for hosting microservices when more control over the infrastructure is needed.
+
+---
+
+### **2. Networking and Communication**
+These services enable secure and efficient communication between microservices.
+
+- **Amazon API Gateway**:
+    - Acts as a front door for your microservices, handling request routing, authentication, and throttling.
+    - Supports RESTful APIs and WebSocket APIs.
+
+- **AWS App Mesh**:
+    - A service mesh that provides observability and controls communication between microservices.
+    - Useful for managing service-to-service communication in distributed systems.
+
+- **Elastic Load Balancer (ELB)**:
+    - Distributes incoming traffic across multiple targets (e.g., ECS tasks or EC2 instances).
+    - Includes Application Load Balancer (ALB) for HTTP/HTTPS traffic and Network Load Balancer (NLB) for TCP/UDP traffic.
+
+- **Route 53**:
+    - A scalable domain name system (DNS) web service for routing traffic to microservices.
+    - Supports domain registration, DNS routing, and health checks.
+
+---
+
+### **3. Storage and Databases**
+These services store data used by your microservices.
+
+- **Amazon RDS (Relational Database Service)**:
+    - Managed relational databases like MySQL, PostgreSQL, or Aurora.
+    - Each microservice can have its own database instance to ensure isolation.
+
+- **Amazon DynamoDB**:
+    - A fully managed NoSQL database for high-performance, low-latency data storage.
+    - Ideal for event-driven architectures or when scalability is critical.
+
+- **Amazon S3 (Simple Storage Service)**:
+    - Object storage service for storing static assets like files, logs, or backups.
+
+- **Amazon ElastiCache**:
+    - In-memory caching service using Redis or Memcached to improve performance by reducing database load.
+
+---
+
+### **4. Messaging and Event Streaming**
+These services enable asynchronous communication between microservices.
+
+- **Amazon SQS (Simple Queue Service)**:
+    - A message queue service that decouples services by enabling asynchronous communication.
+
+- **Amazon SNS (Simple Notification Service)**:
+    - A pub/sub messaging service that allows one-to-many communication between services.
+
+- **Amazon EventBridge**:
+    - An event bus that enables event-driven architectures by routing events between AWS services and custom applications.
+
+- **Amazon Kinesis**:
+    - A real-time data streaming service for processing large volumes of data in motion.
+
+---
+
+### **5. Monitoring and Observability**
+These services help monitor the health and performance of your microservices.
+
+- **Amazon CloudWatch**:
+    - Monitors logs, metrics, and events from your microservices.
+
+- **AWS X-Ray**:
+    - Provides distributed tracing to analyze requests as they flow through your microservices.
+
+- **AWS CloudTrail**:
+    - Tracks API activity across AWS services for auditing purposes.
+
+---
+
+### **6. Security**
+These services ensure secure access and data protection in your architecture.
+
+- **AWS IAM (Identity and Access Management)**:
+    - Manages access control to AWS resources at a granular level.
+
+- **AWS Secrets Manager**:
+    - Securely stores sensitive information like database credentials or API keys.
+
+- **AWS WAF (Web Application Firewall)**:
+    - Protects your APIs from common web exploits like SQL injection or DDoS attacks.
+
+---
+
+### **7. CI/CD and Deployment**
+These services automate the deployment process for your microservices.
+
+- **AWS CodePipeline**:
+    - Automates the build, test, and deployment phases of your application lifecycle.
+
+- **AWS CodeBuild**:
+    - Builds source code into deployable artifacts.
+
+- **AWS CodeDeploy**:
+    - Automates deployments to ECS, Lambda, or EC2 instances.
+
+- **AWS CodeCommit**:
+    - A version control system similar to GitHub but hosted on AWS.
+
+---
+
+### Example Architecture
+A typical AWS-based microservice architecture might include:
+
+1. Compute: Use Amazon ECS with Fargate to run containerized microservices.
+2. Networking: Use API Gateway as an entry point with App Mesh managing inter-service communication.
+3. Storage: Use DynamoDB for NoSQL storage and RDS for relational databases.
+4. Messaging: Use SQS for asynchronous communication between services.
+5. Monitoring: Use CloudWatch for logging and X-Ray for tracing requests across services.
+6. Security: Use IAM roles and Secrets Manager to secure access to resources.
+
+---
+
+### Summary Table of AWS Services
+
+| Category                | Key AWS Services                                                                 |
+|-------------------------|----------------------------------------------------------------------------------|
+| Compute                 | ECS, EKS, Fargate, Lambda, EC2                                                  |
+| Networking              | API Gateway, App Mesh, Elastic Load Balancer                                    |
+| Storage & Databases     | RDS, DynamoDB, S3, ElastiCache                                                  |
+| Messaging               | SQS, SNS, EventBridge, Kinesis                                                  |
+| Monitoring              | CloudWatch, X-Ray                                                               |
+| Security                | IAM, Secrets Manager                                                            |
+| CI/CD                   | CodePipeline, CodeBuild, CodeDeploy                                             |
+
+By combining these AWS services effectively based on your application's requirements (e.g., containerized vs serverless), you can build a scalable, secure, and resilient microservices architecture.
+
+<details>
+    <summary>
+        Sources
+    </summary>
+    - [1] Guide to Implementing Microservices Architecture On AWS https://relevant.software/blog/microservices-on-aws/
+    - [2] Implementing Microservices on AWS https://docs.aws.amazon.com/whitepapers/latest/microservices-on-aws/microservices.html
+    - [3] Implementing Microservices on AWS https://docs.aws.amazon.com/whitepapers/latest/microservices-on-aws/microservices-on-aws.html
+    - [4] Deploying microservices to Amazon Web Services - Open Liberty https://openliberty.io/guides/cloud-aws.html
+    - [5] AWS Microservices: Why and How to Implement? - Euristiq https://euristiq.com/why-and-how-to-implement-microservices-on-aws/
+    - [6] What are Microservices? | AWS https://aws.amazon.com/microservices/?nc1=h_ls
+    - [7] Deploying microservices on AWS - Reddit https://www.reddit.com/r/microservices/comments/1c75s0q/deploying_microservices_on_aws/
+    - [8] AWS simple architecture for microsevices app deployment. - Reddit https://www.reddit.com/r/aws/comments/1fssst2/aws_simple_architecture_for_microsevices_app/
+</details>

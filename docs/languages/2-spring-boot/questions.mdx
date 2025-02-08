@@ -6,19 +6,30 @@ sidebar_position: 12
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-### What is the difference between `context.close()` and `context.registerShutdownHook `?
+<details>
+    <summary>
+        ### What is the difference between `context.close()` and `context.registerShutdownHook `?
+    </summary>
 
-`context.close()` is used to close the application context and release all resources. It is a synchronous operation. `context.registerShutdownHook()` is used to register a shutdown hook with the JVM runtime. It is an asynchronous operation.
+    `context.close()` is used to close the application context and release all resources. It is a synchronous operation. `context.registerShutdownHook()` is used to register a shutdown hook with the JVM runtime. It is an asynchronous operation.
+</details>
 
-### What ways can we invoke the Bean Life Cycle methods ?
+<details>
+    <summary>
+        ### What ways can we invoke the Bean Life Cycle methods ?
+    </summary>
 
-There are three ways to invoke the Bean Life Cycle methods:
+    There are three ways to invoke the Bean Life Cycle methods:
 
-1. **Using `@PostConstruct` and `@PreDestroy` annotations**: These annotations are used to define the init and destroy methods.
-2. **Implementing `InitializingBean` and `DisposableBean` interfaces**: These interfaces are used to define the init and destroy methods.
-3. **Using `init-method` and `destroy-method` attributes in the XML configuration**: These attributes are used to define the init and destroy methods.
+    1. **Using `@PostConstruct` and `@PreDestroy` annotations**: These annotations are used to define the init and destroy methods.
+    2. **Implementing `InitializingBean` and `DisposableBean` interfaces**: These interfaces are used to define the init and destroy methods.
+    3. **Using `init-method` and `destroy-method` attributes in the XML configuration**: These attributes are used to define the init and destroy methods.
+</details>
 
-### What is the difference between Application Context and Web Application Context?
+<details>
+    <summary>
+        ### What is the difference between Application Context and Web Application Context?
+    </summary>
 `ApplicationContext` is the central interface in Spring’s core container and is responsible for managing the lifecycle of beans,
 instantiating and configuring them, wiring them together, and handling their dependencies.
 It is used in standalone applications and non-web environments.
@@ -27,15 +38,18 @@ It is used in standalone applications and non-web environments.
 such as support for themes, file uploads, and internationalization. It is created by the `ContextLoaderListener` or `DispatcherServlet` in a web application.
 
 The key difference between `ApplicationContext` and `WebApplicationContext` is that the latter is designed for web applications and provides additional features specific to web environments.
+</details>
 
-### 4.	How to set profile at the runtime in SpringBoot Framework? We can take WebApplication context, modify the container and register it.
+<details>
+    <summary>
+        ### 4.	How to set profile at the runtime in SpringBoot Framework? We can take WebApplication context, modify the container and register it.
+    </summary>
     ```java
     ConfigurableApplicationContext context = new ClassPathXmlApplicationContext("applicationContext.xml");
     context.getEnvironment().setActiveProfiles("dev");
     context.refresh();
     ```
-
-
+</details>
 
 ### What is the difference between `@Component`, `@Repository`, `@Service`, and `@Controller` annotations?
 
@@ -107,6 +121,22 @@ For e.g., Repository adds DataException over JDBC to handle exceptions.
 
 `@EnableAsync` is used to enable asynchronous processing. `@Async` is used to define a method as asynchronous.
 
+### How to handle exceptions in Spring Boot?
+Spring Boot provides several ways to handle exceptions:
+1. **Using `@ExceptionHandler`**: This annotation is used to define methods that handle exceptions.
+2. **Using `@ControllerAdvice`**: This annotation is used to define global exception handlers.
+
+### How to implement a custom error page in Spring Boot?
+```java
+@Controller
+public class CustomErrorController implements ErrorController {
+    @RequestMapping("/error")
+    public String handleError() {
+        return "error";
+    }
+}
+```
+
 ###	How do you create your own custom Annotation in Java?
 ```java
 @Retention(RetentionPolicy.RUNTIME)
@@ -115,3 +145,221 @@ public @interface MyAnnotation {
     String value();
 }
 ```
+
+### How to validate inputs in Spring Boot?
+The validation API offers a set of annotations that can be used to validate the inputs.
+Hibernates implementation of the validation API adds even more annotations.
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-validation</artifactId>
+</dependency>
+```
+
+<details>
+    <summary>
+        Example:
+    </summary>
+```java
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+public class User {
+    @NotNull
+    private String name;
+    @Size(min = 6, max = 14)
+    private String password;
+    @NotNull
+    @Size(min=1, message="You must choose at least 1 ingredient")
+    private List<Ingredient> ingredients;
+    @CreditCardNumber(message="Not a valid credit card number")
+    private String ccNumber;
+    @Pattern(regexp="^(0[1-9]|1[0-2])([\\/])([1-9][0-9])$", message="Must be in format MM/YY")
+    private String cardExpiration;
+    @Digits(integer=3, fraction=0, message="Invalid CVV")
+    private String cardCVV;
+}
+```
+</details>
+
+### How to implement a custom validator in Spring Boot?
+    ```java
+@Component
+public class CustomValidator implements Validator {
+    @Override
+    public boolean supports(Class<?> clazz) {
+        return User.class.equals(clazz);
+    }
+
+        @Override
+        public void validate(Object target, Errors errors) {
+            User user = (User) target;
+            if (user.getName() == null) {
+                errors.rejectValue("name", "name.empty");
+            }
+        }
+    }
+```
+
+### How to connect to multiple databases in Spring Boot?
+To connect to multiple databases in Spring Boot, we need to follow below steps:
+- Define multiple `DataSource` beans.
+- Define multiple `EntityManager` beans.
+- Use the `@Primary` and `@Qualifier` annotations to specify the primary `DataSource` and `EntityManager`.
+- Transcation Management is also required to manage transactions across multiple data sources.
+
+JPA has a class `DataSource` which is used to connect to the database.
+In Spring Boot, you can define multiple `DataSource` beans and use the`@Primary` annotation to specify the
+primary `DataSource`.
+
+<details>
+    <summary>
+        DataSource Configuration
+    </summary>
+JPA has a class `DataSourceProperties` which is used to configure the data source.
+You can define multiple `DataSourceProperties` beans and use the `@Qualifier` annotation to specify the `DataSourceProperties` to use.
+
+This class has a method `initializeDataSourceBuilder()` which is used to create a `DataSourceBuilder`.
+It has various attributes like `url`, `username`, `password`, `driverClassName`, etc. which are used to configure the data source.
+The class comes with prefix `spring.datasource`.
+
+In order to set values for it these properties can be configured in the `application.properties` file.
+
+```java
+@Configuration
+public class DataSourceConfig {
+    @Bean
+    @ConfigurationProperties("app.datasource.mysql")
+    public DataSourceProperties mysqlDataSourceProps() {
+        return new DataSourceProperties();
+    }
+
+    @Primary
+    @Bean
+    public DataSource dataSource(DatabaseProperties mysqlDataSourceProps) {
+        return mysqlDataSourceProps.initializeDataSourceBuilder().build();
+    }
+
+    @Bean
+    @ConfigurationProperties("app.datasource.postgres")
+    public DataSourceProperties pgDataSourceProps() {
+        return new DataSourceProperties();
+    }
+
+    @Secondary
+    @Bean
+    public DataSource dataSource(DatabaseProperties pgDataSourceProps) {
+        return pgDataSourceProps.initializeDataSourceBuilder().build();
+    }
+}
+```
+</details>
+
+<details>
+    <summary>
+        EntityManager Configuration
+    </summary>
+
+    JPA has a class called `EntityManager` which is used to interact with the database.
+    You can define multiple `EntityManager` beans and use the `@Qualifier` annotation to specify the `EntityManager` to use.
+
+    This class has a method `createEntityManagerFactory()` which is used to create an `EntityManagerFactory`.
+    It has various attributes like `dataSource`, `packagesToScan`, `jpaVendorAdapter`, etc. which are used to configure the `EntityManager`.
+    The class comes with prefix `spring.jpa`.
+
+    To override default `LocalEntityManagerFactoryBean`, you can need to use `@EnableJpaRepositories` annotation.
+    or either name your `LocalContainerEntityManagerFactoryBean` bean as `entityManagerFactory`
+    or you can give name to your bean using `@Bean(name="")` annotation.
+    or you can use @EnableJpaRepositories annotation to specify the entityManagerFactoryRef and transactionManagerRef.
+
+    ```java
+    @Configuration
+    @EnableJpaRepositories(
+        basePackages = "com.example.repositories.mysql",
+        entityManagerFactoryRef = "mysqlEntityManagerFactory",
+        transactionManagerRef = "mysqlTransactionManager"
+    )
+    @EnableTransactionManagement
+    public class EntityManagerConfig {
+        @Primary
+        @Bean
+        public LocalContainerEntityManagerFactoryBean mysqlEntityManagerFactory(
+            EntityManagerFactoryBuilder builder,
+                @Qualifier("mysqlDataSource") DataSource dataSource) {
+            return builder
+                .dataSource(dataSource)
+                .packages("com.example.entities.mysql")
+                .persistenceUnit("mysql")
+                .build();
+        }
+
+        @Bean
+        public PlatformTransactionManager mysqlTransactionManager( @Qualifier("mysqlEntityManagerFactory") EntityManagerFactory entityManagerFactory) {
+            return new JpaTransactionManager(entityManagerFactory);
+        }
+    }
+
+    @Configuration
+    @EnableJpaRepositories(
+        basePackages = "com.example.repositories.pgsql",
+        entityManagerFactoryRef = "pgsqlEntityManagerFactory",
+        transactionManagerRef = "pgsqlTransactionManager"
+    )
+    @EnableTransactionManagement
+    public class PgEntityManagerConfig {
+        @Secondary
+        @Bean
+        public LocalContainerEntityManagerFactoryBean pgEntityManagerFactory( EntityManagerFactoryBuilder builder,
+            @Qualifier("pgDataSource") DataSource dataSource) {
+            return builder
+            .dataSource(dataSource)
+            .packages("com.example.entities.postgres")
+            .persistenceUnit("postgres")
+            .build();
+        }
+
+        @Bean
+        public PlatformTransactionManager pgsqlTransactionManager( @Qualifier("pgsqlEntityManagerFactory") EntityManagerFactory entityManagerFactory) {
+            return new JpaTransactionManager(entityManagerFactory);
+        }
+    }
+    ```
+
+</details>
+<details>
+    <summary>Transaction Management:</summary>
+
+     When managing multiple databases, it is essential to use transaction management to ensure that operations across multiple data sources are consistent and can be rolled back if an error occurs.
+     Each entity manager requires its own transaction manager to manage transactions correctly.
+     Using `@EnableTransactionManagement` informs the framework to perform auto-configuration for the transaction manager
+</details>
+
+:::note **Avoiding Open Session in View:**
+The spring.jpa.open-in-view property should be set to false to avoid potential issues and performance overheads in production environments.
+    This design pattern of Spring requires an entity manager, and when multiple are present, you must specify one as primary which is a bad design.
+     The better solution is to set the spring.jpa.open-in-view property to false
+:::
+
+
+### How to implement a custom listener in Spring Boot?
+```java
+@Component
+public class CustomListener implements ApplicationListener<ContextRefreshedEvent> {
+    @Override
+    public void onApplicationEvent(ContextRefreshedEvent event) {
+        // Custom logic
+    }
+}
+```
+
+### How to implement a custom servlet in Spring Boot?
+```java
+@WebServlet("/custom")
+public class CustomServlet extends HttpServlet {
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        // Custom logic
+    }
+}
+```
+
