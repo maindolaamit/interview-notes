@@ -1,47 +1,38 @@
 ---
+title: Interview Notes
 sidebar_position: 1
 ---
 
-# Tutorial Intro
+# Interview Notes
 
-Let's discover **Docusaurus in less than 5 minutes**.
+Interview Notes is a collection of interview questions and concepts, including system design interview questions and answers, spanning a wide range of topics. The questions are categorized based on programming languages, system components, and features.
 
-## Getting Started
+I started this project to help myself and others prepare for interviews. The answers provide a detailed explanation of the concepts and the approach to solve the problem.
 
-Get started by **creating a new site**.
+## Categories
 
-Or **try Docusaurus immediately** with **[docusaurus.new](https://docusaurus.new)**.
+- **[Languages:](/docs/languages/java/)** Questions related to various programming languages and their features.
+- **[Microservices:](/docs/microservices/intro)** Questions related to microservices architecture and design patterns.
+- **[System Design:](/docs/designs)** Questions related to designing scalable and efficient systems.
+- **[Algorithms and Data Structures:](/docs/programming/lld/)** Competitive programming questions and concepts.
+- **[Behavioral Questions:](/docs/behavioral)** Questions related to teamwork, leadership, and problem-solving skills.
 
-### What you'll need
+## How to Use
 
-- [Node.js](https://nodejs.org/en/download/) version 18.0 or above:
-  - When installing Node.js, you are recommended to check all checkboxes related to dependencies.
+1. **Browse Categories:** Navigate through the different categories to find questions and answers relevant to your preparation.
+2. **Read and Understand:** Go through the detailed explanations and understand the concepts.
+3. **Practice:** Try to solve the questions on your own before looking at the answers.
+4. **Review:** Review the answers and explanations to solidify your understanding.
 
-## Generate a new site
+## Contributing
 
-Generate a new Docusaurus site using the **classic template**.
+If you would like to contribute to this project, please follow these steps:
 
-The classic template will automatically be added to your project after you run the command:
+1. **Fork the Repository:** Create a fork of this repository to your GitHub account.
+2. **Create a Branch:** Create a new branch for your changes.
+3. **Make Changes:** Make your changes and commit them to your branch.
+4. **Submit a Pull Request:** Submit a pull request with a detailed description of your changes.
 
-```bash
-npm init docusaurus@latest my-website classic
-```
+## License
 
-You can type this command into Command Prompt, Powershell, Terminal, or any other integrated terminal of your code editor.
-
-The command also installs all necessary dependencies you need to run Docusaurus.
-
-## Start your site
-
-Run the development server:
-
-```bash
-cd my-website
-npm run start
-```
-
-The `cd` command changes the directory you're working with. In order to work with your newly created Docusaurus site, you'll need to navigate the terminal there.
-
-The `npm run start` command builds your website locally and serves it through a development server, ready for you to view at http://localhost:3000/.
-
-Open `docs/intro.md` (this page) and edit some lines: the site **reloads automatically** and displays your changes.
+This project is licensed under the MIT License. See the `LICENSE` file for more details.

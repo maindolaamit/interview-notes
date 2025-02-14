@@ -4,106 +4,109 @@ description: "Leetcode problems"
 sidebar_position: 14
 ---
 
-
 import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
 
-Start with 100-day challenge first which will get you warm up with the coding and then move to the other problems.
+### Useful Java Snippets for LeetCode
 
 <Tabs>
-  <TabItem value={"Strings"}>
-    - [check-balanced-string](https://leetcode.com/problems/check-balanced-string/)
+  <TabItem value="Collections">
+    ### Sort Array/List
+    ```java
+    // Sort array
+    int[] arr = {3, 1, 4, 1, 5};
+    Arrays.sort(arr); // ascending
+    Arrays.sort(arr, Collections.reverseOrder()); // descending for Integer[]
+    
+    // Sort list
+    List<Integer> list = new ArrayList<>();
+    Collections.sort(list); // ascending
+    Collections.sort(list, Collections.reverseOrder()); // descending
+    ```
 
-    <details>
-        <summary>Easy</summary>
-        - [check-balanced-string](https://leetcode.com/problems/check-balanced-string/)
-    </details>
-    <details>
-        <summary>Medium</summary>
-    </details>
-    <details>
-        <summary>Hard</summary>
-    </details>
+    ### Sort Custom Objects
+    ```java
+    // Sort by single field
+    Arrays.sort(intervals, (a, b) -> a[0] - b[0]);
+    
+    // Sort by multiple fields
+    Arrays.sort(people, (a, b) -> {
+        if (a[0] != b[0]) return a[0] - b[0];
+        return b[1] - a[1];
+    });
+    ```
   </TabItem>
 
-  <TabItem value={"Array"}>
-    <details>
-        <summary>Easy</summary>
-        - [check-balanced-string](https://leetcode.com/problems/check-balanced-string/)
-        - [best-time-to-buy-and-sell-stock](https://leetcode.com/problems/best-time-to-buy-and-sell-stock/description/)
-        - [Two Sum](https://leetcode.com/problems/two-sum/description/)
-    </details>
-    <details>
-        <summary>Medium</summary>
-        - [Spiral Matrix](https://leetcode.com/problems/spiral-matrix-ii/submissions/1440390382/)
-        - [Search 2D Matrix](https://leetcode.com/problems/search-a-2d-matrix/)
-        - [Rotate an Image](https://leetcode.com/problems/rotate-image/submissions/1440576328/)
-        - [](https://leetcode.com/problems/best-time-to-buy-and-sell-stock-ii/description/)
-        - [container-with-most-water](https://leetcode.com/problems/container-with-most-water/description/)
-    </details>
-    <details>
-        <summary>Hard</summary>
-    </details>
+  <TabItem value="Datastructures">
+    ### PriorityQueue (Heap)
+    ```java
+    // Min heap
+    PriorityQueue<Integer> minHeap = new PriorityQueue<>();
+    
+    // Max heap
+    PriorityQueue<Integer> maxHeap = new PriorityQueue<>((a, b) -> b - a);
+    
+    // Custom object heap
+    PriorityQueue<int[]> pq = new PriorityQueue<>((a, b) -> a[1] - b[1]);
+    ```
+
+    ### HashMap Operations
+    ```java
+    Map<Integer, Integer> map = new HashMap<>();
+    map.getOrDefault(key, defaultValue);
+    map.putIfAbsent(key, value);
+    map.containsKey(key);
+    map.merge(key, 1, Integer::sum); // increment value
+    ```
   </TabItem>
 
-  <TabItem value={"LinkedList"}>
-    <details>
-        <summary>Easy</summary>
-        - [check-balanced-string](https://leetcode.com/problems/check-balanced-string/)
-    </details>
-    <details>
-        <summary>Medium</summary>
-    </details>
-    <details>
-        <summary>Hard</summary>
-    </details>
-    ### Easy
+  <TabItem value="Strings">
+    ## String Operations
+
+    ### StringBuilder
+    ```java
+    StringBuilder sb = new StringBuilder();
+    sb.append("text");
+    sb.reverse();
+    sb.toString();
+    sb.setCharAt(index, char);
+    sb.deleteCharAt(index);
+    ```
+
+    ### String to Array
+    ```java
+    String s = "hello";
+    char[] chars = s.toCharArray();
+    String[] words = s.split("\\s+");
+    ```
   </TabItem>
 
-  <TabItem value={"Sliding Window"}>
-    <details>
-        <summary>Easy</summary>
-        - [check-balanced-string](https://leetcode.com/problems/check-balanced-string/)
-    </details>
-    <details>
-        <summary>Medium</summary>
-        - [](https://leetcode.com/problems/spiral-matrix-ii/submissions/1440390382/)
-        - [](i)
-        - [](i)
-        - [](i)
-        - [](i)
-    </details>
-    <details>
-        <summary>Hard</summary>
-    </details>
-  </TabItem>
+  <TabItem value="Arrays">
+    ### 2D Array Creation
+    ```java
+    int m = 3, n = 4;
+    int[][] array2d = new int[m][n];
+    
+    // Fill with value
+    Arrays.fill(array, value);
+    
+    // Fill 2D array
+    for(int[] row : array2d) {
+        Arrays.fill(row, value);
+    }
+    ```
 
-  <TabItem value={"Two Pointers"}>
-    <details>
-        <summary>Easy</summary>
-        - [](https://leetcode.com/problems/spiral-matrix-ii/submissions/1440390382/)
-        - [](i)
-        - [](i)
-        - [](i)
-        - [](i)
-    </details>
-    <details>
-        <summary>Medium</summary>
-        - [container-with-most-water](https://leetcode.com/problems/container-with-most-water/description/)
-    </details>
-    <details>
-        <summary>Hard</summary>
-    </details>
+    ### Array to List
+    ```java
+    Integer[] array = {1, 2, 3};
+    List<Integer> list = Arrays.asList(array);
+    List<Integer> list2 = new ArrayList<>(Arrays.asList(array));
+    ```
   </TabItem>
 </Tabs>
 
-Do the problems from the following study plan:
-- [Leetcode 75](https://leetcode.com/studyplan/leetcode-75/)
-- [Top Interview 50](https://leetcode.com/studyplan/top-interview-150/)
-- [Top 100 Liked](https://leetcode.com/studyplan/top-100-liked/)
-
-```mdx-code-block
-import DocCardList from '@theme/DocCardList';
-
-<DocCardList />
-```
+## Quick Tips
+- Use `Arrays.asList()` for fixed-size list
+- StringBuilder for string manipulation
+- PriorityQueue for k-th element problems
+- HashMap for frequency counting and two-sum type problems

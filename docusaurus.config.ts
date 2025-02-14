@@ -86,6 +86,12 @@ const config: Config = {
           label: "Languages",
         },
         {
+          type: "docSidebar",
+          sidebarId: "microServicesDesignSidebar",
+          position: "left",
+          label: "MicroServices",
+        },
+        {
             type: "docSidebar",
             sidebarId: "programmingSidebar",
             position: "left",
@@ -96,12 +102,6 @@ const config: Config = {
           sidebarId: "systemDesignSidebar",
           position: "left",
           label: "System Design",
-        },
-        {
-          type: "docSidebar",
-          sidebarId: "microServicesDesignSidebar",
-          position: "left",
-          label: "MicroServices",
         },
         {
           type: "docSidebar",

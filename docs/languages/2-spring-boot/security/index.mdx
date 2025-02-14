@@ -85,7 +85,8 @@ Authorities are actions that you allow a user to do in the context of the applic
     - A simple implementation of a UserDetailsService that Spring Security
     provides is `InMemoryUserDetailsManager`
     - The JdbcUserDetailsManager implementation expects three columns in the users table: a username,
-  a password, and enabled, which you can use to deactivate the user.
+    a password, and enabled, which you can use to deactivate the user.
+
 </details>
 <details>
     <summary>UserDetailsManager</summary>
@@ -108,6 +109,11 @@ Authorities are actions that you allow a user to do in the context of the applic
   received request from the HTTP filter layers.
   :::
 </details>
+
+  :::warning
+  The `loadUserByUsername()` method has to return a UserDetails object.
+  If the user is not found, the method should throw a UsernameNotFoundException.
+  :::
 
 ---
 

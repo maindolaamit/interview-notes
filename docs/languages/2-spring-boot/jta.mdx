@@ -1,0 +1,73 @@
+---
+title: JTA
+description: "JTA & Hibernate"
+sidebar_position: 2
+---
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+The Java Transaction API (JTA) is used for distributed transactions in Java EE environments. Here's what the sources say about JTA:
+
+*   **JTA powers the Java EE distributed transactions requirements** following the X/Open XA architecture.
+*   **Distributed transactions** involve multiple heterogeneous resource managers, whereas local transactions use a single resource manager.
+*   With distributed transactions, **ACID guarantees are still enforced on each individual resource,** but a global transaction manager is required to coordinate the distributed transaction outcome.
+*   **JTA uses the two-phase commit (2PC) protocol** to coordinate atomic resource commitment in two steps: a prepare and a commit phase.
+*   In the **prepare phase**, a resource manager prepares the transaction for the upcoming commit.
+*   If all resource managers acknowledge the preparation step, the transaction manager proceeds to the **commit phase**.
+*   If one resource doesn’t acknowledge the prepare phase, the transaction manager rolls back all current participants.
+*   In a JTA environment, if a new transaction is needed, the current running transaction must be suspended, and the sequence value is fetched in a separate transaction.
+*   The JTA transaction manager does additional work to accommodate the transaction context switch, which can impact overall application performance.
+*   The persistence unit transaction type can be resource-local (single data source) or JTA (multiple data sources).
+*   The TRANSACTIONAL caching strategy is specific to JTA environments and has bad performance caused by its synchronous caching mechanism.
+
+The provided sources do not explicitly detail how to install or add JTA to a Spring Boot application. However, they do provide some context regarding JTA and its usage in Java EE environments, as well as how Spring Boot applications can use data sources and transaction management. Here's a synthesis of the relevant information:
+
+*   **JTA and Distributed Transactions:** The Java Transaction API (JTA) is used for distributed transactions in Java EE environments [Me]. Distributed transactions involve multiple resource managers, requiring a global transaction manager to coordinate the outcome [Me]. JTA uses the two-phase commit protocol (2PC) to ensure atomicity across multiple resources [Me].
+
+*   **Spring Boot and Data Sources**: Spring Boot relies on connection pools, like HikariCP, for database connections. Spring Boot also provides starter dependencies like `spring-boot-starter-jdbc` and `spring-boot-starter-data-jpa` to manage database connections and persistence. Additionally, Spring Boot supports various databases, including MySQL, PostgreSQL, H2, and MongoDB.
+
+*   **Transaction Management in Spring**: Spring Boot provides transaction management capabilities.  The `@EnableTransactionManagement` annotation enables Spring JPA Transaction Manager. The persistence unit transaction type can be resource-local (single data source) or JTA (multiple data sources) [Me].
+
+*   **JTA and Performance**:  JTA transaction managers can have an impact on application performance because of the additional work required to accommodate transaction context switches [Me].  The TRANSACTIONAL caching strategy is specific to JTA environments and can have poor performance due to its synchronous caching mechanism [Me].
+
+Based on these points, here’s how to approach using JTA in a Spring Boot application:
+
+1.  **Understand the Need for JTA:** JTA is required for distributed transactions involving multiple resource managers. If your application uses a single data source, you likely don't need JTA. Local transactions can be managed directly by Spring's transaction management framework.
+
+2. **Include Necessary Dependencies:** While the sources don't provide a specific JTA dependency, you will need to include a dependency for a JTA transaction manager if you intend to use it. Commonly used JTA transaction managers are Atomikos and Bitronix. For example, for Atomikos, you will need to add something like:
+
+```xml
+<dependency>
+    <groupId>org.codehaus.atomikos</groupId>
+    <artifactId>transactions-jta</artifactId>
+</dependency>
+```
+
+    or
+```xml
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jta-atomikos</artifactId>
+        </dependency>
+```
+    or
+
+```xml
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jta-bitronix</artifactId>
+        </dependency>
+```
+    along with other relevant dependencies.
+
+3.  **Configure the Transaction Manager**: You will need to configure the JTA transaction manager as a Spring bean and configure your data sources to participate in distributed transactions. This generally involves setting up a JTA transaction manager implementation and configuring datasources to use it. Spring Boot can automatically configure these using the appropriate starter dependency.
+
+4.  **Set the Persistence Unit Transaction Type**: Configure your persistence unit's transaction type to `JTA` if you are using multiple data sources in a distributed transaction [Me].
+
+5.  **Consider Performance**: Be mindful of the potential performance impact due to context switching and synchronous caching [Me]. Consider using different caching strategies that are more suitable for high-performance applications, depending on your needs.
+
+6.  **Use Spring Data JPA:** If you are using Spring Data JPA,  ensure your entities, repositories, and services are set up correctly to work with the JTA transaction manager, and use the `@Transactional` annotation as necessary to demarcate transaction boundaries.
+
+**Important Note:** The sources emphasize that Spring Boot applications often use local transactions and connection pooling with single data sources. Adding JTA is a significant change, usually for distributed systems, and it might be unnecessary for simpler applications. If you are not using distributed transactions that span multiple resource managers, you may not need JTA.
+
+It's also advisable to refer to the Spring Boot documentation and the documentation for your chosen JTA transaction manager for the most accurate and detailed instructions.
