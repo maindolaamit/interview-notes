@@ -1,66 +1,15 @@
 ---
-title: Multi Threading
+title: Multi-Threading
 description: "Java Interview Questions"
 sidebar_position: 5
 ---
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## Table of Contents
-- [Multi-Threading](#multi-threading)
-- [Thread Concepts](#thread-concepts)
-- [Creating Threads in Java 17](#creating-threads-in-java-17)
-- [Thread Pools & Executors](#thread-pools--executors)
-- [Concurrent Utilities](#concurrent-utilities)
-- [Advanced Examples](#advanced-examples)
-
-# Multi-Threading
-![Thread Timeline](./img/java-thread-timeline.png)
-### What is the difference between `Concurrency` and `Parallelism`?
-Concurrency is when two tasks can start, run, and complete in overlapping time periods. It doesn't necessarily mean they'll ever both be running at the same instant. For example, multitasking on a single-core machine.
-Parallelism is when tasks literally run at the same time, e.g., on a multicore processor.
-
-:::note 
-Concurrency is a concept which is implemented in Java using Threads
-::::
-<details>
-<summary>What is `Process`?</summary>
-- A process is a program in execution. It is an active entity.
-</details>
-
-<details>
-<summary>What is `Thread`?</summary>
-```java
-public class Main {
-    public static void main(String[] args) {
-        System.out.println("Concurrency vs Parallelism");
-        System.out.println("Concurrency: " + Runtime.getRuntime().availableProcessors());
-        System.out.println("Parallelism: " + Runtime.getRuntime().availableProcessors());
-    }
-}
-```
-A thread is a single sequential flow of control within a program. It is a lightweight process.
-</details>
-
-
-### What is `Multi-tasking`?
-Multi-tasking is a process of executing multiple tasks simultaneously. We use multi-tasking to utilize the CPU. Multi-tasking can be achieved by two ways:
-
-- Process-based Multitasking (Multiprocessing)
-- Thread-based Multitasking (Multithreading)
-<Tabs>
-<TabItem value="Multi-threading">
-Multi-threading is a Java feature that allows concurrent execution of two or more parts of a program for maximum utilization of CPU. Each part of such program is called a thread. So, threads are light-weight processes within a process.
-</TabItem>
-<TabItem value="Multiprocessing">
-Multiprocessing is a process of executing multiple processes simultaneously. For example: typing and listening music both are going on simultaneously.
-</TabItem>
-</Tabs>
-
 
 ### What are primary ways to create threads in Java 17?
 <Tabs>
-<TabItem value="Extending the Thread Class">
+<TabItem value="Thread Class[Old]">
 - Create a class that extends the Thread class.
 - Override the run() method to define the thread's behavior.
 - Instantiate the class and call its start() method to start the thread.
@@ -79,7 +28,7 @@ class MyThread extends Thread {
 }
 ```
 </TabItem>
-<TabItem value="Implementing the Runnable Interface">
+<TabItem value="Runnable Interface">
 - Create a class that implements the Runnable interface.
 - Implement the run() method to define the thread's behavior.
 - Instantiate the class and pass it to a Thread object's constructor.
@@ -102,6 +51,7 @@ public class Main {
 ```
 </TabItem>
 <TabItem value="Using Executors:">
+// Preferred way to create threads in Java
 - Use the Executor framework to manage thread pools and task execution.
 - Create an ExecutorService using Executors.newCachedThreadPool() or Executors.newFixedThreadPool().
 - Submit tasks to the executor using the submit() method.
@@ -128,13 +78,18 @@ To control concurrent modifications, the Java programming language defines the
 - It propagates changes from the current Thread local memory to the global memory,
     that’s available to all running threads of executions.
 
-### What is `Thread Pool`?
-A thread pool is a collection of threads that can be reused. Thread pools are used in multi-threaded applications. **Thread pools are also known as a thread executor framework.**
-- In a thread pool, each thread is assigned a task. 
-- When a thread completes its task, it can be reused for another task. 
-- Thread pools are used to reduce the overhead of creating new threads. 
-- Creating and destroying new threads is resource intensive, and it takes time. 
-- So, when a thread completes its task, it can be reused for another task. 
+<details>
+<summary>
+     What is `Thread Pool`?
+</summary>
+    A Thread pool is a collection of threads that can be reused. Thread pools are used in multi-threaded applications. **Thread pools are also known as a thread executor framework.**
+    - In a thread pool, each thread is assigned a task. 
+    - When a thread completes its task, it can be reused for another task. 
+    - Thread pools are used to reduce the overhead of creating new threads. 
+    - Creating and destroying new threads is resource intensive, and it takes time. 
+    - So, when a thread completes its task, it can be reused for another task. 
+
+</details>
 
 ### What is `ExecutorService`?
 The ExecutorService interface provides a way to manage threads. It is an interface that extends the Executor interface. It provides methods to manage threads and tasks. It is a high-level API that provides features like thread pooling, scheduling, etc. It is a part of the java.util.concurrent package. It is an interface that provides methods like execute(), submit(), shutdown(), etc.
@@ -171,6 +126,39 @@ public class Main {
 }
 ```
 
+<Tabs>
+    <TabItem value="ThreadLocal">
+
+    - ThreadLocal is a class in Java that allows you to store data that will be accessible only by a specific thread. It is a thread-local variable.
+    - Each thread that accesses the variable (via its get or set method) has its own, independently initialized copy of the variable.
+    - ThreadLocal instances are typically private static fields in classes that wish to associate state with a thread (e.g., a user ID or Transaction ID).
+    ```java
+    public class Main {
+        public static void main(String[] args) {
+            ThreadLocal<String> threadLocal = new ThreadLocal<>();
+            threadLocal.set("ThreadLocal's Value");
+            String value = threadLocal.get();
+            System.out.println(value);
+        }
+    }
+    ```
+    </TabItem>
+
+    <TabItem value="ThreadLocalRandom">
+
+    - ThreadLocalRandom is a class in Java that provides methods for generating random numbers. It is a random number generator that is local to the current thread.
+    - It is a thread-local random number generator. It is used to generate random numbers in multi-threaded applications. It is a part of the java.util.concurrent package.
+    ```java
+    public class Main {
+        public static void main(String[] args) {
+            ThreadLocalRandom random = ThreadLocalRandom.current();
+            int value = random.nextInt(1, 10);
+            System.out.println(value);
+        }
+    }
+    ```
+    </TabItem>
+</Tabs>
 
 ### What are some of the main scenarios where threading is heavily used in Java:
 <Tabs>
@@ -249,9 +237,13 @@ Blocking is when the execution of additional JavaScript in the Node.js process m
 
 ---
 ### What are `Callable`?
-Callable is an interface in Java that is similar to Runnable. It is used to create a thread that returns a result.
+`Callable` is an interface in Java that is similar to `Runnable`. It is used to create a thread that returns a result.
+
+**Use Case:**
+- When you need to return a value from a thread.
+- When you need to throw a checked exception from a thread.
 - It is a task that returns a result and may throw an exception.
-- It is a part of the java.util.concurrent package. It is a functional interface that contains only one abstract method call().
+- It is a part of the `java.util.concurrent` package. It is a functional interface that contains only one abstract method `call()`.
 - It is used to create a thread that returns a result.
 ```java
 public class Main {
@@ -462,6 +454,8 @@ public class Main {
 </TabItem>
 </Tabs>
 
+## Synchronization Components Overview
+
 ### What are Atomic and Volatile variables?
 Both variables are used in concurrent programming to avoid data inconsistency issues caused by concurrent access to the same variable.
 <Tabs>
@@ -478,7 +472,7 @@ Both variables are used in concurrent programming to avoid data inconsistency is
     ```
 </TabItem>
 <TabItem value="Volatile">
-    - Volatile variables are used to perform atomic operations on single variables. Archives this by preventingg compiler and and CPU from caching.
+    - Volatile variables are used to perform atomic operations on single variables. Archives this by preventing compiler and and CPU from caching.
     - Lightweight & faster than synchronization mechanism, since it does not involve locking.
     - Useful for simple flags or counters that are accessed by multiple threads.
     - Does not guaranteee atomicity for compound oprations like incrementing a counter.
@@ -492,132 +486,147 @@ Both variables are used in concurrent programming to avoid data inconsistency is
     ```
 </TabItem>
 </Tabs>
----
 
 
-### What are `ThreadLocal` variables?
-ThreadLocal is a class in Java that allows you to store data that will be accessible only by a specific thread. It is a thread-local variable. Each thread that accesses the variable (via its get or set method) has its own, independently initialized copy of the variable. ThreadLocal instances are typically private static fields in classes that wish to associate state with a thread (e.g., a user ID or Transaction ID).
-```java
-public class Main {
-    public static void main(String[] args) {
-        ThreadLocal<String> threadLocal = new ThreadLocal<>();
-        threadLocal.set("ThreadLocal's Value");
-        String value = threadLocal.get();
-        System.out.println(value);
-    }
-}
-```
+### Modern Approaches (Commonly Used)
+1. **CompletableFuture**
+   - Most recommended for async operations in modern Java
+   - Best for: Chain of async operations, combining multiple async tasks
+   - Perfect for microservices, API calls, and non-blocking operations
 
-### What are `ThreadLocalRandom`?
-ThreadLocalRandom is a class in Java that provides methods for generating random numbers. It is a random number generator that is local to the current thread.
-It is a thread-local random number generator. It is used to generate random numbers in multi-threaded applications. It is a part of the java.util.concurrent package.
-```java
-public class Main {
-    public static void main(String[] args) {
-        ThreadLocalRandom random = ThreadLocalRandom.current();
-        int value = random.nextInt(1, 10);
-        System.out.println(value);
-    }
-}
-```
+2. **Atomic Variables**
+   - Preferred choice for thread-safe counters and flags
+   - Best for: Simple shared state management without locks
+   - Highly performant for single variable operations
 
-
+### Situational Use Cases
 <details>
-<summary>What are `CountDownLatch`?</summary>
-```java
-public class Main {
-    public static void main(String[] args) {
-        CountDownLatch latch = new CountDownLatch(1);
-        new Thread(() -> {
-            System.out.println("Thread waiting...");
-            try {
-                latch.await();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            System.out.println("Thread running...");
-        }).start();
-        latch.countDown();
-    }
-}
-```
-CountDownLatch is a class in Java that allows one or more threads to wait until a set of operations being performed in other threads completes. It is a synchronization aid that allows one or more threads to wait until a set of operations being performed in other threads completes.
-
-It is a part of the java.util.concurrent package. It is a synchronization aid that allows one or more threads to wait until a set of operations being performed in other threads completes.
-</details>
-
-<details>
-<summary>What are `CyclicBarrier`?</summary>
-```java
-public class Main {
-    public static void main(String[] args) {
-        CyclicBarrier barrier = new CyclicBarrier(2);
-        new Thread(() -> {
-            System.out.println("Thread waiting...");
-            try {
-                barrier.await();
-            } catch (InterruptedException | BrokenBarrierException e) {
-                e.printStackTrace();
-            }
-            System.out.println("Thread running...");
-        }).start();
-        barrier.await();
-    }
-}
-```
-CycleBarrier is a class in Java that allows a set of threads to wait until all threads reach a common barrier point. It is a synchronization aid that allows a set of threads to wait until all threads reach a common barrier point. It is a part of the java.util.concurrent package.
-</details>
-
-<details>
-<summary>What are `Semaphore`?</summary>
-```java
-public class Main {
-    public static void main(String[] args) {
-        Semaphore semaphore = new Semaphore(1);
-        new Thread(() -> {
-            try {
-                semaphore.acquire();
+<summary>
+   **CountDownLatch**
+   - Still relevant but specific use case
+   - Best for: One-time synchronization where one or more threads wait for a set of operations
+   - Common in startup sequences or initialization patterns
+</summary>
+    ```java
+    public class Main {
+        public static void main(String[] args) {
+            CountDownLatch latch = new CountDownLatch(1);
+            new Thread(() -> {
+                System.out.println("Thread waiting...");
+                try {
+                    latch.await();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
                 System.out.println("Thread running...");
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } finally {
-                semaphore.release();
-            }
-        }).start();
+            }).start();
+            latch.countDown();
+        }
     }
-}
-```
-Semaphore is a class in Java that is used to control access to a shared resource. It is a synchronization aid that allows a set of threads to perform a limited set of operations in parallel. It is a part of the java.util.concurrent package. It is a synchronization aid that allows a set of threads to perform a limited set of operations in parallel.
+    ```
+    CountDownLatch is a class in Java that allows one or more threads to wait until a set of operations being performed in other threads completes. It is a synchronization aid that allows one or more threads to wait until a set of operations being performed in other threads completes.
+
+    It is a part of the java.util.concurrent package. It is a synchronization aid that allows one or more threads to wait until a set of operations being performed in other threads completes.
 </details>
 
 <details>
-<summary>What are `Exchanger`?</summary>
-```java
-public class Main {
-    public static void main(String[] args) {
-        Exchanger<String> exchanger = new Exchanger<>();
-        new Thread(() -> {
-            try {
-                String value = exchanger.exchange("String 1");
-                System.out.println("Thread 1: " + value);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }).start();
-        new Thread(() -> {
-            try {
-                String value = exchanger.exchange("String 2");
-                System.out.println("Thread 2: " + value);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }).start();
+<summary>
+   **Semaphore**
+   - Used in specific resource management scenarios
+   - Best for: Controlling access to limited resources (connection pools, thread pools)
+   - Common in resource pool implementations
+</summary>
+    ```java
+    public class Main {
+        public static void main(String[] args) {
+            Semaphore semaphore = new Semaphore(1);
+            new Thread(() -> {
+                try {
+                    semaphore.acquire();
+                    System.out.println("Thread running...");
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } finally {
+                    semaphore.release();
+                }
+            }).start();
+        }
     }
-}
-```
-Exchanger is a class in Java that is used to exchange objects between two threads. It is a synchronization point at which two threads can exchange objects. It is a part of the java.util.concurrent package. It is a synchronization point at which two threads can exchange objects.
+    ```
+    Semaphore is a class in Java that is used to control access to a shared resource. It is a synchronization aid that allows a set of threads to perform a limited set of operations in parallel. It is a part of the java.util.concurrent package. It is a synchronization aid that allows a set of threads to perform a limited set of operations in parallel.
 </details>
+
+### Legacy Approaches (Less Common in Modern Applications)
+<details>
+<summary>
+   **CyclicBarrier**
+   - Less common in modern applications
+   - Replaced by more flexible alternatives like CompletableFuture
+   - Consider only for specific algorithmic problems where multiple threads need synchronized starts
+</summary>
+    CycleBarrier is a class in Java that allows a set of threads to wait until all threads reach a common barrier point.
+    It is a synchronization aid that allows a set of threads to wait until all threads reach a common barrier point.
+    It is a part of the java.util.concurrent package.
+
+    ```java
+    public class Main {
+        public static void main(String[] args) {
+            CyclicBarrier barrier = new CyclicBarrier(2);
+            new Thread(() -> {
+                System.out.println("Thread waiting...");
+                try {
+                    barrier.await();
+                } catch (InterruptedException | BrokenBarrierException e) {
+                    e.printStackTrace();
+                }
+                System.out.println("Thread running...");
+            }).start();
+            barrier.await();
+        }
+    }
+    ```
+</details>
+<details>
+<summary>
+   **Exchanger**
+   - Rarely used in modern applications
+   - Very specific use case for two-thread data exchange
+   - Modern alternatives like queues or reactive streams are preferred
+</summary>
+    ```java
+    public class Main {
+        public static void main(String[] args) {
+            Exchanger<String> exchanger = new Exchanger<>();
+            new Thread(() -> {
+                try {
+                    String value = exchanger.exchange("String 1");
+                    System.out.println("Thread 1: " + value);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }).start();
+            new Thread(() -> {
+                try {
+                    String value = exchanger.exchange("String 2");
+                    System.out.println("Thread 2: " + value);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }).start();
+        }
+    }
+    ```
+    Exchanger is a class in Java that is used to exchange objects between two threads. It is a synchronization point at which two threads can exchange objects. It is a part of the java.util.concurrent package. It is a synchronization point at which two threads can exchange objects.
+</details>
+
+
+:::tip Modern Best Practices
+- Prefer CompletableFuture for async operations
+- Use Atomic variables for simple shared state
+- Consider higher-level abstractions (e.g., ExecutorService) over direct thread management
+- For complex scenarios, consider reactive programming frameworks
+:::
 
 ## Advanced Examples
-For more complex multi-thread scenarios, see the [Advanced Multi‑Threading page](/docs/languages/1-java/multi-thread-advanced).
+For more complex multi-thread scenarios, see the [Advanced Multi‑Threading page](/docs/languages/java/threads/multi-thread-advanced).
 

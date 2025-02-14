@@ -1,0 +1,151 @@
+---
+title: Advanced Multi Threading
+description: "Complex multi-thread examples in Java"
+sidebar_position: 6
+---
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Advanced Multi-Threading Examples
+
+This page demonstrates more complex scenarios and techniques in Java multi-threading.
+
+<Tabs>
+<TabItem value="thread-pool" label="Thread Pool">
+
+## Custom Thread Pool with Monitoring
+
+```java
+// Advanced custom thread pool example with monitoring
+import java.util.concurrent.*;
+public class MonitoringThreadPool {
+    public static void main(String[] args) {
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(
+            2, // Core pool size
+            4, // Max pool size
+            60L, TimeUnit.SECONDS, // Keep alive time
+            new LinkedBlockingQueue<>() // Work queue
+        );
+        // Submit tasks and monitor pool status
+        for (int i = 0; i < 10; i++) {
+            executor.submit(() -> {
+                System.out.println("Executing task on " + Thread.currentThread().getName());
+                try { Thread.sleep(500); } catch (InterruptedException e) { }
+            });
+        }
+        executor.shutdown();
+        while (!executor.isTerminated()) {
+            System.out.println("Active Threads: " + executor.getActiveCount());
+            try { Thread.sleep(300); } catch (InterruptedException e) { }
+        }
+        System.out.println("All tasks completed.");
+    }
+}
+```
+
+</TabItem>
+<TabItem value="coordination" label="Coordination">
+
+## Complex Coordination Using CountDownLatch and CyclicBarrier
+
+```java
+// Demonstrates using both CountDownLatch and CyclicBarrier for task coordination
+import java.util.concurrent.*;
+
+public class CoordinationExample {
+    public static void main(String[] args) throws InterruptedException, BrokenBarrierException {
+        final int parties = 3;
+        CountDownLatch latch = new CountDownLatch(parties);
+        CyclicBarrier barrier = new CyclicBarrier(parties, () -> System.out.println("All threads reached barrier."));
+
+        Runnable task = () -> {
+            try {
+                System.out.println(Thread.currentThread().getName() + " started.");
+                latch.countDown();
+                barrier.await(); // wait for others
+                System.out.println(Thread.currentThread().getName() + " proceeding after barrier.");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        };
+
+        for (int i = 0; i < parties; i++) {
+            new Thread(task).start();
+        }
+
+        latch.await();
+        System.out.println("All threads signaled start.");
+    }
+}
+```
+
+</TabItem>
+<TabItem value="completable-future" label="CompletableFuture">
+
+## CompletableFuture Chaining Complex Workflows
+
+```java
+// Advanced CompletableFuture example with multiple asynchronous steps
+import java.util.concurrent.*;
+
+public class CompletableFutureExample {
+    public static void main(String[] args) {
+        CompletableFuture.supplyAsync(() -> {
+            System.out.println("Step 1: Fetching Data");
+            return "Data";
+        }).thenApply(data -> {
+            System.out.println("Step 2: Processing " + data);
+            return data.length();
+        }).thenCompose(length -> CompletableFuture.supplyAsync(() -> {
+            System.out.println("Step 3: Saving Data of length " + length);
+            return "Success";
+        })).thenAccept(result -> {
+            System.out.println("Final Result: " + result);
+        }).join();
+    }
+}
+```
+
+</TabItem>
+<TabItem value="exchanger" label="Exchanger">
+
+## Exchanger for Thread Synchronization
+
+```java
+// Example demonstrating the use of Exchanger for thread synchronization
+import java.util.concurrent.Exchanger;
+
+public class ExchangerExample {
+    public static void main(String[] args) {
+        Exchanger<String> exchanger = new Exchanger<>();
+
+        Runnable task1 = () -> {
+            try {
+                String data = "Data from Task 1";
+                System.out.println("Task 1 exchanging: " + data);
+                String receivedData = exchanger.exchange(data);
+                System.out.println("Task 1 received: " + receivedData);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        };
+
+        Runnable task2 = () -> {
+            try {
+                String data = "Data from Task 2";
+                System.out.println("Task 2 exchanging: " + data);
+                String receivedData = exchanger.exchange(data);
+                System.out.println("Task 2 received: " + receivedData);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        };
+
+        new Thread(task1).start();
+        new Thread(task2).start();
+    }
+}
+```
+
+</TabItem>
+</Tabs>
