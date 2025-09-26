@@ -14,8 +14,6 @@ In a relational database, the query optimizer automatically decides which parts 
 Anything that is meaningful to humans may need to change sometime in
 the future—and if that information is duplicated, all the redundant copies need to be
 updated.
-That incurring write overheads, and risks inconsistencies (where some copies
-of the information are updated but others aren’t).
 
 Removing such duplication is the key idea behind `Normalization` in databases.
 :::
@@ -46,6 +44,28 @@ a `write-ahead` log (WAL, also known as a redo log).
 This is an append-only file to which every B-tree modification must be written before it can be applied to the pages of the tree itself.
 When the database comes back up after a crash, this log is used to restore the B-tree back to a consistent state.
 
+```mermaid
+graph TB
+    A[Client Write Request] -->|1. Write| B[Write-Ahead Log]
+    B -->|2. Append| C[WAL File]
+    B -->|3. Update| D[B-tree Pages]
+    
+    subgraph Database
+        C
+        D -->|4. Index| E[Root Page]
+        E -->|Points to| F[Internal Pages]
+        F -->|Points to| G[Leaf Pages]
+    end
+    
+    style C fill:#f9f,stroke:#333
+    style D fill:#bbf,stroke:#333
+    style E fill:#dfd,stroke:#333
+    style F fill:#dfd,stroke:#333 
+    style G fill:#dfd,stroke:#333
+
+```
+
+
 ### Transactions
 Most databases are accessed by several clients at the same time. That is no problem if
 they are reading and writing different parts of the database, but if they are accessing
@@ -59,25 +79,31 @@ isolated from each other: they cannot step on each other’s toes.
 - **Durability** : Durability is the promise that once a transaction has committed successfully,
 any data it has written will not be forgotten, even if there is a hardware fault or the database crashes.
 
-::: note
+:::tip
 Atomicity can be implemented using a log for crash recovery, and isolation can be implemented
 using a lock on each object (allowing only one thread to access an object at any one time).
 :::
 
-A transaction is usually understood as a mechanism for grouping multiple operations on multiple objects into one
-unit of execution.
+**A transaction is usually understood as a mechanism for grouping multiple operations on multiple objects into one
+unit of execution.**
 
-##### Read committed
+<details>
+    <summary>Read committed</summary>
+
 Imagine a transaction has written some data to the database, but the transaction has not yet committed or aborted.
 Can another transaction see that uncommitted data?
 If yes, that is called a dirty read.
 Transactions running at the read committed isolation level must prevent dirty reads.
 This means that any writes by a transaction only become visible to others when that
 transaction commits
+</details>
+
 **Read committed is a very popular isolation level.
 It is the default setting in Oracle 11g, PostgresSQL, SQL Server 2012, MemSQL, and many other databases**
 
-##### Write committed
+<details>
+    <summary>Write committed</summary>
+
 Image two clients are trying to update the same data, one is part of a transaction, and the other is not.
 If the non-transactional client overwrites the uncommited data of the transactional client, that is called a dirty write.
 Most commonly, databases prevent dirty writes by using row-level locks: when a transaction wants to modify a
@@ -85,7 +111,10 @@ particular object (row or document), it must first acquire a lock on that object
 It must then hold that lock until the transaction is committed or aborted.
 Only one transaction can hold the lock for any given object; if another transaction wants to write to the same object,
 it must wait until the first transaction is committed or aborted before it can acquire the lock and continue
+</details>
 
+**Write committed is a very popular isolation level.
+It is the default setting in Oracle 11g, PostgresSQL, SQL Server 2012, MemSQL, and many other databases**
 
 
 :::note
@@ -103,14 +132,16 @@ these versions after the fact.
 **Transaction isolation** is primarily about avoiding race conditions due to concurrently executing transactions,
 whereas **distributed consistency** is mostly about coordinating the state of replicas in the face of delays and faults.
 
+---
+
 ### Column-family stores
 In most OLTP databases, storage is laid out in a row-oriented fashion: all the values
 from one row of a table are stored next to each other. Document databases are similar: an entire document is
 typically stored as one contiguous sequence of bytes.
 
 A `row-oriented` storage engine still needs to load all of those rows (each consisting of over 100 attributes) from
-disk into memory, parse them, and filter out those that don’t meet the required conditions, that can take a long time.
-The idea behind `column-oriented` storage is simple: don’t store all the values from one row together, but store all the values from each column together instead.
+disk into memory, parse them, and filter out those that don't meet the required conditions, that can take a long time.
+The idea behind `column-oriented` storage is simple: don't store all the values from one row together, but store all the values from each column together instead.
 
 
 Often, the number of distinct values in a column is small compared to the number of rows.
@@ -120,24 +151,21 @@ Often, the number of distinct values in a column is small compared to the number
 :::tip
 Besides reducing the volume of data that needs to be loaded from disk, column-oriented storage layouts are also good
 for making efficient use of CPU cycles. For example, the query engine can take a chunk of compressed column data that fits
-comfortably in the CPU’s L1 cache and iterate through it in a tight loop (that is, with no function calls).
+comfortably in the CPU's L1 cache and iterate through it in a tight loop (that is, with no function calls).
 :::
 
 ## NoSQL Databases
-The main arguments in favor of the document data model are schema flexibility, bet‐ ter performance due to locality, and that for some applications it is closer to the data
+The main arguments in favor of the document data model are schema flexibility, better performance due to locality, and that for some applications it is closer to the data
 structures used by the application.
 
-The document model has limitations: for example, you cannot refer directly to a nes‐
-ted item within a document, but instead you need to say something like “the second
-item in the list of positions for user 251” (much like an access path in the hierarchical
-model). However, as long as documents are not too deeply nested, that is not usually
-a problem.
+The document model has limitations: for example, you cannot refer directly to a nested item within a document, but instead you need to say something like “the second item in the list of positions for user 251” (much like an access path in the hierarchical model).
+ However, as long as documents are not too deeply nested, that is not usually a problem.
 The locality advantage only applies if you need large parts of the document at the same time.
 
 The relational model counters by providing better support for joins, and many-to-one and many-to-many relationships.
 
 :::note
-Document databases are sometimes called `schemaless`, but that’s misleading, as the
+Document databases are sometimes called `schemaless`, but that's misleading, as the
 code that reads the data usually assumes some kind of structure—i.e., there is an
 implicit schema, but it is not enforced by the database.
 
@@ -149,13 +177,14 @@ data is read), in contrast with `schema-on-write` (the traditional approach of r
     <summary>Which data model leads to simpler application code?</summary>
 
     If the data in your application has a document-like structure (i.e., a tree of one-to many relationships, where
-    typically the entire tree is loaded at once), then it’s proba‐
+    typically the entire tree is loaded at once), then it's probably a good idea to use a document model.
     Data Models and Query Languages a good idea to use a document model.
 
     The poor support for joins in document databases may or may not be a problem,
     depending on the application.
 </details>
 
+---
 
 :::note
 Many different databases implement their proprietary binary encoding to send and receive data. They have a network
@@ -163,19 +192,34 @@ protocol over which we can send query and receive results over network protocol 
 :::
 
 
-<details>
-    <summary>Fencing Tokens</summary>
+### Fencing Tokens
+When using a lock or lease to protect a resource from being accessed by multiple clients at the same time, it is
+important to ensure that the lock or lease is released when the client no longer needs it.
 
-    When using a lock or lease to protect a resource from being accessed by multiple clients at the same time, it is
-    important to ensure that the lock or lease is released when the client no longer needs it.
+If a client becomes unreachable while holding a lock or lease due to network delay or GC pause,
+the resource may become unavailable
+indefinitely. This is known as a `split-brain` situation. When the client come back alive it may assume that it still
+holds the lock or lease, and start modifying the resource, even though another client may have acquired the lock or lease.
 
-    If a client becomes unreachable while holding a lock or lease due to network delay or GC pause,
-    the resource may become unavailable
-    indefinitely. This is known as a `split-brain` situation. When the client come back alive it may assume that it still
-    holds the lock or lease, and start modifying the resource, even though another client may have acquired the lock or lease.
+To prevent this, the lock or lease can be associated with a `fencing token`, which is an increasing value that changes
+every time the lock or lease is acquired by `lock server`. When a client sends a write request it includes the
+fencing token. If the fencing token has changed since the resource last saw it,
+the lock or lease is considered to be held by another client, and the operation fails.
 
-    To prevent this, the lock or lease can be associated with a `fencing token`, which is an increasing value that changes
-    every time the lock or lease is acquired by `lock server`. When a client sends a write request it includes the
-    fencing token. If the fencing token has changed since the resource last saw it,
-    the lock or lease is considered to be held by another client, and the operation fails.
-</details>
+```mermaid
+sequenceDiagram
+participant C1 as Client 1
+participant LS as Lock Server
+participant S as Storage
+participant C2 as Client 2
+
+C1->>LS: Acquire lock
+LS-->>C1: Token=1
+Note over C1: Network delay/GC pause
+C2->>LS: Acquire lock
+LS-->>C2: Token=2
+C1->>S: Write with Token=1
+S-->>C1: Reject (Token < Current)
+C2->>S: Write with Token=2
+S-->>C2: Accept write
+```
