@@ -10,18 +10,45 @@ import TabItem from "@theme/TabItem";
 ### Useful Java Snippets for LeetCode
 
 <Tabs>
+  <TabItem value="Arrays">
+    ### 2D Array Creation
+    ```java
+    int m = 3, n = 4;
+    int[][] array2d = new int[m][n];
+    
+    // Fill with value
+    Arrays.fill(array, value);
+    
+    // Fill 2D array
+    for(int[] row : array2d) {
+        Arrays.fill(row, value);
+    }
+
+    // Sort array
+    int[] arr = {3, 1, 4, 1, 5};
+    // ascending
+    Arrays.sort(arr); 
+    // descending for Integer[]
+    Arrays.sort(arr, Collections.reverseOrder()); 
+    ```
+
+    ### Array to List
+    ```java
+    Integer[] array = {1, 2, 3};
+    List<Integer> list = Arrays.asList(array);
+    List<Integer> list2 = new ArrayList<>(Arrays.asList(array));
+    ```
+  </TabItem>
   <TabItem value="Collections">
     ### Sort Array/List
     ```java
-    // Sort array
-    int[] arr = {3, 1, 4, 1, 5};
-    Arrays.sort(arr); // ascending
-    Arrays.sort(arr, Collections.reverseOrder()); // descending for Integer[]
-    
     // Sort list
     List<Integer> list = new ArrayList<>();
     Collections.sort(list); // ascending
     Collections.sort(list, Collections.reverseOrder()); // descending
+
+    // export to Array
+    Integer[] array = list.toArray(new Integer[0]);
     ```
 
     ### Sort Custom Objects
@@ -78,29 +105,6 @@ import TabItem from "@theme/TabItem";
     String s = "hello";
     char[] chars = s.toCharArray();
     String[] words = s.split("\\s+");
-    ```
-  </TabItem>
-
-  <TabItem value="Arrays">
-    ### 2D Array Creation
-    ```java
-    int m = 3, n = 4;
-    int[][] array2d = new int[m][n];
-    
-    // Fill with value
-    Arrays.fill(array, value);
-    
-    // Fill 2D array
-    for(int[] row : array2d) {
-        Arrays.fill(row, value);
-    }
-    ```
-
-    ### Array to List
-    ```java
-    Integer[] array = {1, 2, 3};
-    List<Integer> list = Arrays.asList(array);
-    List<Integer> list2 = new ArrayList<>(Arrays.asList(array));
     ```
   </TabItem>
 </Tabs>
