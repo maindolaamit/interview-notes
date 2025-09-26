@@ -1,0 +1,101 @@
+---
+title: "Example 4: Shopping Cart"
+description: "Shopping Cart TDD Example"
+---
+
+# Example 4: Shopping Cart
+
+Implement a shopping cart with items, quantities, and total calculation.
+
+## Test 1: Empty Cart
+```java
+@Test
+void newCartShouldBeEmpty() {
+    ShoppingCart cart = new ShoppingCart();
+    assertTrue(cart.isEmpty());
+    assertEquals(0.0, cart.getTotal());
+}
+```
+
+Implementation:
+```java
+public class ShoppingCart {
+    private List<Item> items = new ArrayList<>();
+    
+    public boolean isEmpty() {
+        return items.isEmpty();
+    }
+    
+    public double getTotal() {
+        return 0.0;
+    }
+}
+```
+
+## Test 2: Adding Items
+```java
+@Test
+void shouldCalculateTotalForSingleItem() {
+    ShoppingCart cart = new ShoppingCart();
+    cart.addItem(new Item("Book", 29.99), 1);
+    assertEquals(29.99, cart.getTotal());
+}
+```
+
+Updated Implementation:
+```java
+public class ShoppingCart {
+    private List<CartEntry> entries = new ArrayList<>();
+    
+    public void addItem(Item item, int quantity) {
+        entries.add(new CartEntry(item, quantity));
+    }
+    
+    public double getTotal() {
+        return entries.stream()
+            .mapToDouble(entry -> entry.getItem().getPrice() * entry.getQuantity())
+            .sum();
+    }
+}
+
+class CartEntry {
+    private Item item;
+    private int quantity;
+    // Constructor and getters
+}
+```
+
+## Test 3: Cart Operations
+```java
+@Test
+void shouldUpdateQuantityForExistingItem() {
+    ShoppingCart cart = new ShoppingCart();
+    Item book = new Item("Book", 29.99);
+    
+    cart.addItem(book, 1);
+    cart.updateQuantity(book, 2);
+    
+    assertEquals(59.98, cart.getTotal());
+}
+```
+
+Final Implementation:
+```java
+public class ShoppingCart {
+    private Map<Item, Integer> entries = new HashMap<>();
+    
+    public void updateQuantity(Item item, int quantity) {
+        if (quantity <= 0) {
+            entries.remove(item);
+        } else {
+            entries.put(item, quantity);
+        }
+    }
+    
+    public double getTotal() {
+        return entries.entrySet().stream()
+            .mapToDouble(entry -> entry.getKey().getPrice() * entry.getValue())
+            .sum();
+    }
+}
+```

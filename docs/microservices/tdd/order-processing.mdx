@@ -1,0 +1,139 @@
+---
+title: "Example 5: Order Processing"
+description: "Order Processing System TDD Example"
+---
+
+# Example 5: Order Processing
+
+Implement a complete order processing system with validation, inventory check, and payment processing.
+
+## Test 1: Order Creation
+```java
+@Test
+void shouldCreateOrderWithItems() {
+    Order order = new Order("CUST-001");
+    order.addItem(new OrderItem("PROD-001", 2));
+    
+    assertEquals(1, order.getItems().size());
+    assertEquals("CUST-001", order.getCustomerId());
+}
+```
+
+Implementation:
+```java
+public class Order {
+    private String customerId;
+    private List<OrderItem> items = new ArrayList<>();
+    private OrderStatus status = OrderStatus.CREATED;
+    
+    public Order(String customerId) {
+        this.customerId = customerId;
+    }
+    
+    public void addItem(OrderItem item) {
+        items.add(item);
+    }
+}
+```
+
+## Test 2: Order Processing
+```java
+@Test
+void shouldProcessValidOrder() {
+    // Setup
+    InventoryService inventory = mock(InventoryService.class);
+    PaymentService payment = mock(PaymentService.class);
+    when(inventory.isAvailable("PROD-001", 2)).thenReturn(true);
+    when(payment.process(any())).thenReturn(true);
+    
+    // Test
+    OrderProcessor processor = new OrderProcessor(inventory, payment);
+    Order order = new Order("CUST-001");
+    order.addItem(new OrderItem("PROD-001", 2));
+    
+    OrderResult result = processor.process(order);
+    assertTrue(result.isSuccess());
+}
+```
+
+Updated Implementation:
+```java
+public class OrderProcessor {
+    private final InventoryService inventory;
+    private final PaymentService payment;
+    
+    public OrderProcessor(InventoryService inventory, PaymentService payment) {
+        this.inventory = inventory;
+        this.payment = payment;
+    }
+    
+    public OrderResult process(Order order) {
+        // Validate inventory
+        if (!checkInventory(order)) {
+            return OrderResult.error("Insufficient inventory");
+        }
+        
+        // Process payment
+        if (!payment.process(order)) {
+            return OrderResult.error("Payment failed");
+        }
+        
+        order.setStatus(OrderStatus.PROCESSED);
+        return OrderResult.success();
+    }
+}
+```
+
+## Test 3: Full Order Workflow
+```java
+@Test
+void shouldHandleCompleteOrderWorkflow() {
+    // Setup services
+    InventoryService inventory = new InventoryService();
+    PaymentService payment = new PaymentService();
+    OrderProcessor processor = new OrderProcessor(inventory, payment);
+    
+    // Create and process order
+    Order order = new Order("CUST-001");
+    order.addItem(new OrderItem("PROD-001", 2));
+    
+    OrderResult result = processor.process(order);
+    
+    // Verify
+    assertTrue(result.isSuccess());
+    assertEquals(OrderStatus.PROCESSED, order.getStatus());
+    verify(inventory).reduceStock("PROD-001", 2);
+}
+```
+
+Final Implementation:
+```java
+public class OrderProcessor {
+    // ...existing constructor and fields...
+    
+    public OrderResult process(Order order) {
+        try {
+            if (!validateOrder(order)) {
+                return OrderResult.error("Invalid order");
+            }
+            
+            if (!checkInventory(order)) {
+                return OrderResult.error("Insufficient inventory");
+            }
+            
+            if (!payment.process(order)) {
+                return OrderResult.error("Payment failed");
+            }
+            
+            updateInventory(order);
+            order.setStatus(OrderStatus.PROCESSED);
+            notifyCustomer(order);
+            
+            return OrderResult.success();
+            
+        } catch (Exception e) {
+            return OrderResult.error("Processing failed: " + e.getMessage());
+        }
+    }
+}
+```

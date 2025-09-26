@@ -1,0 +1,97 @@
+---
+title: "Example 3: Bank Account"
+description: "Bank Account Operations TDD Example"
+---
+
+# Example 3: Bank Account
+
+Let's implement a bank account with deposit, withdrawal, and balance operations.
+
+## Test 1: Initial Balance
+```java
+@Test
+void newAccountShouldHaveZeroBalance() {
+    BankAccount account = new BankAccount();
+    assertEquals(0.0, account.getBalance());
+}
+```
+
+Implementation:
+```java
+public class BankAccount {
+    private double balance = 0.0;
+    
+    public double getBalance() {
+        return balance;
+    }
+}
+```
+
+## Test 2: Deposit Operation
+```java
+@Test
+void shouldIncreaseBalanceWhenDepositing() {
+    BankAccount account = new BankAccount();
+    account.deposit(100.0);
+    assertEquals(100.0, account.getBalance());
+}
+
+@Test
+void shouldThrowExceptionForNegativeDeposit() {
+    BankAccount account = new BankAccount();
+    assertThrows(IllegalArgumentException.class, 
+        () -> account.deposit(-50.0));
+}
+```
+
+Updated Implementation:
+```java
+public class BankAccount {
+    private double balance = 0.0;
+    
+    public void deposit(double amount) {
+        if (amount < 0) {
+            throw new IllegalArgumentException("Cannot deposit negative amount");
+        }
+        balance += amount;
+    }
+    
+    public double getBalance() {
+        return balance;
+    }
+}
+```
+
+## Test 3: Withdrawal Operation
+```java
+@Test
+void shouldDecreaseBalanceWhenWithdrawing() {
+    BankAccount account = new BankAccount();
+    account.deposit(100.0);
+    account.withdraw(50.0);
+    assertEquals(50.0, account.getBalance());
+}
+
+@Test
+void shouldThrowExceptionForInsufficientFunds() {
+    BankAccount account = new BankAccount();
+    assertThrows(InsufficientFundsException.class, 
+        () -> account.withdraw(50.0));
+}
+```
+
+Final Implementation:
+```java
+public class BankAccount {
+    private double balance = 0.0;
+    
+    public void withdraw(double amount) {
+        if (amount > balance) {
+            throw new InsufficientFundsException("Insufficient funds");
+        }
+        balance -= amount;
+    }
+    
+    // ...existing deposit and getBalance methods...
+}
+```

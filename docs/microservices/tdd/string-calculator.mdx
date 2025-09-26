@@ -1,0 +1,75 @@
+---
+sidebar_position: 2
+title: "Example 1: String Calculator"
+description: "Simple String Calculator TDD Example"
+---
+
+# Example 1: String Calculator
+
+Let's start with a simple string calculator that adds numbers from a string.
+
+## Test 1: Empty String
+```java
+@Test
+void shouldReturnZeroForEmptyString() {
+    StringCalculator calculator = new StringCalculator();
+    assertEquals(0, calculator.add(""));
+}
+```
+
+Implementation:
+```java
+public class StringCalculator {
+    public int add(String numbers) {
+        if (numbers.isEmpty()) {
+            return 0;
+        }
+        return -1; // placeholder for next test
+    }
+}
+```
+
+## Test 2: Single Number
+```java
+@Test
+void shouldReturnNumberForSingleNumber() {
+    StringCalculator calculator = new StringCalculator();
+    assertEquals(1, calculator.add("1"));
+}
+```
+
+Updated Implementation:
+```java
+public class StringCalculator {
+    public int add(String numbers) {
+        if (numbers.isEmpty()) {
+            return 0;
+        }
+        return Integer.parseInt(numbers);
+    }
+}
+```
+
+## Test 3: Two Numbers
+```java
+@Test
+void shouldReturnSumForTwoNumbers() {
+    StringCalculator calculator = new StringCalculator();
+    assertEquals(3, calculator.add("1,2"));
+}
+```
+
+Final Implementation:
+```java
+public class StringCalculator {
+    public int add(String numbers) {
+        if (numbers.isEmpty()) {
+            return 0;
+        }
+        String[] nums = numbers.split(",");
+        return Arrays.stream(nums)
+                    .mapToInt(Integer::parseInt)
+                    .sum();
+    }
+}
+```

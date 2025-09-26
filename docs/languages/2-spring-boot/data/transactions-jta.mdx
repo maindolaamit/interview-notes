@@ -1,10 +1,57 @@
 ---
-title: JTA
-description: "JTA & Hibernate"
-sidebar_position: 2
+title: Transactions & JTA 
+description: "Local Transactions, JTA and 2‑Phase Commit"
+sidebar_position: 4
 ---
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
+
+Spring Boot supports both local and distributed transactions. This section explains:
+
+## Local Transactions
+* Managed automatically by Spring with `@Transactional`.
+* Best for single data source scenarios using connection pools.
+
+## Distributed Transactions with JTA
+
+* **JTA (Java Transaction API):** Required for distributed transactions involving multiple resource managers.
+* **Two‑Phase Commit (2PC):** Ensures atomic commitment across resources.
+* **Dependencies:** Typically use Atomikos or Bitronix via Spring Boot starters.
+  
+:::tip JTA Tips
+- Only use JTA when dealing with multiple data sources.
+- Be mindful of performance trade‑offs due to transaction context switching.
+:::
+
+**Example Dependency:**
+
+```xml
+<!-- For Atomikos -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-jta-atomikos</artifactId>
+</dependency>
+
+<!-- For Bitronix -->
+<dependency>
+    <groupId>org.codehaus.atomikos</groupId>
+    <artifactId>transactions-jta</artifactId>
+</dependency>
+
+<!-- Or use the Bitronix Spring Boot starter -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-jta-bitronix</artifactId>
+</dependency>
+```
+
+**Configuration Steps:**
+
+1. Include the JTA dependency.
+2. Configure the transaction manager bean.
+3. Set persistence unit’s transaction type to JTA.
+
+**Image Suggestion:**  
+A diagram showing the two‑phase commit flow in a JTA setup.  
+(Consider creating: `/Users/amaindola/github/interview-notes/docs/languages/2-spring-boot/data/img/two-phase-commit.png`)
 
 The Java Transaction API (JTA) is used for distributed transactions in Java EE environments. Here's what the sources say about JTA:
 
@@ -36,28 +83,6 @@ Based on these points, here’s how to approach using JTA in a Spring Boot appli
 
 2. **Include Necessary Dependencies:** While the sources don't provide a specific JTA dependency, you will need to include a dependency for a JTA transaction manager if you intend to use it. Commonly used JTA transaction managers are Atomikos and Bitronix. For example, for Atomikos, you will need to add something like:
 
-```xml
-<dependency>
-    <groupId>org.codehaus.atomikos</groupId>
-    <artifactId>transactions-jta</artifactId>
-</dependency>
-```
-
-    or
-```xml
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-jta-atomikos</artifactId>
-        </dependency>
-```
-    or
-
-```xml
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-jta-bitronix</artifactId>
-        </dependency>
-```
     along with other relevant dependencies.
 
 3.  **Configure the Transaction Manager**: You will need to configure the JTA transaction manager as a Spring bean and configure your data sources to participate in distributed transactions. This generally involves setting up a JTA transaction manager implementation and configuring datasources to use it. Spring Boot can automatically configure these using the appropriate starter dependency.
