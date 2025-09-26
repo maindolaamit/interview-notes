@@ -90,6 +90,23 @@ import TabItem from "@theme/TabItem";
   <TabItem value="Strings">
     ## String Operations
 
+    ### Normal
+    ```java
+    String s = "hello";
+    s.charAt(index); // get character at index
+    s.length(); // get length of string
+    s.substring(start, end); // get substring from start to end
+    s.substring(start, start + length); // get substring from start to start + length
+    s.indexOf(substring); // get index of substring
+    s.isEmpty(); // check if string is empty
+    s.equals(otherString); // check if string is equal to other string
+    s.equalsIgnoreCase(otherString); // check if string is equal to other string ignoring case
+    s.contains(substring); // check if string contains substring
+    s.startsWith(prefix); // check if string starts with prefix
+    s.endsWith(suffix); // check if string ends with suffix
+    s.replace(oldChar, newChar); // replace old character with new character
+    ```
+
     ### StringBuilder
     ```java
     StringBuilder sb = new StringBuilder();
