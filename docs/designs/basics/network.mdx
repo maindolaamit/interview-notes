@@ -1,7 +1,7 @@
 ---
 title: Network
 description : "High Level Design concepts"
-sidebar_position: 5
+sidebar_position: 1
 ---
 
 <details>
@@ -23,10 +23,38 @@ These metrics set expectations for clients of the service and allow customers to
 Asynchronous systems try to deliver packets as soon as possible, but there is no upper bound on how long it might take for a packet to be delivered.
 This is called an `unbounded delay`.
 
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Network
+    participant Server
+    
+    Note over Client, Server: Asynchronous Network with Unbounded Delays
+    
+    Client->>Network: Packet 1 (t=0ms)
+    Network-->>Server: Delivered (t=50ms)
+    Server-->>Network: Response 1
+    Network-->>Client: Response received (t=100ms)
+    
+    Client->>Network: Packet 2 (t=10ms)
+    Note over Network: Network congestion, routing issues
+    Network-->>Server: Delivered (t=2000ms) ⚠️ High delay
+    Server-->>Network: Response 2
+    Network-->>Client: Response received (t=2100ms)
+    
+    Client->>Network: Packet 3 (t=20ms)
+    Network-->>Server: Delivered (t=75ms)
+    Server-->>Network: Response 3
+    Network-->>Client: Response received (t=150ms)
+    
+    Note over Client, Server: No guaranteed upper bound on delivery time
+```
+
+
 <details>
 <summary>**If a timeout is the only sure way of detecting a fault, then how long should the timeout be?**</summary>
 
-    ** There is unfortunately no simple answer. **
+    **There is unfortunately no simple answer.**
     - A short timeout will detect faults quickly, but it might also generate false positives.
     - A long timeout will generate fewer false positives, but it will take longer to detect actual faults.
 
@@ -55,3 +83,178 @@ The datacenters and internet are designed for burst traffic, so they don't have 
 supposed to complete a job quickly.
 Using `circuit` for some applications would be wasteful of network capacity.
 
+---
+
+## Protocols
+
+### HTTP vs HTTPS
+
+HTTP and HTTPS are protocols used for communication between a web browser and a server. While they serve similar purposes, they differ significantly in terms of security, functionality, and usage.
+
+#### **Key Differences**
+
+| Feature                  | HTTP (Hypertext Transfer Protocol)       | HTTPS (Hypertext Transfer Protocol Secure)  |
+|--------------------------|------------------------------------------|---------------------------------------------|
+| **Security**             | No encryption; data is transmitted as plaintext, making it vulnerable to interception (e.g., man-in-the-middle attacks). | Encrypts data using SSL/TLS, ensuring secure communication and protecting sensitive information. |
+| **URL Format**           | URLs start with `http://`.        | URLs start with `https://` and display a padlock icon in the browser. |
+| **Port**                 | Uses port 80 by default .          | Uses port 443 by default.            |
+| **Certificate Requirement** | Does not require any certificates.      | Requires an SSL/TLS certificate issued by a trusted Certificate Authority (CA). The server provides an SSL certificate to the browser, which verifies the server's identity.|
+| **Use Cases**            | Suitable for non-sensitive data or older websites. | Essential for websites handling sensitive data like passwords, financial transactions, or personal information. |
+| **SEO Benefits**         | No direct impact on search rankings.     | Improves website authority and rankings in search engines like Google. |
+
+#### **Why HTTPS is Preferred**
+1. **Security**: Protects against eavesdropping, tampering, and man-in-the-middle attacks.
+2. **Trust**: Users are more likely to trust websites with HTTPS due to visible security indicators like the padlock icon.
+3. **Compliance**: Many regulations (e.g., GDPR) mandate secure data transmission.
+4. **Performance**: Modern HTTPS implementations using HTTP/2 can improve website loading times compared to older HTTP versions [4].
+
+<details>
+<summary>
+    **Where are private & Public Keys stored for HTTPS? Who gives the public key to the client? What is the role of SSL Certificate?**
+</summary>
+    - Private keys are stored on the server.
+    - Public keys are stored on the client.
+    - The server gives the public key to the client from the server's SSL certificate.
+    - SSL certificate is a digital certificate that is used to verify the identity of the server.
+    - SSL certificate is used to encrypt the data sent to the server.
+    - SSL certificate is used to decrypt the data sent to the client.
+
+    For example, Gmail, Google Chrome browser uses a public key(which will be given by the server) to encrypt the data sent to the server, and the server uses a private key to decrypt the data.
+    SSL certificate is used to verify the identity of the server.
+
+
+    ```mermaid
+    sequenceDiagram
+        participant Client
+        participant Server
+        
+        Client->>Server: Request (encrypted with public key)
+        Server->>Client: Response (decrypted with private key)
+    ```
+</details>
+
+---
+
+
+REST is not a protocol, but rather a design philosophy that builds upon the principles
+of HTTP. It emphasizes simple data formats, using URLs for identifying
+resources and using HTTP features for cache control, authentication, and content
+type negotiation.
+
+:::tip
+Due to its widespread usage, the REST over HTTP-based API in obvious choice for most of the applications having
+synchronous request-response communication.
+
+REST excels in a situation where we want large scale effective caching of requests.
+:::
+
+:::warning
+Though we can build asynchronous systems using REST, it is not the best choice for such systems compared to
+alternatives for general microservices communication like gRPC, Kafka, RabbitMQ etc.
+:::
+
+:::tip
+GraphQL's sweet spot is when we have a lot of clients that need different data from the same API.
+These clients are usually GUI & mobile devices where we want to minimize the data.
+:::
+
+#### Challenge with GraphQL
+Compared with REST-based HTTP APIs, caching is more complex with GraphQL because a single query can fetch data from
+multiple endpoints, and the response can contain nested data structures.
+This makes it difficult to determine which parts of the response are affected by a change in the underlying data,
+and therefore which parts of the cache need to be invalidated.
+
+Workaround this issue is associate an ID with every returned resource and use it in a client device for caching.
+
+While GraphQL can handle writes, it doesn't seem to fit as well as for reads. This often leads to situation where
+we have to use REST for writes and GraphQL for reads.
+
+#### Shifting from REST's Endpoint-Based Approach to GraphQL’s Schema
+
+
+<details>
+    <summary>
+#### Schema Definition
+    </summary>
+- **Challenge**: REST is structured around multiple endpoints(e.g. `\users`, `\posts`, `\comments`) and each endpoint has its own error-handling mechanism.
+Whereas, GraphQL has a single endpoint and a single response format, which makes it challenging to implement a consistent error-handling mechanism.
+- **Solution**: Define a GraphQL schema (.graphqls files) that represents types, queries, and mutations to replace multiple REST endpoints.
+</details>
+
+<details>
+    <summary>
+#### Error Handling Differences
+    </summary>
+- **Challenge**: REST uses HTTP status codes (200 OK, 404 Not Found, 500 Internal Server Error), but GraphQL always returns 200 OK with errors inside the response body.
+- **Solution**: Implement a custom error-handling mechanism using GraphQLErrorHandler to ensure consistency in error reporting.
+</details>
+
+<details>
+    <summary>
+#### Authentication and Authorization Differences
+    </summary>
+- **Challenge**: In REST, security is usually enforced at the endpoint level (e.g., @PreAuthorize("hasRole('ADMIN')")), but in GraphQL, authorization must be handled inside resolvers.
+- **Solution**: Use GraphQL Context to manage authentication and enforce role-based access control at the resolver level.
+</details>
+
+### SOAP
+The API of a SOAP web service is described using an XML-based language called the
+Web Services Description Language, or WSDL. WSDL enables code generation so
+that a client can access a remote service using local classes and method calls (which
+are encoded to XML messages and decoded again by the framework). This is useful in
+statically typed programming languages, but less so in dynamically typed ones
+
+
+As WSDL is not designed to be human-readable, and as SOAP messages are often too
+complex to construct manually, users of SOAP rely heavily on tool support
+
+
+### RPC
+Using an RPC technology means adopting serialization and deserialization of data.
+RPC frameworks define how data is encoded and decoded,
+and how the remote procedure is called and the result is returned.
+This is often done using a binary protocol, which is more efficient than text-based protocols like SOAP or REST.
+However,
+binary protocols are harder to debug and less interoperable between different programming languages and platforms.
+
+A consumer needs to have access to the same interface definition that the producer used to generate the code.
+
+:::tip
+Avro RPC in an interesting outlier as it sends full schema information with every message, allowing for more flexibility in the data format.
+:::
+
+#### Difference between RPC and Local function calls
+| Aspect | Local Function Call | Network Request |
+|--------|-------------------|-----------------|
+| Predictability | Predictable - succeeds or fails based on parameters under your control | Unpredictable - subject to network problems, machine availability, etc. Requires retry mechanisms |
+| Return Behavior | Returns result, throws exception, or never returns (infinite loop/crash) | Additional outcome: may timeout without result, leaving uncertainty if request went through |
+| Execution Time | Consistent execution time | Much slower and highly variable latency |
+| Parameter Passing | Efficient passing of references/pointers to local memory | Parameters must be encoded to bytes for network transmission. Complex for large objects |
+
+
+**gRPC(build to take advantage of HTTP/2) supports streams, where a call consists of not just one request and one response, but a series of requests and responses over time**
+
+
+:::warning
+The problem with RPC is that with every change, we need to generate new client stubs.
+Client that wants to consume new method needs the new stubs.
+This is manageable in small teams, but in large teams it becomes a problem.
+
+Similarly, if we want to remove a field or rename a field or restructure an object, we need to maintain backward compatibility.
+:::
+
+---
+
+### Message brokers
+A topic provides only one-way dataflow. However, a consumer may itself publish messages to another topic (so you can chain
+them together), or to a reply queue that is consumed by the sender of the original message (allowing a request/response dataflow, similar to RPC).
+
+A variety of message brokers exists like RabbitMQ, Kafka, Amazon SQS, Google Cloud Pub/Sub etc.
+Kafka's popularity is due to its high throughput, fault tolerance, and horizontal scalability making is more suitable for
+stream processing pipelines.
+
+
+:::tip
+One of the easiest ways to provide guaranteed message delivery is to have the consumer acknowledge the message only after it has successfully processed the message.
+One of the easiest ways to provide guaranteed message delivery is to resend the message if the consumer does not acknowledge it within a certain time.
+:::

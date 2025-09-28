@@ -84,6 +84,19 @@ import TabItem from "@theme/TabItem";
     map.putIfAbsent(key, value);
     map.containsKey(key);
     map.merge(key, 1, Integer::sum); // increment value
+    // loop through map
+    for (Map.Entry<Integer, Integer> entry : map.entrySet()) {
+        int key = entry.getKey();
+        int value = entry.getValue();
+    }
+    // Stream
+    map.entrySet().stream().forEach(entry -> {
+        int key = entry.getKey();
+        int value = entry.getValue();
+    });
+    // compute if absent is same as putIfAbsent
+    // useful for lazy initialization
+    map.computeIfAbsent(key, k -> new ArrayList<>());
     ```
   </TabItem>
 
