@@ -1,0 +1,448 @@
+---
+title: Real-World Multi-Threading Examples
+description: "Production-ready multi-threading scenarios in Java"
+sidebar_position: 7
+---
+
+# Real-World Multi-Threading: Disk Usage Monitoring Service
+
+This example demonstrates a practical multi-threading scenario inspired by production code - monitoring disk usage across multiple servers asynchronously. This is a common enterprise pattern used for infrastructure monitoring and health checks.
+
+## Complete Implementation
+
+```java
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.stream.Collectors;
+import java.time.LocalDateTime;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Repository;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+
+// ============= Data Models =============
+
+record ServerConfig(String serverName, String hostname, String environment, 
+                   String application, String[] mountPoints) {}
+
+record MountUsage(String mountPoint, String totalSize, String usedSize, 
+                 LocalDateTime timestamp) {
+    public double getUsagePercent() {
+        // Simplified calculation - in real implementation would parse size strings
+        return Math.random() * 100; // Mock data for example
+    }
+    
+    public String getUsagePercentFormatted() {
+        return String.format("%.1f%%", getUsagePercent());
+    }
+}
+
+record CommandOutput(String server, String command, List<String> output, 
+                    int exitStatus, LocalDateTime executedAt) {}
+
+// ============= Main Service =============
+
+@Service
+@Slf4j
+public class DiskUsageMonitoringService {
+
+    private final Executor taskExecutor;
+    private final ServerConfigurationService serverConfigService;
+    private final SSHService sshService;
+    private final DiskUsageRepository diskUsageRepository;
+
+    @Value("${disk.monitoring.interval.minutes:5}")
+    private int monitoringIntervalMinutes;
+
+    public DiskUsageMonitoringService(Executor taskExecutor, 
+                                    ServerConfigurationService serverConfigService,
+                                    SSHService sshService, 
+                                    DiskUsageRepository diskUsageRepository) {
+        this.taskExecutor = taskExecutor;
+        this.serverConfigService = serverConfigService;
+        this.sshService = sshService;
+        this.diskUsageRepository = diskUsageRepository;
+    }
+
+    /**
+     * Scheduled task that runs every 5 minutes to update disk usage for all servers
+     * Uses CompletableFuture for parallel processing with timeout handling
+     */
+    @Scheduled(fixedDelayString = "${disk.monitoring.interval.minutes:5}m")
+    public void updateAllServersDiskUsage() {
+        log.info("Starting scheduled disk usage update for all servers");
+
+        List<ServerConfig> serverConfigs = serverConfigService.getAllServerConfigs();
+
+        // Process servers in parallel with limited concurrency
+        List<CompletableFuture<Void>> futures = serverConfigs.stream()
+            .map(this::updateServerDiskUsageAsync)
+            .collect(Collectors.toList());
+
+        // Wait for all operations to complete with timeout
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+            .orTimeout(5, TimeUnit.MINUTES)
+            .whenComplete((result, throwable) -> {
+                if (throwable != null) {
+                    log.error("Some disk usage updates failed: {}", throwable.getMessage());
+                } else {
+                    log.info("Completed disk usage update for {} servers", serverConfigs.size());
+                }
+            });
+    }
+
+    /**
+     * Update disk usage for a specific server asynchronously
+     * Demonstrates @Async annotation with custom executor
+     */
+    @Async("taskExecutor")
+    public CompletableFuture<Void> updateServerDiskUsageAsync(ServerConfig serverConfig) {
+        return CompletableFuture.runAsync(() -> {
+            try {
+                // Simulate SSH command execution to get disk usage
+                List<MountUsage> mountUsages = sshService.getDiskUsageForServer(serverConfig);
+                
+                // Store results in repository
+                diskUsageRepository.updateDiskUsage(
+                    serverConfig.serverName(),
+                    mountUsages,
+                    serverConfig.environment(),
+                    serverConfig.application()
+                );
+                
+                log.debug("Updated disk usage for server: {} ({} - {})",
+                    serverConfig.serverName(),
+                    serverConfig.environment(),
+                    serverConfig.application());
+                    
+            } catch (Exception e) {
+                log.error("Failed to update disk usage for server {}: {}",
+                    serverConfig.serverName(), e.getMessage());
+            }
+        }, taskExecutor);
+    }
+
+    /**
+     * Manual trigger for updating specific environment
+     * Demonstrates coordination of multiple async operations
+     */
+    public void updateEnvironmentDiskUsage(String environment) {
+        List<ServerConfig> serverConfigs = 
+            serverConfigService.getServerConfigsByEnvironment(environment);
+
+        List<CompletableFuture<Void>> futures = serverConfigs.stream()
+            .map(this::updateServerDiskUsageAsync)
+            .collect(Collectors.toList());
+
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+            .whenComplete((result, throwable) -> {
+                if (throwable != null) {
+                    log.error("Failed to update disk usage for environment {}: {}",
+                        environment, throwable.getMessage());
+                } else {
+                    log.info("Updated disk usage for {} servers in environment {}",
+                        serverConfigs.size(), environment);
+                }
+            });
+    }
+
+    /**
+     * Manually trigger disk usage update for a specific server
+     */
+    public void updateServerDiskUsage(String serverName) {
+        ServerConfig serverConfig = serverConfigService.getServerConfig(serverName);
+        if (serverConfig != null) {
+            updateServerDiskUsageAsync(serverConfig);
+        } else {
+            log.warn("Server configuration not found for: {}", serverName);
+        }
+    }
+}
+
+// ============= Thread-Safe Repository =============
+
+/**
+ * Thread-safe repository using ConcurrentHashMap and ReadWriteLock
+ * Demonstrates proper synchronization for shared data
+ */
+@Repository
+@Slf4j
+public class DiskUsageRepository {
+    
+    private final Map<String, ServerDiskUsage> serverDiskUsageMap = new ConcurrentHashMap<>();
+    private final ReadWriteLock lock = new ReentrantReadWriteLock();
+
+    /**
+     * Store disk usage data for a server with write lock
+     */
+    public void updateDiskUsage(String serverName, List<MountUsage> mountUsages, 
+                               String environment, String applicationType) {
+        lock.writeLock().lock();
+        try {
+            ServerDiskUsage serverDiskUsage = new ServerDiskUsage(
+                serverName, environment, applicationType, mountUsages, LocalDateTime.now()
+            );
+            serverDiskUsageMap.put(serverName, serverDiskUsage);
+            log.debug("Updated disk usage for server: {} ({} - {})", 
+                serverName, environment, applicationType);
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    /**
+     * Get disk usage data for a specific server with read lock
+     */
+    public ServerDiskUsage getDiskUsage(String serverName) {
+        lock.readLock().lock();
+        try {
+            return serverDiskUsageMap.get(serverName);
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    /**
+     * Get all disk usage data with read lock
+     */
+    public Map<String, ServerDiskUsage> getAllDiskUsage() {
+        lock.readLock().lock();
+        try {
+            return new ConcurrentHashMap<>(serverDiskUsageMap);
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    /**
+     * Get disk usage data for servers in a specific environment
+     */
+    public Map<String, ServerDiskUsage> getDiskUsageByEnvironment(String environment) {
+        lock.readLock().lock();
+        try {
+            return serverDiskUsageMap.entrySet().stream()
+                .filter(entry -> environment.equals(entry.getValue().environment()))
+                .collect(
+                    ConcurrentHashMap::new,
+                    (map, entry) -> map.put(entry.getKey(), entry.getValue()),
+                    ConcurrentHashMap::putAll
+                );
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    /**
+     * Check if data is stale (older than specified minutes)
+     */
+    public boolean isDataStale(String serverName, int staleMinutes) {
+        ServerDiskUsage usage = getDiskUsage(serverName);
+        if (usage == null) return true;
+        
+        return usage.lastUpdated().plusMinutes(staleMinutes).isBefore(LocalDateTime.now());
+    }
+
+    /**
+     * Inner record to hold server disk usage data with metadata
+     */
+    public record ServerDiskUsage(String serverName, String environment, String applicationType,
+                                 List<MountUsage> mountUsages, LocalDateTime lastUpdated) {}
+}
+
+// ============= SSH Service (Simplified) =============
+
+@Service
+@Slf4j
+public class SSHService {
+
+    /**
+     * Simulate getting disk usage for a server
+     * In real implementation, this would execute SSH commands
+     */
+    public List<MountUsage> getDiskUsageForServer(ServerConfig serverConfig) {
+        try {
+            // Simulate network delay
+            Thread.sleep(100 + (long)(Math.random() * 500));
+            
+            List<MountUsage> mountUsages = new ArrayList<>();
+            for (String mountPoint : serverConfig.mountPoints()) {
+                mountUsages.add(new MountUsage(
+                    mountPoint,
+                    "100G", // Total size
+                    String.format("%.0fG", Math.random() * 80), // Used size
+                    LocalDateTime.now()
+                ));
+            }
+            
+            log.debug("Retrieved disk usage for server: {}", serverConfig.serverName());
+            return mountUsages;
+            
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("Interrupted while getting disk usage for server: {}", 
+                serverConfig.serverName());
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Get disk usage for a server asynchronously with timeout
+     */
+    public CompletableFuture<List<MountUsage>> getDiskUsageForServerAsync(ServerConfig serverConfig) {
+        return CompletableFuture.supplyAsync(() -> getDiskUsageForServer(serverConfig))
+            .orTimeout(30, TimeUnit.SECONDS)
+            .exceptionally(throwable -> {
+                log.error("Async disk usage fetch failed for server {}: {}",
+                    serverConfig.serverName(), throwable.getMessage());
+                return new ArrayList<>();
+            });
+    }
+}
+
+// ============= Configuration Service (Simplified) =============
+
+@Service
+public class ServerConfigurationService {
+    
+    private final List<ServerConfig> serverConfigs = Arrays.asList(
+        new ServerConfig("web-server-1", "web1.company.com", "production", "web", 
+                        new String[]{"/", "/var/log"}),
+        new ServerConfig("db-server-1", "db1.company.com", "production", "database", 
+                        new String[]{"/", "/var/lib/mysql"}),
+        new ServerConfig("api-server-1", "api1.company.com", "staging", "api", 
+                        new String[]{"/", "/opt/app"})
+    );
+
+    public List<ServerConfig> getAllServerConfigs() {
+        return new ArrayList<>(serverConfigs);
+    }
+
+    public ServerConfig getServerConfig(String serverName) {
+        return serverConfigs.stream()
+            .filter(config -> config.serverName().equals(serverName))
+            .findFirst()
+            .orElse(null);
+    }
+
+    public List<ServerConfig> getServerConfigsByEnvironment(String environment) {
+        return serverConfigs.stream()
+            .filter(config -> config.environment().equals(environment))
+            .collect(Collectors.toList());
+    }
+}
+
+// ============= Custom Thread Pool Configuration =============
+
+/**
+ * Custom Thread Pool Configuration for optimal performance
+ */
+@Configuration
+@EnableAsync
+@EnableScheduling
+@Slf4j
+public class AsyncConfig {
+
+    @Value("${disk.monitoring.concurrent.threads:10}")
+    private int corePoolSize;
+
+    @Value("${disk.monitoring.concurrent.max.threads:20}")
+    private int maxPoolSize;
+
+    @Value("${disk.monitoring.concurrent.queue.capacity:100}")
+    private int queueCapacity;
+
+    @Bean(name = "taskExecutor")
+    public Executor taskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(corePoolSize);
+        executor.setMaxPoolSize(maxPoolSize);
+        executor.setQueueCapacity(queueCapacity);
+        executor.setThreadNamePrefix("DiskUsage-");
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+        executor.initialize();
+
+        log.info("Configured async task executor with core={}, max={}, queue={}",
+            corePoolSize, maxPoolSize, queueCapacity);
+
+        return executor;
+    }
+}
+```
+
+## Key Multi-Threading Concepts Demonstrated
+
+### 1. **Scheduled Asynchronous Processing**
+- `@Scheduled` annotation for periodic tasks
+- `@Async` annotation for non-blocking execution
+- Custom thread pool configuration
+
+### 2. **CompletableFuture Orchestration**
+- Parallel processing of multiple servers
+- Timeout handling with `orTimeout()`
+- Completion callbacks with `whenComplete()`
+- Exception handling in async operations
+
+### 3. **Thread Safety Patterns**
+- `ConcurrentHashMap` for thread-safe collections
+- `ReadWriteLock` for optimized read/write access
+- Proper lock management with try-finally blocks
+
+### 4. **Resource Management**
+- Custom thread pool with configurable parameters
+- Rejected execution handling
+- Graceful timeout handling
+
+### 5. **Error Handling**
+- Exception handling in async operations
+- Logging for debugging and monitoring
+- Fallback strategies for failed operations
+
+## Common Interview Questions This Example Addresses
+
+1. **How do you handle parallel processing in Spring Boot?**
+   - Using `@Async` with custom thread pools
+   - CompletableFuture for coordinating multiple async operations
+
+2. **What's the difference between @Async and CompletableFuture?**
+   - `@Async` is Spring's annotation for method-level asynchronous execution
+   - `CompletableFuture` provides more control over async workflows and composition
+
+3. **How do you configure custom thread pools?**
+   - Using `ThreadPoolTaskExecutor` with configurable parameters
+   - Setting rejection policies and thread naming
+
+4. **How do you ensure thread safety in repositories?**
+   - Using `ConcurrentHashMap` for basic thread safety
+   - Adding `ReadWriteLock` for optimized concurrent access patterns
+
+5. **How do you handle timeouts in async operations?**
+   - Using `orTimeout()` method on CompletableFuture
+   - Implementing timeout handling in Spring's async methods
+
+6. **What are best practices for error handling in concurrent code?**
+   - Using `exceptionally()` for CompletableFuture error handling
+   - Proper logging and fallback strategies
+   - Interrupt handling for long-running operations
+
+## Real-World Applications
+
+This pattern is commonly used in:
+- **Infrastructure Monitoring**: Checking health of multiple servers
+- **Data Collection**: Gathering metrics from distributed systems
+- **Batch Processing**: Processing multiple items concurrently
+- **API Gateway**: Making parallel calls to downstream services
+- **Report Generation**: Collecting data from multiple sources
+
+## Performance Considerations
+
+- **Thread Pool Sizing**: Core pool size should match expected concurrent load
+- **Queue Capacity**: Prevents memory issues during traffic spikes
+- **Timeout Values**: Should account for network latency and processing time
+- **Lock Granularity**: ReadWriteLock optimizes for read-heavy workloads
