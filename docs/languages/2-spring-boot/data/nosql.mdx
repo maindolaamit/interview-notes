@@ -1,0 +1,107 @@
+---
+title: Spring Data NoSQL
+description: "Spring Data NoSQL"
+sidebar_position: 4
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Spring Data NoSQL
+
+Spring Data provides integration with various NoSQL databases, including MongoDB, Cassandra, and Redis. Each NoSQL database has its own specific features and use cases.
+
+**Key Concepts:**
+
+*   **Repositories:** Similar to JPA, Spring Data provides repository abstractions for NoSQL databases.
+*   **Documents:** Represent data objects stored in NoSQL databases.
+*   **Template:** Provides low-level access to the NoSQL database.
+
+## Spring Data MongoDB
+
+Spring Data MongoDB provides integration with MongoDB.
+
+**Key Features:**
+
+*   **Mapping:** Maps Java objects to MongoDB documents.
+*   **Repositories:** Provides repository abstractions for MongoDB.
+*   **Querying:** Supports various query methods.
+
+**Example:**
+
+```java
+@Document(collection = "products")
+public class Product {
+    @Id
+    private String id;
+    private String name;
+    private double price;
+    // standard getters and setters
+}
+
+public interface ProductRepository extends MongoRepository<Product, String> {
+    List<Product> findByName(String name);
+}
+```
+
+## Spring Data Redis
+
+Spring Data Redis provides integration with Redis.
+
+**Key Features:**
+
+*   **Data Structures:** Supports various Redis data structures, such as strings, lists, sets, and hashes.
+*   **Caching:** Provides caching integration with Redis.
+*   **Repositories:** Provides repository abstractions for Redis.
+
+**Example:**
+
+```java
+@RedisHash("products")
+public class Product {
+    @Id
+    private String id;
+    private String name;
+    private double price;
+    // standard getters and setters
+}
+
+public interface ProductRepository extends CrudRepository<Product, String> {
+    List<Product> findByName(String name);
+}
+```
+
+## Differences from Relational Databases
+
+*   **Schema:** NoSQL databases are often schema-less, while relational databases have a fixed schema.
+*   **Transactions:** NoSQL databases may not support ACID transactions, while relational databases do.
+*   **Joins:** NoSQL databases typically do not support joins, while relational databases do.
+
+## Handling Transactions in NoSQL
+
+*   **MongoDB:** Supports ACID transactions since version 4.0.
+*   **Redis:** Does not support ACID transactions.
+*   **Cassandra:** Supports lightweight transactions (LWT).
+
+**Image Suggestion:**
+
+*   Include a diagram comparing relational databases and NoSQL databases.
+
+    *   File Path: `/Users/amaindola/github/interview-notes/docs/languages/2-spring-boot/data/img/relational-vs-nosql.png` (Create this image)
+
+## Handling NoSQL Differently
+
+* **Transactions:** MongoDB supports ACID transactions (from version 4.0), while Redis does not fully support them.
+* **Data Modeling:** No joins—embed or reference documents accordingly.
+* **Performance Considerations:** Use caching and proper indexing, and consider the eventual consistency model.
+
+:::tip NoSQL Tips
+- Understand the data access patterns and trade‑offs.
+- Favor denormalization over complex joins.
+:::
+
+**Image Suggestion:**  
+Diagram comparing relational databases with NoSQL databases.  
+File: `/Users/amaindola/github/interview-notes/docs/languages/2-spring-boot/data/img/relational-vs-nosql.png`
+
+// ...existing code samples and explanations...

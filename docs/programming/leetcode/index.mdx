@@ -10,18 +10,45 @@ import TabItem from "@theme/TabItem";
 ### Useful Java Snippets for LeetCode
 
 <Tabs>
+  <TabItem value="Arrays">
+    ### 2D Array Creation
+    ```java
+    int m = 3, n = 4;
+    int[][] array2d = new int[m][n];
+    
+    // Fill with value
+    Arrays.fill(array, value);
+    
+    // Fill 2D array
+    for(int[] row : array2d) {
+        Arrays.fill(row, value);
+    }
+
+    // Sort array
+    int[] arr = {3, 1, 4, 1, 5};
+    // ascending
+    Arrays.sort(arr); 
+    // descending for Integer[]
+    Arrays.sort(arr, Collections.reverseOrder()); 
+    ```
+
+    ### Array to List
+    ```java
+    Integer[] array = {1, 2, 3};
+    List<Integer> list = Arrays.asList(array);
+    List<Integer> list2 = new ArrayList<>(Arrays.asList(array));
+    ```
+  </TabItem>
   <TabItem value="Collections">
     ### Sort Array/List
     ```java
-    // Sort array
-    int[] arr = {3, 1, 4, 1, 5};
-    Arrays.sort(arr); // ascending
-    Arrays.sort(arr, Collections.reverseOrder()); // descending for Integer[]
-    
     // Sort list
     List<Integer> list = new ArrayList<>();
     Collections.sort(list); // ascending
     Collections.sort(list, Collections.reverseOrder()); // descending
+
+    // export to Array
+    Integer[] array = list.toArray(new Integer[0]);
     ```
 
     ### Sort Custom Objects
@@ -57,11 +84,41 @@ import TabItem from "@theme/TabItem";
     map.putIfAbsent(key, value);
     map.containsKey(key);
     map.merge(key, 1, Integer::sum); // increment value
+    // loop through map
+    for (Map.Entry<Integer, Integer> entry : map.entrySet()) {
+        int key = entry.getKey();
+        int value = entry.getValue();
+    }
+    // Stream
+    map.entrySet().stream().forEach(entry -> {
+        int key = entry.getKey();
+        int value = entry.getValue();
+    });
+    // compute if absent is same as putIfAbsent
+    // useful for lazy initialization
+    map.computeIfAbsent(key, k -> new ArrayList<>());
     ```
   </TabItem>
 
   <TabItem value="Strings">
     ## String Operations
+
+    ### Normal
+    ```java
+    String s = "hello";
+    s.charAt(index); // get character at index
+    s.length(); // get length of string
+    s.substring(start, end); // get substring from start to end
+    s.substring(start, start + length); // get substring from start to start + length
+    s.indexOf(substring); // get index of substring
+    s.isEmpty(); // check if string is empty
+    s.equals(otherString); // check if string is equal to other string
+    s.equalsIgnoreCase(otherString); // check if string is equal to other string ignoring case
+    s.contains(substring); // check if string contains substring
+    s.startsWith(prefix); // check if string starts with prefix
+    s.endsWith(suffix); // check if string ends with suffix
+    s.replace(oldChar, newChar); // replace old character with new character
+    ```
 
     ### StringBuilder
     ```java
@@ -78,29 +135,6 @@ import TabItem from "@theme/TabItem";
     String s = "hello";
     char[] chars = s.toCharArray();
     String[] words = s.split("\\s+");
-    ```
-  </TabItem>
-
-  <TabItem value="Arrays">
-    ### 2D Array Creation
-    ```java
-    int m = 3, n = 4;
-    int[][] array2d = new int[m][n];
-    
-    // Fill with value
-    Arrays.fill(array, value);
-    
-    // Fill 2D array
-    for(int[] row : array2d) {
-        Arrays.fill(row, value);
-    }
-    ```
-
-    ### Array to List
-    ```java
-    Integer[] array = {1, 2, 3};
-    List<Integer> list = Arrays.asList(array);
-    List<Integer> list2 = new ArrayList<>(Arrays.asList(array));
     ```
   </TabItem>
 </Tabs>

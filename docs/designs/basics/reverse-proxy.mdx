@@ -21,6 +21,25 @@ API Gateways are commonly implemented using technologies like NGINX, Kong, Apige
 ### What is a Reverse Proxy ?
 A reverse proxy is a web server that centralizes internal services and provides unified interfaces to the public. Requests from clients are forwarded to a server that can fulfill it before the reverse proxy returns the server's response to the client.
 
+```mermaid
+graph LR
+    A[Client 1] --> D[Reverse Proxy]
+    B[Client 2] --> D
+    C[Client 3] --> D
+    
+    D --> E[Backend Server 1]
+    D --> F[Backend Server 2]
+    D --> G[Backend Server 3]
+    
+    style D fill:#e1f5fe
+    style A fill:#f3e5f5
+    style B fill:#f3e5f5
+    style C fill:#f3e5f5
+    style E fill:#e8f5e8
+    style F fill:#e8f5e8
+    style G fill:#e8f5e8
+```
+
 Additional benefits include:
 
 - Increased security - Hide information about backend servers, blacklist IPs, limit number of connections per client
@@ -29,13 +48,12 @@ Additional benefits include:
 - Removes the need to install X.509 certificates on each server
 - Compression - Compress server responses
 - Caching - Return the response for cached requests
-- Static content - Serve static content directly
-- HTML/CSS/JS
-- Photos
-- Videos
-- Etc
+- Static content - Serve static content directly like HTML/CSS/JS, Photos, Videos , etc.
 
-##### Disadvantage(s): reverse proxy
+
+
+### Disadvantage(s): reverse proxy
 Introducing a reverse proxy results in increased complexity.
-A single reverse proxy is a single point of failure, configuring multiple reverse proxies (ie a failover) further increases complexity.
+- A single reverse proxy is a single point of failure
+- Configuring multiple reverse proxies (ie a failover) further increases complexity.
 

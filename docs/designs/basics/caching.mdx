@@ -1,7 +1,7 @@
 ---
 title: Caching
 description : "Systems Design Basics"
-sidebar_position: 3
+sidebar_position: 5
 ---
 
 ### What is Distributed Caching?
@@ -12,9 +12,7 @@ it is called a `cache hit`, if not, it is called a `cache miss` and the data has
 - A cache is a temporary storage component area where the data is stored so that it can be accessed quickly in the future.
 - Distributed caching is the process of caching data in multiple cache instances that are deployed in different servers.
 - Distributed caching is used to improve the performance of applications by reducing the load on the database.
-- Distributed caching is used to store data that is frequently accessed by applications.
-- Distributed caching is used to store data that is expensive to compute.
-- Distributed caching is used to store data that is shared by multiple users.
+- Distributed caching is used to store data that is frequently accessed by applications, expensive to compute, shared by multiple users.
 
 #### Cache Invalidation Strategies
 - **Write-Through Cache:** In this strategy, data is written into the cache and the corresponding database at the same time. This ensures that the cache is never stale, but has the disadvantage of lower write performance due to the dual writes.
@@ -22,22 +20,62 @@ it is called a `cache hit`, if not, it is called a `cache miss` and the data has
 - **Write-Back Cache:** In this strategy, data is written to the cache and the write is immediately acknowledged to the client. The write to the backend storage is performed sometime later. This can improve write performance, but has the disadvantage of potential data loss in the event of a crash, since the only copy of the written data is in the cache.
 - **Refresh Ahead Cache:** In this strategy, the cache is proactively refreshed in anticipation of future requests. This can help avoid the latency of cache misses, but runs the risk of refreshing data that is never read.
 
+
+```mermaid
+graph LR
+    A[Client] --> B{Cache Strategy}
+    B -->|Write-Through| C[Cache + DB simultaneously]
+    B -->|Write-Around| D[DB directly]
+    B -->|Write-Back| E[Cache first, DB later]
+    B -->|Refresh-Ahead| F[Proactive Cache Update]
+```
+
+
+
+
 #### Cache Eviction Policies
 - **First In, First Out (FIFO):** The cache evicts the first block accessed first without any regard to how often or how many times it was accessed before.
 - **Last In, First Out (LIFO):** The cache evicts the block accessed most recently first without any regard to how often or how many times it was accessed before.
 - **Least Recently Used (LRU):** Discards the least recently used items first.
 - **Most Recently Used (MRU):** Discards, in contrast to LRU, the most recently used items first.
 
+```mermaid
+graph LR
+    A[Cache] --> B{Eviction Policy}
+    B -->|FIFO| C[First In, First Out]
+    B -->|LIFO| D[Last In, First Out]
+    B -->|LRU| E[Least Recently Used]
+    B -->|MRU| F[Most Recently Used]
+```
+
+
+
 ### What is a CDN
-A content delivery network (CDN) is a globally distributed network of proxy servers, serving content from locations closer to the user. Generally, static files such as HTML/CSS/JS, photos, and videos are served from CDN, although some CDNs such as Amazon's CloudFront support dynamic content. The site's DNS resolution will tell clients which server to contact.
+A content delivery network (CDN) is a **globally distributed network of proxy servers, serving content from locations closer to the user**. Generally, static files such as HTML/CSS/JS, photos, and videos are served from CDN, although some CDNs such as Amazon's CloudFront support dynamic content. The site's DNS resolution will tell clients which server to contact.
 
 Serving content from CDNs can significantly improve performance in two ways:
 
 - Users receive content from data centers close to them
 - Your servers do not have to serve requests that the CDN fulfills
 
+```mermaid
+graph LR
+    A[Server] --> B[CDN]
+    B --> C[User]
+```
 #### Push CDNs
 Push CDNs receive new content whenever changes occur on your server. You take full responsibility for providing content, uploading directly to the CDN and rewriting URLs to point to the CDN. You can configure when content expires and when it is updated. Content is uploaded only when it is new or changed, minimizing traffic, but maximizing storage.
+```mermaid
+graph TB
+    A1[Origin Server] -->|1. Content Upload| B1[CDN Edge Server]
+    B1 -->|2. Content Delivery| C1[User Request]
+    D1[Content Changes] -->|3. Immediate Push| B1
+    
+    style A1 fill:#e1f5fe
+    style B1 fill:#f3e5f5
+    style C1 fill:#e8f5e8
+```
+
 
 :::note
 Sites with a small amount of traffic or sites with content that isn't often updated work well with push CDNs. Content is placed on the CDNs once, instead of being re-pulled at regular intervals.
@@ -49,6 +87,19 @@ Pull CDNs grab new content from your server when the first user requests the con
 A time-to-live (TTL) determines how long content is cached. Pull CDNs minimize storage space on the CDN, but can create redundant traffic if files expire and are pulled before they have actually changed.
 
 Sites with heavy traffic work well with pull CDNs, as traffic is spread out more evenly with only recently-requested content remaining on the CDN.
+```mermaid
+graph TB
+    A2[Origin Server] 
+    B2[CDN Edge Server] -->|1. First Request| A2
+    A2 -->|2. Content Fetch| B2
+    B2 -->|3. Cached Content| C2[Subsequent Users]
+    C2 -->|4. Cache Miss/TTL Expired| B2
+    B2 -->|5. Re-fetch from Origin| A2
+    
+    style A2 fill:#e1f5fe
+    style B2 fill:#f3e5f5
+    style C2 fill:#e8f5e8
+```
 
 **Disadvantage(s):** CDN
 - CDN costs could be significant depending on traffic, although this should be weighed with additional costs you would incur not using a CDN.

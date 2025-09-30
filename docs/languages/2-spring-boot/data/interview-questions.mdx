@@ -1,0 +1,63 @@
+---
+title: Interview Questions
+description: "Intermediate Spring Data Interview Questions and Tips"
+sidebar_position: 15
+---
+
+# Spring Data Interview Questions
+
+This section reviews common interview questions for intermediate Spring Data developers.  
+Each question is accompanied by tips, tricks, and key points.
+
+## General Questions
+
+1. What is Spring Data and what problems does it solve?  
+   :::tip  
+   Tip: Focus on its unified repository model, support for multiple data stores, and auto‑configuration features.  
+   :::
+
+2. How does Spring Data abstract data access from multiple sources?  
+   :::tip  
+   Tip: Mention repository interfaces, templates, and declarative transactions.
+   :::
+
+## JPA & Hibernate
+
+1. What are the key differences between `JpaRepository` and `CrudRepository`?  
+2. How do you handle entity relationships (One‑to‑Many, Many‑to‑Many) in JPA?  
+3. Explain lazy loading and its impact on performance.  
+4. What are the common performance improvements in Hibernate (batch updates, caching, etc.)?  
+   :::tip  
+   Tip: Explain how statement caching and connection pooling contribute to performance.
+   :::
+
+## NoSQL
+
+1. What are the advantages and limitations of schema‑less databases versus relational databases?  
+2. How do you design a NoSQL data model in Spring Data MongoDB or Redis?  
+3. What are the trade‑offs of using NoSQL in terms of transactions and consistency?  
+   :::tip  
+   Tip: Focus on denormalization, embedding versus referencing, and the eventual consistency model.
+   :::
+
+## Transactions & JTA
+
+1. When should you use JTA over local transactions?  
+2. Explain the two‑phase commit protocol.  
+3. What are the potential performance issues with distributed transactions?  
+   :::tip  
+   Tip: Emphasize using JTA only when multiple data sources are involved.
+   :::
+
+## Performance Optimizations
+
+1. How can connection pooling, batch updates, and statement caching enhance performance in Spring Data?  
+2. What is the role of `@Transactional(readOnly=true)`?  
+3. How do you monitor and tune data access performance using Spring Boot?  
+   :::tip  
+   Tip: Mention configuration properties and integration with monitoring tools (e.g., FlexyPool, datasource-proxy).
+   :::
+
+**Image Suggestion:**  
+Consider including a mind map of common Spring Data interview questions.  
+File: `/Users/amaindola/github/interview-notes/docs/languages/2-spring-boot/data/img/interview-questions-mindmap.png`

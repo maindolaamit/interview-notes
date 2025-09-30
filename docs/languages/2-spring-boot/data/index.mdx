@@ -1,0 +1,55 @@
+---
+title: Spring Data 
+description: "Overview of Spring Data Modules, Core Concepts & Architecture"
+sidebar_position: 3
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Spring Data Overview
+
+Spring Data provides a unified approach for accessing different data stores, including relational databases, NoSQL databases, and more. It covers these key modules:
+
+**Key Modules:**
+
+* **Spring Data JPA:** Simplifies relational database access via JPA/Hibernate.
+* **Spring Data NoSQL:** Integrates with MongoDB, Redis, Cassandra, etc.
+* **Transaction Management:** Covers local and distributed transactions with support for JTA and two‑phase commits.
+* **Performance Enhancements:** Techniques like connection pooling, batch updates, caching, and statement optimization.
+
+**Core Concepts:**
+
+*   **Repositories:** Interfaces that extend `JpaRepository` or `CrudRepository` to provide basic CRUD operations.
+*   **Entities:** Classes annotated with `@Entity` that represent database tables or NoSQL collections.
+*   **Entity Manager:** Interface used to interact with the persistence context.
+*   **Transactions:** Managed using `@Transactional` annotation to manage atomic operations.
+
+:::note
+`@Repository` is useful for translating the
+unchecked sQl specific exception to spring exceptions. This way, we have to
+handle only DataAccessException
+:::
+
+:::tip Tips & Tricks
+- Use repository abstractions to reduce boilerplate.
+- Leverage auto‑configuration provided by Spring Boot.
+- Prefer declarative transaction management using `@Transactional`.
+:::
+
+```mermaid
+graph LR
+    A[Spring Application] --> B(Spring Data Core);
+    B --> C{Repositories};
+    B --> D{Entities};
+    B --> E{Data Source Configuration};
+    C --> F[JpaRepository];
+    C --> G[CrudRepository];
+    D --> H((@Entity));
+    E --> I{Database};
+    style A fill:#f9f,stroke:#333,stroke-width:2px
+    style B fill:#ccf,stroke:#333,stroke-width:2px
+    style C fill:#ccf,stroke:#333,stroke-width:2px
+    style D fill:#ccf,stroke:#333,stroke-width:2px
+    style E fill:#ccf,stroke:#333,stroke-width:2px
+```

@@ -1,0 +1,378 @@
+---
+title: Performance in Spring Data 
+description: "Spring Data Performance"
+sidebar_position: 5
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Spring Data Performance
+
+**Spring's Role in JDBC Performance Optimization**
+
+Using various JDBC performance optimization techniques, Spring leverages and enhances these techniques,
+particularly through its transaction management and integration with connection pooling libraries.
+
+Refresh your Knowledge on [Persistence](@docs/languages/java/persistence)
+
+<Tabs>
+    <TabItem value="Connection Pooling" label="Connection Pooling">
+        * Understand the importance of connection pooling for reducing the overhead associated with establishing and
+        closing database connections.
+        * connection pools act as bounded buffers, leveling traffic spikes and preventing the database from becoming
+        overwhelmed.
+        * Note the significance of configuring the appropriate pool size based on application-specific database access
+        patterns and connection usage monitoring.
+        * Spring facilitates the integration of connection pooling solutions like HikariCP by providing configuration
+        mechanisms to easily manage pool properties.
+
+        For instance, Spring Boot applications using HikariCP can configure connection pool parameters like
+        `maximumPoolSize`, `minimumIdle`, and `connectionTimeout` directly in the `application.properties` file.
+
+    </TabItem>
+    <TabItem value="Transaction Management" label="Transaction Management">
+
+        * Spring's declarative transaction management, using annotations like `@Transactional`, simplifies the handling
+        of transactions and promotes better resource utilization.
+        * The `@Transactional(readOnly=true)` annotation optimizes read-only transactions by signaling to the underlying
+        JPA provider and JDBC connection to potentially apply database-specific read-only optimizations.
+        * Spring offers control over transaction isolation levels through the `isolation` attribute of the
+        `@Transactional` annotation, allowing developers to fine-tune the level of concurrency and data consistency for
+        their transactions.
+        * The sources explain that while Java EE doesn't inherently support declarative read-only transactions or
+        isolation level configuration, Spring provides these features, extending the capabilities of standard Java EE
+        transaction management.
+    </TabItem>
+
+    <TabItem value="Batch Updates" label="Batch Updates">
+
+        * Understand the benefits of using JDBC batch updates to group multiple DML statements into a single database
+        request, reducing the number of database roundtrips and improving transaction response time.
+        * Spring, particularly through Hibernate, supports transparent statement batching.
+        * This allows developers to enable batch updates without significant code changes, even after the data access
+        logic is already implemented.
+        * Configuration properties like `spring.jpa.properties.hibernate.jdbc.batch_size` in Spring Boot allow for
+        customizing the batch size to optimize performance further.
+
+    </TabItem>
+
+    <TabItem value="Statement Caching" label="Statement Caching">
+        * Using caching, both server-side and client-side, can significantly improve performance by reusing parsed and
+        optimized SQL statements.
+        * They note that prepared statements, due to their parameterized nature, are more suitable for statement
+        caching.
+        * Spring's reliance on prepared statements in data access operations, particularly through JPA and Hibernate,
+        naturally promotes the utilization of statement caching mechanisms.
+        * The sources also highlight the importance of carefully managing statement cache size and configuration to
+        prevent issues like cache eviction of frequently used statements.
+
+    </TabItem>
+
+    <TabItem value="Monitoring and Logging" label="Monitoring and Logging">
+
+        * Advocate for monitoring database connections and logging SQL statements and parameters to gain insights into
+        the performance of the data access layer.
+        * They discuss tools like FlexyPool for connection monitoring and libraries like datasource-proxy and P6Spy for
+        statement logging.
+        * Spring facilitates the integration of these monitoring and logging tools, providing the flexibility to
+        incorporate them into applications to enhance performance analysis and debugging.
+
+    </TabItem>
+
+    <TabItem value="Delaying Connection Acquisition" label="Delaying Connection Acquisition">
+
+        * Acquiring database connections prematurely can lead to performance penalties, especially when there are
+        long-running tasks before the first SQL statement execution.
+        * They suggest informing Hibernate to disable auto-commit and delay connection acquisition until necessary.
+        * Spring supports this optimization by allowing developers to disable auto-commit in connection pool
+        configurations and through the `spring.jpa.properties.hibernate.connection.provider_disables_autocommit`
+        property.
+
+        In essence, Spring acts as a framework that simplifies and enhances the use of various JDBC performance
+        optimization techniques. It provides developers with the tools and configuration options to leverage these
+        techniques effectively, resulting in improved performance and scalability for data-intensive applications.
+
+    </TabItem>
+</Tabs>
+
+---
+Optimizing data access is crucial for application performance. Spring Data provides various techniques to improve performance.
+
+## Performance Optimization Strategies
+
+Spring Data offers several strategies to enhance application performance:
+
+*   **Connection Pooling:** Leverage HikariCP, configured in `application.properties`, to minimize database connection overhead.
+*   **Batch Updates & Statement Caching:** Utilize Hibernate properties for efficient DML operations and SQL statement reuse.
+*   **Read-Only Transactions:** Optimize read-only operations with `@Transactional(readOnly = true)`.
+*   **Lazy Loading:** Improve responsiveness by deferring the loading of related entities. Use judiciously to avoid N+1 problems.
+*   **Caching:** Implement caching mechanisms to store and retrieve frequently accessed data, reducing database load.
+
+## Connection Pooling
+
+Connection pooling is a technique to reduce the overhead of establishing database connections. Spring Boot automatically configures connection pooling using HikariCP.
+
+**Configuration:**
+
+```properties
+spring.datasource.hikari.maximum-pool-size=10
+spring.datasource.hikari.minimum-idle=5
+spring.datasource.hikari.connection-timeout=30000
+```
+
+## Batch Updates
+
+Batch updates are used to group multiple DML statements into a single database request.
+
+**Example:**
+
+```java
+@Transactional
+public void batchUpdate(List<Product> products) {
+    entityManager.unwrap(Session.class).doWork(connection -> {
+        PreparedStatement preparedStatement = connection.prepareStatement(
+            "UPDATE product SET name = ?, price = ? WHERE id = ?"
+        );
+        for (Product product : products) {
+            preparedStatement.setString(1, product.getName());
+            preparedStatement.setDouble(2, product.getPrice());
+            preparedStatement.setString(3, product.getId());
+            preparedStatement.addBatch();
+        }
+        preparedStatement.executeBatch();
+    });
+}
+```
+
+## Statement Caching
+
+Statement caching is used to reuse parsed and optimized SQL statements.
+
+**Configuration:**
+
+```properties
+spring.jpa.properties.hibernate.jdbc.batch_size=50
+spring.jpa.properties.hibernate.order_inserts=true
+spring.jpa.properties.hibernate.order_updates=true
+spring.jpa.properties.hibernate.cache.use_second_level_cache=true
+spring.jpa.properties.hibernate.cache.use_query_cache=true
+```
+
+## Caching
+
+Spring provides caching integration with various caching providers, such as Redis and Caffeine.
+
+**Example:**
+
+```java
+@Service
+@CacheConfig(cacheNames = "products")
+public class ProductService {
+    @Cacheable(key = "#id")
+    public Product findById(String id) {
+        // ...
+    }
+
+    @CachePut(key = "#product.id")
+    public Product update(Product product) {
+        // ...
+    }
+
+    @CacheEvict(key = "#id")
+    public void delete(String id) {
+        // ...
+    }
+}
+```
+
+The **SKIP LOCKED** option in SQL queries is useful in scenarios where **concurrent transactions process tasks without waiting for locked rows to be released**. This is particularly beneficial in implementing **concurrent table-based queues**, also known as job queues or batch queues.
+
+Here's how `SKIP LOCKED` works and when it's useful:
+
+*   **Functionality**: This SQL option instructs the database to **skip rows that are currently locked by other transactions** and to **lock only the rows that have not been locked previously**.
+*   **Use case**: Consider a scenario where multiple concurrent transactions need to process tasks from a queue. Without `SKIP LOCKED`, if one transaction encounters a locked row (task), it would have to wait for the lock to be released, potentially causing delays and reducing concurrency. `SKIP LOCKED` allows the transaction to skip the locked row and proceed to the next available (unlocked) row, thus maximizing concurrency and throughput.
+*   **Implementation**: To set up `SKIP LOCKED` in Spring Boot, you need to:
+*   Use `@Lock(LockModeType.PESSIMISTIC_WRITE)`
+*   Use `@QueryHint` to set `javax.persistence.lock.timeout` to `SKIP_LOCKED`
+*   Configure the appropriate Hibernate dialect for your database (e.g., `MySQL8Dialect` for MySQL 8 or `PostgreSQL95Dialect` for PostgreSQL 9.5)
+*   **Example**: Imagine a book review system where multiple reviewers are assigned books to review. Each book can be in a `PENDING` status until reviewed. Using `SKIP LOCKED`, multiple reviewers can simultaneously fetch available books for review without waiting for others to release locks.
+
+
+Sets are preferred over lists in `@ManyToMany` associations primarily due to their superior performance, especially when remove operations are involved.
+
+Key reasons to choose `Set` over `List` in `@ManyToMany` relationships:
+
+*   **Performance**: Hibernate treats `@ManyToMany` relationships as two unidirectional `@OneToMany` associations. Using `Set` avoids the performance overhead associated with maintaining the order of elements, which is inherent in `List` implementations like `ArrayList`.
+*   **Removal Efficiency**: `Set` performs much better than `List`, especially if remove operations are involved.
+*   **Cartesian Product Problem**: When fetching associated collections, switching from `Set` to `List` might seem like a solution to preserve order but can result in a huge Cartesian product during the merging of intermediate result sets. It is better to fetch at most one association at a time, even if this means more than one query, to avoid this huge Cartesian product.
+*   **Maintaining Order**: `java.util.ArrayList` preserves the order of inserted elements, while `java.util.HashSet` does not. If order is important, other approaches should be considered, keeping in mind the performance implications.
+*Note*: If using List, be aware of issue hhh-58557 that was fixed starting with Hibernate 5.0.8.
+
+### Entity Graphs
+<details>
+    <summary>Entity Graphs</summary>
+
+    ### **Entity Graphs in Spring Data JPA**
+    In **Spring Data JPA**, an **Entity Graph** is a feature that helps optimize queries by defining which related entities should be fetched eagerly rather than using lazy loading. This improves performance by reducing the number of database queries (commonly known as the **N+1 problem**).
+
+    #### **Why Use Entity Graphs?**
+    By default, JPA fetches relationships lazily (unless set to `EAGER`), which can lead to multiple queries for related entities. With **Entity Graphs**, we can specify which associations should be fetched **immediately** to avoid unnecessary additional queries.
+
+    ---
+
+    ## **Practical Example: Using Entity Graph in Spring Boot**
+    ### **Scenario**
+    We have two entities:
+    1. **Department** (parent entity)
+    2. **Employee** (child entity, related to Department)
+
+    ### **Step 1: Define Entities**
+    ```java
+    import jakarta.persistence.*;
+    import java.util.List;
+
+    @Entity
+    public class Department {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+
+    @OneToMany(mappedBy = "department", fetch = FetchType.LAZY) // Default is lazy loading
+    private List<Employee> employees;
+
+    // Getters and Setters
+}
+    ```
+    ```java
+    import jakarta.persistence.*;
+
+    @Entity
+    public class Employee {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+
+    @ManyToOne
+    @JoinColumn(name = "department_id")
+    private Department department;
+
+    // Getters and Setters
+}
+    ```
+    ---
+    ### **Step 2: Define Entity Graph in Repository**
+    ```java
+    import org.springframework.data.jpa.repository.EntityGraph;
+    import org.springframework.data.jpa.repository.JpaRepository;
+    import java.util.List;
+
+    public interface DepartmentRepository extends JpaRepository<Department, Long> {
+
+    // EntityGraph ensures employees are fetched with the department in one query
+    @EntityGraph(attributePaths = {"employees"})
+    List<Department> findAll();
+}
+    ```
+    ---
+    ### **Step 3: Using Entity Graph in Service Layer**
+    ```java
+    import org.springframework.stereotype.Service;
+    import java.util.List;
+
+    @Service
+    public class DepartmentService {
+
+    private final DepartmentRepository departmentRepository;
+
+    public DepartmentService(DepartmentRepository departmentRepository) {
+    this.departmentRepository = departmentRepository;
+}
+
+    public List<Department> getAllDepartmentsWithEmployees() {
+    return departmentRepository.findAll();
+}
+}
+    ```
+    ---
+    ### **Step 4: Testing with REST Controller**
+    ```java
+    import org.springframework.web.bind.annotation.GetMapping;
+    import org.springframework.web.bind.annotation.RequestMapping;
+    import org.springframework.web.bind.annotation.RestController;
+    import java.util.List;
+
+    @RestController
+    @RequestMapping("/departments")
+    public class DepartmentController {
+
+    private final DepartmentService departmentService;
+
+    public DepartmentController(DepartmentService departmentService) {
+    this.departmentService = departmentService;
+}
+
+    @GetMapping
+    public List<Department> getDepartments() {
+    return departmentService.getAllDepartmentsWithEmployees();
+}
+}
+    ```
+    ---
+    ### **How It Works**
+    1. The `@EntityGraph(attributePaths = {"employees"})` ensures that when fetching departments, the associated employees are retrieved **in a single query** instead of separate queries for each department.
+    2. Without `@EntityGraph`, each department query would trigger an additional query for its employees (**N+1 problem**).
+    3. Now, when we hit `GET /departments`, the response contains **departments along with employees**, fetched efficiently.
+
+    ---
+    ### **SQL Query Comparison**
+    **Without Entity Graph (Lazy Loading)**:
+    ```sql
+    SELECT * FROM department;
+    SELECT * FROM employee WHERE department_id = ?;  -- Runs N times (N = # of departments)
+    ```
+    **With Entity Graph (Eager Fetching in One Query)**:
+    ```sql
+    SELECT d.*, e.* FROM department d
+    LEFT JOIN employee e ON d.id = e.department_id;
+    ```
+
+    ---
+    ### **Key Takeaways**
+    ✅ **Prevents N+1 problem** by fetching related data in a single query
+    ✅ **Optimizes performance** by reducing the number of queries
+    ✅ **Improves maintainability** compared to manually using `JOIN FETCH` in JPQL
+
+    Would you like an advanced example using **NamedEntityGraph** or **dynamic entity graphs**? 🚀
+</details>
+
+---
+
+### Immutable Entities
+**Immutable entities** are a design pattern in JPA where an entity's state cannot be modified after it has been created.
+By using immutable entities, **applications can reduce memory consumption and CPU usage, especially when dealing with caching and data retrieval operations**.
+
+Here’s how immutable entities are defined and how they enhance performance:
+
+**Definition of an Immutable Entity**:
+*   Must be annotated with `@Immutable` from `org.hibernate.annotations.Immutable`.
+*   Should not contain any associations such as `@ElementCollection`, `@OneToOne`, `@OneToMany`, `@ManyToOne`, or `@ManyToMany`.
+
+**Performance Improvements**:
+*   **Second Level Cache**: Immutable entities are **stored in the Second Level Cache as an entity reference instead of a disassembled state.**
+    This avoids the performance penalty of reconstructing an entity from its disassembled state, which involves creating a new entity instance and populating it with the disassembled state.
+*   **Read-Only Optimization**: Entities of immutable classes are automatically loaded as read-only entities.
+
+**Behavior**:
+*   **Updating**: Attempting to update an immutable entity will be silently ignored without causing errors.
+*   **Deleting**: Deleting an immutable entity will fetch the entity from the Second Level Cache (if present) and delete it from both the cache and the database.
+
+**Configuration**:
+*   The `hibernate.cache.use_reference_entries` configuration property must be set to `true`.
+
