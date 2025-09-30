@@ -15,7 +15,7 @@ I started this project to help myself and others prepare for interviews. The ans
 - **[Microservices:](/docs/microservices/intro)** Questions related to microservices architecture and design patterns.
 - **[System Design:](/docs/designs)** Questions related to designing scalable and efficient systems.
 - **[Algorithms and Data Structures:](/docs/programming/lld/)** Competitive programming questions and concepts.
-- **[Behavioral Questions:](/docs/behavioral)** Questions related to teamwork, leadership, and problem-solving skills.
+- **[Behavioral Questions:](/docs/behavioural)** Questions related to teamwork, leadership, and problem-solving skills.
 
 ## How to Use
 

@@ -113,8 +113,6 @@ Only one transaction can hold the lock for any given object; if another transact
 it must wait until the first transaction is committed or aborted before it can acquire the lock and continue
 </details>
 
-**Write committed is a very popular isolation level.
-It is the default setting in Oracle 11g, PostgresSQL, SQL Server 2012, MemSQL, and many other databases**
 
 
 :::note
@@ -178,7 +176,6 @@ data is read), in contrast with `schema-on-write` (the traditional approach of r
 
     If the data in your application has a document-like structure (i.e., a tree of one-to many relationships, where
     typically the entire tree is loaded at once), then it's probably a good idea to use a document model.
-    Data Models and Query Languages a good idea to use a document model.
 
     The poor support for joins in document databases may or may not be a problem,
     depending on the application.

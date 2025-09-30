@@ -49,7 +49,7 @@ Consistent hashing is a special kind of hashing such that when a hash table is r
 - To store a key-value pair, the key is hashed to yield an integer, which is then mapped modulo the number of servers, `n`. This maps the key to one of the `n` servers.
 - This approach is simple and works well until the number of servers changes. When a server is added, most keys have to be remapped to different servers. When a server is removed, even more keys have to be remapped to different servers.
 - Applying modulus operation to the hash function can lead to uneven distribution of keys.
-::::
+:::
 
 ### Hash Space and Hash Ring
 - The hash space is a circle with values ranging from `0` to `2^32-1` (32-bit hash values).
