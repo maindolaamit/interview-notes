@@ -103,6 +103,24 @@ import TabItem from "@theme/TabItem";
   <TabItem value="Strings">
     ## String Operations
 
+    ### Characters 
+    ```java
+    char c = 'a';
+    boolean isDigit = Character.isDigit(c);
+    boolean isLetter = Character.isLetter(c);
+    boolean isLower = Character.isLowerCase(c);
+    boolean isUpper = Character.isUpperCase(c);
+    boolean isVowel = "aeiouAEIOU".indexOf(c) != -1;
+    boolean isConsonant = Character.isLetter(c) && !isVowel;
+    boolean isWhitespace = Character.isWhitespace(c);
+    boolean isAlphabetic = Character.isAlphabetic(c);
+    boolean isLetterOrDigit = Character.isLetterOrDigit(c);
+    //
+    char lower = Character.toLowerCase(c);
+    char upper = Character.toUpperCase(c);
+    int digit = Character.getNumericValue(c); // convert char to int
+    ```
+
     ### Normal
     ```java
     String s = "hello";
@@ -135,6 +153,13 @@ import TabItem from "@theme/TabItem";
     String s = "hello";
     char[] chars = s.toCharArray();
     String[] words = s.split("\\s+");
+    // split by space
+    String[] words = s.split("\\s+");
+    // split by comma
+    String[] items = s.split(",");
+    // join array to string with delimiter
+    String joined = String.join(",", words); // join array to string with delimiter
+
     ```
   </TabItem>
 </Tabs>
