@@ -1,42 +1,42 @@
-import { themes as prismThemes } from "prism-react-renderer";
-import type { Config } from "@docusaurus/types";
-import type * as Preset from "@docusaurus/preset-classic";
+import { themes as prismThemes } from 'prism-react-renderer';
+import type { Config } from '@docusaurus/types';
+import type * as Preset from '@docusaurus/preset-classic';
 
 const config: Config = {
-  title: "InterviewNotes",
-  tagline: "Interviews are cool",
-  favicon: "img/favicon.ico",
+  title: 'InterviewNotes',
+  tagline: 'Interviews are cool',
+  favicon: 'img/favicon.ico',
 
   // Set the production url of your site here
-  url: "https://github.com/",
+  url: 'https://maindolaamit.github.io',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: "/",
+  baseUrl: '/',
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
-  organizationName: "maindolaamit", // Usually your GitHub org/user name.
-  projectName: "interview-notes", // Usually your repo name.
-  deploymentBranch: "gh-pages",
+  organizationName: 'maindolaamit', // Usually your GitHub org/user name.
+  projectName: 'maindolaamit.github.io', // Usually your repo name.
+  deploymentBranch: 'gh-pages',
   trailingSlash: false,
 
-  onBrokenLinks: "throw",
-  onBrokenMarkdownLinks: "warn",
+  onBrokenLinks: 'throw',
+  onBrokenMarkdownLinks: 'warn',
 
   // Even if you don't use internationalization, you can use this field to set
   // useful metadata like html lang. For example, if your site is Chinese, you
   // may want to replace "en" with "zh-Hans".
   i18n: {
-    defaultLocale: "en",
-    locales: ["en"],
+    defaultLocale: 'en',
+    locales: ['en'],
   },
-  plugins: ["@docusaurus/theme-mermaid", "plugin-image-zoom"],
+  plugins: ['@docusaurus/theme-mermaid', 'plugin-image-zoom'],
   presets: [
     [
-      "classic",
+      'classic',
       {
         docs: {
-          sidebarPath: "./sidebars.ts",
+          sidebarPath: './sidebars.ts',
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           // editUrl:
@@ -50,7 +50,7 @@ const config: Config = {
           //   "https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/",
         },
         theme: {
-          customCss: "./src/css/custom.css",
+          customCss: './src/css/custom.css',
         },
       } satisfies Preset.Options,
     ],
@@ -60,67 +60,67 @@ const config: Config = {
   },
   themeConfig: {
     // Replace with your project's social card
-    image: "img/docusaurus-social-card.jpg",
+    image: 'img/docusaurus-social-card.jpg',
     imageZoom: {
       // CSS selector to apply the plugin to, defaults to '.markdown img'
-      selector: ".markdown img",
+      selector: '.markdown img',
       // Optional medium-zoom options
       // see: https://www.npmjs.com/package/medium-zoom#options
       options: {
         margin: 24,
-        background: "#BADA55",
+        background: '#BADA55',
         scrollOffset: 0,
-        container: "#zoom-container",
-        template: "#zoom-template",
+        container: '#zoom-container',
+        template: '#zoom-template',
       },
     },
     navbar: {
-      title: "InterviewNotes",
+      title: 'InterviewNotes',
       logo: {
-        alt: "Site Logo",
-        src: "img/home-logo.jpg",
+        alt: 'Site Logo',
+        src: 'img/home-logo.jpg',
       },
       items: [
         {
-          type: "docSidebar",
-          sidebarId: "langSidebar",
-          position: "left",
-          label: "Languages",
+          type: 'docSidebar',
+          sidebarId: 'langSidebar',
+          position: 'left',
+          label: 'Languages',
         },
         {
-          type: "docSidebar",
-          sidebarId: "microServicesDesignSidebar",
-          position: "left",
-          label: "MicroServices",
+          type: 'docSidebar',
+          sidebarId: 'microServicesDesignSidebar',
+          position: 'left',
+          label: 'MicroServices',
         },
         {
-            type: "docSidebar",
-            sidebarId: "programmingSidebar",
-            position: "left",
-            label: "Programming",
+          type: 'docSidebar',
+          sidebarId: 'programmingSidebar',
+          position: 'left',
+          label: 'Programming',
         },
         {
-          type: "docSidebar",
-          sidebarId: "systemDesignSidebar",
-          position: "left",
-          label: "System Design",
+          type: 'docSidebar',
+          sidebarId: 'systemDesignSidebar',
+          position: 'left',
+          label: 'System Design',
         },
         {
-          type: "docSidebar",
-          sidebarId: "behaviouralSidebar",
-          position: "left",
-          label: "Behavioural",
+          type: 'docSidebar',
+          sidebarId: 'behaviouralSidebar',
+          position: 'left',
+          label: 'Behavioural',
         },
-        { to: "/blog", label: "Blog", position: "left" },
+        { to: '/blog', label: 'Blog', position: 'left' },
         {
-          href: "https://github.com/maindolaamit?tab=repositories",
-          label: "GitHub",
-          position: "right",
+          href: 'https://github.com/maindolaamit?tab=repositories',
+          label: 'GitHub',
+          position: 'right',
         },
       ],
     },
     footer: {
-      style: "dark",
+      style: 'dark',
       links: [
         // {
         //   // title: "Docs",
@@ -171,7 +171,7 @@ const config: Config = {
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
-      additionalLanguages: ["java"],
+      additionalLanguages: ['java'],
     },
   } satisfies Preset.ThemeConfig,
 };
