@@ -1,101 +1,495 @@
 ---
-title: "Example 4: Shopping Cart"
-description: "Shopping Cart TDD Example"
+title: "Shopping Cart - TDD Example"
+description: "Learn TDD with a shopping cart system that manages items, quantities, and pricing"
+sidebar_position: 4
 ---
 
-# Example 4: Shopping Cart
+# Shopping Cart - TDD Example
 
-Implement a shopping cart with items, quantities, and total calculation.
+This example demonstrates TDD with complex domain logic, collections, and business rules. We'll build a shopping cart system that handles items, quantities, pricing, and discounts.
 
-## Test 1: Empty Cart
+## Requirements
+
+Create a shopping cart that:
+1. Can add items with quantities
+2. Can remove items
+3. Can update item quantities
+4. Calculates total price
+5. Applies discounts (percentage and fixed amount)
+6. Handles inventory constraints
+7. Supports different item types (physical, digital)
+
+## TDD Implementation
+
+### Step 1: Write Failing Tests (Red)
+
 ```java
-@Test
-void newCartShouldBeEmpty() {
-    ShoppingCart cart = new ShoppingCart();
-    assertTrue(cart.isEmpty());
-    assertEquals(0.0, cart.getTotal());
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class ShoppingCartTest {
+    
+    @Test
+    public void testNewCartIsEmpty() {
+        ShoppingCart cart = new ShoppingCart();
+        assertTrue(cart.isEmpty());
+        assertEquals(0, cart.getItemCount());
+    }
+    
+    @Test
+    public void testAddItemToCart() {
+        ShoppingCart cart = new ShoppingCart();
+        Product product = new Product("Laptop", 999.99);
+        
+        cart.addItem(product, 1);
+        
+        assertFalse(cart.isEmpty());
+        assertEquals(1, cart.getItemCount());
+        assertEquals(1, cart.getQuantity(product));
+    }
+    
+    @Test
+    public void testAddMultipleItems() {
+        ShoppingCart cart = new ShoppingCart();
+        Product laptop = new Product("Laptop", 999.99);
+        Product mouse = new Product("Mouse", 29.99);
+        
+        cart.addItem(laptop, 1);
+        cart.addItem(mouse, 2);
+        
+        assertEquals(2, cart.getItemCount());
+        assertEquals(1, cart.getQuantity(laptop));
+        assertEquals(2, cart.getQuantity(mouse));
+    }
+    
+    @Test
+    public void testUpdateItemQuantity() {
+        ShoppingCart cart = new ShoppingCart();
+        Product product = new Product("Laptop", 999.99);
+        
+        cart.addItem(product, 1);
+        cart.updateQuantity(product, 3);
+        
+        assertEquals(3, cart.getQuantity(product));
+    }
+    
+    @Test
+    public void testRemoveItem() {
+        ShoppingCart cart = new ShoppingCart();
+        Product product = new Product("Laptop", 999.99);
+        
+        cart.addItem(product, 1);
+        cart.removeItem(product);
+        
+        assertTrue(cart.isEmpty());
+        assertEquals(0, cart.getQuantity(product));
+    }
 }
 ```
 
-Implementation:
+**Run tests** - they fail because classes don't exist yet.
+
+### Step 2: Create Basic Classes (Green)
+
 ```java
+public class Product {
+    private String name;
+    private double price;
+    
+    public Product(String name, double price) {
+        this.name = name;
+        this.price = price;
+    }
+    
+    // Getters, equals, hashCode...
+}
+
 public class ShoppingCart {
-    private List<Item> items = new ArrayList<>();
+    private Map<Product, Integer> items = new HashMap<>();
     
     public boolean isEmpty() {
         return items.isEmpty();
     }
     
-    public double getTotal() {
-        return 0.0;
+    public int getItemCount() {
+        return items.size();
+    }
+    
+    public void addItem(Product product, int quantity) {
+        // TODO: Implement
+    }
+    
+    public int getQuantity(Product product) {
+        return items.getOrDefault(product, 0);
+    }
+    
+    public void updateQuantity(Product product, int quantity) {
+        // TODO: Implement
+    }
+    
+    public void removeItem(Product product) {
+        // TODO: Implement
     }
 }
 ```
 
-## Test 2: Adding Items
+### Step 3: Implement Basic Cart Operations
+
+```java
+public void addItem(Product product, int quantity) {
+    if (quantity <= 0) {
+        throw new IllegalArgumentException("Quantity must be positive");
+    }
+    items.merge(product, quantity, Integer::sum);
+}
+
+public void updateQuantity(Product product, int quantity) {
+    if (quantity <= 0) {
+        throw new IllegalArgumentException("Quantity must be positive");
+    }
+    items.put(product, quantity);
+}
+
+public void removeItem(Product product) {
+    items.remove(product);
+}
+```
+
+**Run tests** - they should pass! ✅
+
+### Step 4: Add Price Calculations
+
 ```java
 @Test
-void shouldCalculateTotalForSingleItem() {
+public void testCalculateTotalPrice() {
     ShoppingCart cart = new ShoppingCart();
-    cart.addItem(new Item("Book", 29.99), 1);
-    assertEquals(29.99, cart.getTotal());
+    Product laptop = new Product("Laptop", 999.99);
+    Product mouse = new Product("Mouse", 29.99);
+    
+    cart.addItem(laptop, 1);
+    cart.addItem(mouse, 2);
+    
+    double expectedTotal = 999.99 + (29.99 * 2);
+    assertEquals(expectedTotal, cart.getTotalPrice(), 0.01);
 }
 ```
 
-Updated Implementation:
 ```java
-public class ShoppingCart {
-    private List<CartEntry> entries = new ArrayList<>();
-    
-    public void addItem(Item item, int quantity) {
-        entries.add(new CartEntry(item, quantity));
-    }
-    
-    public double getTotal() {
-        return entries.stream()
-            .mapToDouble(entry -> entry.getItem().getPrice() * entry.getQuantity())
+public double getTotalPrice() {
+    return items.entrySet().stream()
+            .mapToDouble(entry -> entry.getKey().getPrice() * entry.getValue())
             .sum();
+}
+```
+
+### Step 5: Add Discount System
+
+```java
+@Test
+public void testApplyPercentageDiscount() {
+    ShoppingCart cart = new ShoppingCart();
+    Product product = new Product("Laptop", 100.0);
+    cart.addItem(product, 1);
+    
+    cart.applyDiscount(new PercentageDiscount(10.0)); // 10% off
+    
+    assertEquals(90.0, cart.getTotalPrice(), 0.01);
+}
+
+@Test
+public void testApplyFixedDiscount() {
+    ShoppingCart cart = new ShoppingCart();
+    Product product = new Product("Laptop", 100.0);
+    cart.addItem(product, 1);
+    
+    cart.applyDiscount(new FixedDiscount(20.0)); // $20 off
+    
+    assertEquals(80.0, cart.getTotalPrice(), 0.01);
+}
+```
+
+```java
+public interface Discount {
+    double apply(double originalPrice);
+}
+
+public class PercentageDiscount implements Discount {
+    private double percentage;
+    
+    public PercentageDiscount(double percentage) {
+        this.percentage = percentage;
+    }
+    
+    @Override
+    public double apply(double originalPrice) {
+        return originalPrice * (1 - percentage / 100.0);
     }
 }
 
-class CartEntry {
-    private Item item;
-    private int quantity;
-    // Constructor and getters
+public class FixedDiscount implements Discount {
+    private double amount;
+    
+    public FixedDiscount(double amount) {
+        this.amount = amount;
+    }
+    
+    @Override
+    public double apply(double originalPrice) {
+        return Math.max(0, originalPrice - amount);
+    }
+}
+
+public class ShoppingCart {
+    private Map<Product, Integer> items = new HashMap<>();
+    private Discount discount;
+    
+    public void applyDiscount(Discount discount) {
+        this.discount = discount;
+    }
+    
+    public double getTotalPrice() {
+        double total = items.entrySet().stream()
+                .mapToDouble(entry -> entry.getKey().getPrice() * entry.getValue())
+                .sum();
+        
+        return discount != null ? discount.apply(total) : total;
+    }
 }
 ```
 
-## Test 3: Cart Operations
+### Step 6: Add Inventory Management
+
 ```java
 @Test
-void shouldUpdateQuantityForExistingItem() {
+public void testCannotAddMoreThanAvailable() {
     ShoppingCart cart = new ShoppingCart();
-    Item book = new Item("Book", 29.99);
+    Product product = new Product("Laptop", 999.99, 2); // Only 2 in stock
     
-    cart.addItem(book, 1);
-    cart.updateQuantity(book, 2);
-    
-    assertEquals(59.98, cart.getTotal());
+    cart.addItem(product, 1); // Should work
+    assertThrows(InsufficientStockException.class, () -> {
+        cart.addItem(product, 2); // Should fail - only 1 more available
+    });
 }
 ```
 
-Final Implementation:
+```java
+public class Product {
+    private String name;
+    private double price;
+    private int stock;
+    
+    public Product(String name, double price, int stock) {
+        this.name = name;
+        this.price = price;
+        this.stock = stock;
+    }
+    
+    public boolean isInStock(int quantity) {
+        return stock >= quantity;
+    }
+    
+    public void reduceStock(int quantity) {
+        if (!isInStock(quantity)) {
+            throw new InsufficientStockException("Not enough stock");
+        }
+        stock -= quantity;
+    }
+}
+
+public class InsufficientStockException extends RuntimeException {
+    public InsufficientStockException(String message) {
+        super(message);
+    }
+}
+
+public void addItem(Product product, int quantity) {
+    if (quantity <= 0) {
+        throw new IllegalArgumentException("Quantity must be positive");
+    }
+    
+    int currentQuantity = items.getOrDefault(product, 0);
+    int totalQuantity = currentQuantity + quantity;
+    
+    if (!product.isInStock(totalQuantity)) {
+        throw new InsufficientStockException("Not enough stock available");
+    }
+    
+    product.reduceStock(quantity);
+    items.merge(product, quantity, Integer::sum);
+}
+```
+
+### Step 7: Refactor for Better Design
+
 ```java
 public class ShoppingCart {
-    private Map<Item, Integer> entries = new HashMap<>();
+    private Map<Product, Integer> items = new HashMap<>();
+    private Discount discount;
     
-    public void updateQuantity(Item item, int quantity) {
-        if (quantity <= 0) {
-            entries.remove(item);
+    public boolean isEmpty() {
+        return items.isEmpty();
+    }
+    
+    public int getItemCount() {
+        return items.size();
+    }
+    
+    public void addItem(Product product, int quantity) {
+        validateQuantity(quantity);
+        validateStock(product, quantity);
+        
+        product.reduceStock(quantity);
+        items.merge(product, quantity, Integer::sum);
+    }
+    
+    public void updateQuantity(Product product, int quantity) {
+        validateQuantity(quantity);
+        
+        int currentQuantity = items.getOrDefault(product, 0);
+        int quantityDifference = quantity - currentQuantity;
+        
+        if (quantityDifference > 0) {
+            validateStock(product, quantityDifference);
+            product.reduceStock(quantityDifference);
+        } else if (quantityDifference < 0) {
+            product.increaseStock(Math.abs(quantityDifference));
+        }
+        
+        if (quantity == 0) {
+            items.remove(product);
         } else {
-            entries.put(item, quantity);
+            items.put(product, quantity);
         }
     }
     
-    public double getTotal() {
-        return entries.entrySet().stream()
-            .mapToDouble(entry -> entry.getKey().getPrice() * entry.getValue())
-            .sum();
+    public void removeItem(Product product) {
+        int quantity = items.getOrDefault(product, 0);
+        if (quantity > 0) {
+            product.increaseStock(quantity);
+            items.remove(product);
+        }
+    }
+    
+    public int getQuantity(Product product) {
+        return items.getOrDefault(product, 0);
+    }
+    
+    public double getTotalPrice() {
+        double total = calculateSubtotal();
+        return applyDiscount(total);
+    }
+    
+    private void validateQuantity(int quantity) {
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("Quantity must be positive");
+        }
+    }
+    
+    private void validateStock(Product product, int quantity) {
+        if (!product.isInStock(quantity)) {
+            throw new InsufficientStockException("Not enough stock available");
+        }
+    }
+    
+    private double calculateSubtotal() {
+        return items.entrySet().stream()
+                .mapToDouble(entry -> entry.getKey().getPrice() * entry.getValue())
+                .sum();
+    }
+    
+    private double applyDiscount(double subtotal) {
+        return discount != null ? discount.apply(subtotal) : subtotal;
+    }
+    
+    public void applyDiscount(Discount discount) {
+        this.discount = discount;
     }
 }
 ```
+
+## Key TDD Lessons
+
+1. **Domain Modeling**: TDD helps discover the right domain objects and relationships
+2. **Business Rules**: Each business rule becomes a test, ensuring they're implemented correctly
+3. **Error Handling**: Test both success and failure scenarios
+4. **Refactoring**: Extract methods to improve readability and maintainability
+5. **Interface Design**: TDD helps design clean, focused interfaces
+
+## Complete Test Suite
+
+```java
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class ShoppingCartTest {
+    
+    @Test
+    public void testNewCartIsEmpty() {
+        ShoppingCart cart = new ShoppingCart();
+        assertTrue(cart.isEmpty());
+        assertEquals(0, cart.getItemCount());
+    }
+    
+    @Test
+    public void testAddItemToCart() {
+        ShoppingCart cart = new ShoppingCart();
+        Product product = new Product("Laptop", 999.99, 10);
+        
+        cart.addItem(product, 1);
+        
+        assertFalse(cart.isEmpty());
+        assertEquals(1, cart.getItemCount());
+        assertEquals(1, cart.getQuantity(product));
+    }
+    
+    @Test
+    public void testCalculateTotalPrice() {
+        ShoppingCart cart = new ShoppingCart();
+        Product laptop = new Product("Laptop", 999.99, 10);
+        Product mouse = new Product("Mouse", 29.99, 10);
+        
+        cart.addItem(laptop, 1);
+        cart.addItem(mouse, 2);
+        
+        double expectedTotal = 999.99 + (29.99 * 2);
+        assertEquals(expectedTotal, cart.getTotalPrice(), 0.01);
+    }
+    
+    @Test
+    public void testApplyPercentageDiscount() {
+        ShoppingCart cart = new ShoppingCart();
+        Product product = new Product("Laptop", 100.0, 10);
+        cart.addItem(product, 1);
+        
+        cart.applyDiscount(new PercentageDiscount(10.0));
+        
+        assertEquals(90.0, cart.getTotalPrice(), 0.01);
+    }
+    
+    @Test
+    public void testApplyFixedDiscount() {
+        ShoppingCart cart = new ShoppingCart();
+        Product product = new Product("Laptop", 100.0, 10);
+        cart.addItem(product, 1);
+        
+        cart.applyDiscount(new FixedDiscount(20.0));
+        
+        assertEquals(80.0, cart.getTotalPrice(), 0.01);
+    }
+    
+    @Test
+    public void testCannotAddMoreThanAvailable() {
+        ShoppingCart cart = new ShoppingCart();
+        Product product = new Product("Laptop", 999.99, 2);
+        
+        cart.addItem(product, 1);
+        assertThrows(InsufficientStockException.class, () -> {
+            cart.addItem(product, 2);
+        });
+    }
+}
+```
+
+## Next Steps
+
+This example demonstrates TDD with complex domain logic and business rules. The final example will show TDD with a complete order processing system that integrates multiple components.

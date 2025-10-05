@@ -1,22 +1,85 @@
 ---
-title: "Example 3: Bank Account"
-description: "Bank Account Operations TDD Example"
+title: "Bank Account - TDD Example"
+description: "Learn TDD with a bank account system that manages deposits, withdrawals, and balance"
+sidebar_position: 3
 ---
 
-# Example 3: Bank Account
+# Bank Account - TDD Example
 
-Let's implement a bank account with deposit, withdrawal, and balance operations.
+This example demonstrates TDD with state management and business rules. We'll build a bank account system that handles deposits, withdrawals, and maintains account balance.
 
-## Test 1: Initial Balance
+## Requirements
+
+Create a bank account that:
+1. Starts with a zero balance
+2. Allows deposits (positive amounts only)
+3. Allows withdrawals (positive amounts only, can't exceed balance)
+4. Tracks transaction history
+5. Prevents overdrafts
+6. Calculates interest (simple interest)
+
+## TDD Implementation
+
+### Step 1: Write Failing Tests (Red)
+
 ```java
-@Test
-void newAccountShouldHaveZeroBalance() {
-    BankAccount account = new BankAccount();
-    assertEquals(0.0, account.getBalance());
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class BankAccountTest {
+    
+    @Test
+    public void testNewAccountHasZeroBalance() {
+        BankAccount account = new BankAccount();
+        assertEquals(0.0, account.getBalance());
+    }
+    
+    @Test
+    public void testDepositIncreasesBalance() {
+        BankAccount account = new BankAccount();
+        account.deposit(100.0);
+        assertEquals(100.0, account.getBalance());
+    }
+    
+    @Test
+    public void testWithdrawalDecreasesBalance() {
+        BankAccount account = new BankAccount();
+        account.deposit(100.0);
+        account.withdraw(30.0);
+        assertEquals(70.0, account.getBalance());
+    }
+    
+    @Test
+    public void testCannotWithdrawMoreThanBalance() {
+        BankAccount account = new BankAccount();
+        account.deposit(50.0);
+        assertThrows(InsufficientFundsException.class, () -> {
+            account.withdraw(100.0);
+        });
+    }
+    
+    @Test
+    public void testCannotDepositNegativeAmount() {
+        BankAccount account = new BankAccount();
+        assertThrows(IllegalArgumentException.class, () -> {
+            account.deposit(-50.0);
+        });
+    }
+    
+    @Test
+    public void testCannotWithdrawNegativeAmount() {
+        BankAccount account = new BankAccount();
+        assertThrows(IllegalArgumentException.class, () -> {
+            account.withdraw(-50.0);
+        });
+    }
 }
 ```
 
-Implementation:
+**Run tests** - they fail because classes don't exist yet.
+
+### Step 2: Create Basic Classes (Green)
+
 ```java
 public class BankAccount {
     private double balance = 0.0;
@@ -24,74 +87,298 @@ public class BankAccount {
     public double getBalance() {
         return balance;
     }
+    
+    public void deposit(double amount) {
+        // TODO: Implement
+    }
+    
+    public void withdraw(double amount) {
+        // TODO: Implement
+    }
+}
+
+public class InsufficientFundsException extends RuntimeException {
+    public InsufficientFundsException(String message) {
+        super(message);
+    }
 }
 ```
 
-## Test 2: Deposit Operation
+### Step 3: Implement Deposit Logic
+
 ```java
 @Test
-void shouldIncreaseBalanceWhenDepositing() {
+public void testDepositIncreasesBalance() {
     BankAccount account = new BankAccount();
     account.deposit(100.0);
     assertEquals(100.0, account.getBalance());
 }
+```
 
-@Test
-void shouldThrowExceptionForNegativeDeposit() {
-    BankAccount account = new BankAccount();
-    assertThrows(IllegalArgumentException.class, 
-        () -> account.deposit(-50.0));
+```java
+public void deposit(double amount) {
+    if (amount <= 0) {
+        throw new IllegalArgumentException("Deposit amount must be positive");
+    }
+    balance += amount;
 }
 ```
 
-Updated Implementation:
+### Step 4: Implement Withdrawal Logic
+
 ```java
-public class BankAccount {
-    private double balance = 0.0;
-    
-    public void deposit(double amount) {
-        if (amount < 0) {
-            throw new IllegalArgumentException("Cannot deposit negative amount");
-        }
-        balance += amount;
+public void withdraw(double amount) {
+    if (amount <= 0) {
+        throw new IllegalArgumentException("Withdrawal amount must be positive");
     }
-    
-    public double getBalance() {
-        return balance;
+    if (amount > balance) {
+        throw new InsufficientFundsException("Insufficient funds");
     }
+    balance -= amount;
 }
 ```
 
-## Test 3: Withdrawal Operation
+**Run tests** - they should pass! ✅
+
+### Step 5: Add Transaction History
+
 ```java
 @Test
-void shouldDecreaseBalanceWhenWithdrawing() {
+public void testTransactionHistory() {
     BankAccount account = new BankAccount();
     account.deposit(100.0);
-    account.withdraw(50.0);
-    assertEquals(50.0, account.getBalance());
-}
-
-@Test
-void shouldThrowExceptionForInsufficientFunds() {
-    BankAccount account = new BankAccount();
-    assertThrows(InsufficientFundsException.class, 
-        () -> account.withdraw(50.0));
+    account.withdraw(30.0);
+    
+    List<Transaction> transactions = account.getTransactionHistory();
+    assertEquals(2, transactions.size());
+    assertEquals(TransactionType.DEPOSIT, transactions.get(0).getType());
+    assertEquals(100.0, transactions.get(0).getAmount());
+    assertEquals(TransactionType.WITHDRAWAL, transactions.get(1).getType());
+    assertEquals(30.0, transactions.get(1).getAmount());
 }
 ```
 
-Final Implementation:
 ```java
+public enum TransactionType {
+    DEPOSIT, WITHDRAWAL
+}
+
+public class Transaction {
+    private final TransactionType type;
+    private final double amount;
+    private final LocalDateTime timestamp;
+    
+    public Transaction(TransactionType type, double amount) {
+        this.type = type;
+        this.amount = amount;
+        this.timestamp = LocalDateTime.now();
+    }
+    
+    // Getters...
+}
+
 public class BankAccount {
     private double balance = 0.0;
+    private List<Transaction> transactions = new ArrayList<>();
+    
+    public void deposit(double amount) {
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Deposit amount must be positive");
+        }
+        balance += amount;
+        transactions.add(new Transaction(TransactionType.DEPOSIT, amount));
+    }
     
     public void withdraw(double amount) {
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Withdrawal amount must be positive");
+        }
         if (amount > balance) {
             throw new InsufficientFundsException("Insufficient funds");
         }
         balance -= amount;
+        transactions.add(new Transaction(TransactionType.WITHDRAWAL, amount));
     }
     
-    // ...existing deposit and getBalance methods...
+    public List<Transaction> getTransactionHistory() {
+        return new ArrayList<>(transactions);
+    }
 }
 ```
+
+### Step 6: Add Interest Calculation
+
+```java
+@Test
+public void testInterestCalculation() {
+    BankAccount account = new BankAccount();
+    account.deposit(1000.0);
+    account.addInterest(5.0); // 5% interest
+    
+    assertEquals(1050.0, account.getBalance());
+}
+```
+
+```java
+public void addInterest(double interestRate) {
+    if (interestRate < 0) {
+        throw new IllegalArgumentException("Interest rate cannot be negative");
+    }
+    double interest = balance * (interestRate / 100.0);
+    balance += interest;
+    transactions.add(new Transaction(TransactionType.DEPOSIT, interest));
+}
+```
+
+### Step 7: Refactor for Better Design
+
+```java
+public class BankAccount {
+    private double balance = 0.0;
+    private List<Transaction> transactions = new ArrayList<>();
+    
+    public double getBalance() {
+        return balance;
+    }
+    
+    public void deposit(double amount) {
+        validatePositiveAmount(amount);
+        updateBalance(amount, TransactionType.DEPOSIT);
+    }
+    
+    public void withdraw(double amount) {
+        validatePositiveAmount(amount);
+        validateSufficientFunds(amount);
+        updateBalance(-amount, TransactionType.WITHDRAWAL);
+    }
+    
+    public void addInterest(double interestRate) {
+        validateNonNegativeRate(interestRate);
+        double interest = calculateInterest(interestRate);
+        updateBalance(interest, TransactionType.DEPOSIT);
+    }
+    
+    public List<Transaction> getTransactionHistory() {
+        return new ArrayList<>(transactions);
+    }
+    
+    private void validatePositiveAmount(double amount) {
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Amount must be positive");
+        }
+    }
+    
+    private void validateSufficientFunds(double amount) {
+        if (amount > balance) {
+            throw new InsufficientFundsException("Insufficient funds");
+        }
+    }
+    
+    private void validateNonNegativeRate(double rate) {
+        if (rate < 0) {
+            throw new IllegalArgumentException("Interest rate cannot be negative");
+        }
+    }
+    
+    private double calculateInterest(double interestRate) {
+        return balance * (interestRate / 100.0);
+    }
+    
+    private void updateBalance(double amount, TransactionType type) {
+        balance += amount;
+        transactions.add(new Transaction(type, Math.abs(amount)));
+    }
+}
+```
+
+## Key TDD Lessons
+
+1. **State Management**: TDD helps manage complex state transitions
+2. **Exception Handling**: Test both happy path and error conditions
+3. **Business Rules**: Each business rule becomes a test case
+4. **Refactoring**: Extract methods to improve readability
+5. **Encapsulation**: Keep internal state private, expose only necessary methods
+
+## Complete Test Suite
+
+```java
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+import java.util.List;
+
+public class BankAccountTest {
+    
+    @Test
+    public void testNewAccountHasZeroBalance() {
+        BankAccount account = new BankAccount();
+        assertEquals(0.0, account.getBalance());
+    }
+    
+    @Test
+    public void testDepositIncreasesBalance() {
+        BankAccount account = new BankAccount();
+        account.deposit(100.0);
+        assertEquals(100.0, account.getBalance());
+    }
+    
+    @Test
+    public void testWithdrawalDecreasesBalance() {
+        BankAccount account = new BankAccount();
+        account.deposit(100.0);
+        account.withdraw(30.0);
+        assertEquals(70.0, account.getBalance());
+    }
+    
+    @Test
+    public void testCannotWithdrawMoreThanBalance() {
+        BankAccount account = new BankAccount();
+        account.deposit(50.0);
+        assertThrows(InsufficientFundsException.class, () -> {
+            account.withdraw(100.0);
+        });
+    }
+    
+    @Test
+    public void testCannotDepositNegativeAmount() {
+        BankAccount account = new BankAccount();
+        assertThrows(IllegalArgumentException.class, () -> {
+            account.deposit(-50.0);
+        });
+    }
+    
+    @Test
+    public void testCannotWithdrawNegativeAmount() {
+        BankAccount account = new BankAccount();
+        assertThrows(IllegalArgumentException.class, () -> {
+            account.withdraw(-50.0);
+        });
+    }
+    
+    @Test
+    public void testTransactionHistory() {
+        BankAccount account = new BankAccount();
+        account.deposit(100.0);
+        account.withdraw(30.0);
+        
+        List<Transaction> transactions = account.getTransactionHistory();
+        assertEquals(2, transactions.size());
+        assertEquals(TransactionType.DEPOSIT, transactions.get(0).getType());
+        assertEquals(100.0, transactions.get(0).getAmount());
+        assertEquals(TransactionType.WITHDRAWAL, transactions.get(1).getType());
+        assertEquals(30.0, transactions.get(1).getAmount());
+    }
+    
+    @Test
+    public void testInterestCalculation() {
+        BankAccount account = new BankAccount();
+        account.deposit(1000.0);
+        account.addInterest(5.0);
+        
+        assertEquals(1050.0, account.getBalance());
+    }
+}
+```
+
+## Next Steps
+
+This example demonstrates TDD with state management and business rules. The next example will show TDD with more complex domain logic in a shopping cart system.

@@ -1,75 +1,172 @@
 ---
-sidebar_position: 2
-title: "Example 1: String Calculator"
-description: "Simple String Calculator TDD Example"
+title: "String Calculator - TDD Example"
+description: "Learn TDD with a simple string calculator that adds numbers"
+sidebar_position: 1
 ---
 
-# Example 1: String Calculator
+# String Calculator - TDD Example
 
-Let's start with a simple string calculator that adds numbers from a string.
+This is our first TDD example - a simple string calculator that can add numbers from a string input. This example demonstrates the basic TDD cycle: Red → Green → Refactor.
 
-## Test 1: Empty String
+## Requirements
+
+Create a calculator that:
+1. Takes a string of numbers separated by commas
+2. Returns the sum of those numbers
+3. Handles empty strings (returns 0)
+4. Handles single numbers
+5. Handles multiple numbers
+
+## TDD Implementation
+
+### Step 1: Write a Failing Test (Red)
+
 ```java
-@Test
-void shouldReturnZeroForEmptyString() {
-    StringCalculator calculator = new StringCalculator();
-    assertEquals(0, calculator.add(""));
-}
-```
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
-Implementation:
-```java
-public class StringCalculator {
-    public int add(String numbers) {
-        if (numbers.isEmpty()) {
-            return 0;
-        }
-        return -1; // placeholder for next test
+public class StringCalculatorTest {
+    
+    @Test
+    public void testEmptyStringReturnsZero() {
+        StringCalculator calculator = new StringCalculator();
+        assertEquals(0, calculator.add(""));
     }
 }
 ```
 
-## Test 2: Single Number
+**Run the test** - it fails because `StringCalculator` class doesn't exist yet.
+
+### Step 2: Write Minimal Code to Pass (Green)
+
+```java
+public class StringCalculator {
+    public int add(String numbers) {
+        return 0;
+    }
+}
+```
+
+**Run the test** - it passes! ✅
+
+### Step 3: Add More Tests and Implement
+
 ```java
 @Test
-void shouldReturnNumberForSingleNumber() {
+public void testSingleNumberReturnsThatNumber() {
     StringCalculator calculator = new StringCalculator();
     assertEquals(1, calculator.add("1"));
 }
-```
 
-Updated Implementation:
-```java
-public class StringCalculator {
-    public int add(String numbers) {
-        if (numbers.isEmpty()) {
-            return 0;
-        }
-        return Integer.parseInt(numbers);
-    }
-}
-```
-
-## Test 3: Two Numbers
-```java
 @Test
-void shouldReturnSumForTwoNumbers() {
+public void testTwoNumbersReturnsSum() {
     StringCalculator calculator = new StringCalculator();
     assertEquals(3, calculator.add("1,2"));
 }
 ```
 
-Final Implementation:
+**Run tests** - they fail. Now implement the logic:
+
 ```java
 public class StringCalculator {
     public int add(String numbers) {
         if (numbers.isEmpty()) {
             return 0;
         }
-        String[] nums = numbers.split(",");
-        return Arrays.stream(nums)
-                    .mapToInt(Integer::parseInt)
-                    .sum();
+        
+        String[] numberStrings = numbers.split(",");
+        int sum = 0;
+        for (String numberString : numberStrings) {
+            sum += Integer.parseInt(numberString.trim());
+        }
+        return sum;
     }
 }
 ```
+
+**Run tests** - they pass! ✅
+
+### Step 4: Refactor and Add More Features
+
+Let's add support for multiple numbers and refactor:
+
+```java
+@Test
+public void testMultipleNumbersReturnsSum() {
+    StringCalculator calculator = new StringCalculator();
+    assertEquals(6, calculator.add("1,2,3"));
+}
+
+@Test
+public void testNumbersWithSpaces() {
+    StringCalculator calculator = new StringCalculator();
+    assertEquals(3, calculator.add("1, 2"));
+}
+```
+
+Refactored implementation:
+
+```java
+public class StringCalculator {
+    public int add(String numbers) {
+        if (numbers.isEmpty()) {
+            return 0;
+        }
+        
+        return Arrays.stream(numbers.split(","))
+                .map(String::trim)
+                .mapToInt(Integer::parseInt)
+                .sum();
+    }
+}
+```
+
+## Key TDD Lessons
+
+1. **Start Simple**: Begin with the simplest case (empty string)
+2. **One Test at a Time**: Add one test, make it pass, then move to the next
+3. **Red-Green-Refactor**: Always follow this cycle
+4. **Refactor Safely**: With tests in place, you can refactor confidently
+5. **Incremental Development**: Build complexity gradually
+
+## Complete Test Suite
+
+```java
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+import java.util.Arrays;
+
+public class StringCalculatorTest {
+    
+    private StringCalculator calculator = new StringCalculator();
+    
+    @Test
+    public void testEmptyStringReturnsZero() {
+        assertEquals(0, calculator.add(""));
+    }
+    
+    @Test
+    public void testSingleNumberReturnsThatNumber() {
+        assertEquals(1, calculator.add("1"));
+    }
+    
+    @Test
+    public void testTwoNumbersReturnsSum() {
+        assertEquals(3, calculator.add("1,2"));
+    }
+    
+    @Test
+    public void testMultipleNumbersReturnsSum() {
+        assertEquals(6, calculator.add("1,2,3"));
+    }
+    
+    @Test
+    public void testNumbersWithSpaces() {
+        assertEquals(3, calculator.add("1, 2"));
+    }
+}
+```
+
+## Next Steps
+
+This basic example demonstrates the TDD cycle. In the next example, we'll tackle more complex requirements like input validation and error handling.

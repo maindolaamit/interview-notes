@@ -1,139 +1,549 @@
 ---
-title: "Example 5: Order Processing"
-description: "Order Processing System TDD Example"
+title: "Order Processing System - TDD Example"
+description: "Learn TDD with a complete order processing system that integrates multiple components"
+sidebar_position: 5
 ---
 
-# Example 5: Order Processing
+# Order Processing System - TDD Example
 
-Implement a complete order processing system with validation, inventory check, and payment processing.
+This is our most complex TDD example - a complete order processing system that integrates inventory management, payment processing, shipping, and notifications. This demonstrates TDD with multiple collaborating objects and complex business workflows.
 
-## Test 1: Order Creation
+## Requirements
+
+Create an order processing system that:
+1. Creates orders from shopping carts
+2. Validates inventory availability
+3. Processes payments (with different payment methods)
+4. Calculates shipping costs
+5. Sends notifications
+6. Handles order status transitions
+7. Supports order cancellation and refunds
+
+## TDD Implementation
+
+### Step 1: Write Failing Tests (Red)
+
 ```java
-@Test
-void shouldCreateOrderWithItems() {
-    Order order = new Order("CUST-001");
-    order.addItem(new OrderItem("PROD-001", 2));
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class OrderProcessingSystemTest {
     
-    assertEquals(1, order.getItems().size());
-    assertEquals("CUST-001", order.getCustomerId());
+    @Test
+    public void testCreateOrderFromCart() {
+        ShoppingCart cart = createCartWithItems();
+        OrderProcessingSystem orderSystem = new OrderProcessingSystem();
+        
+        Order order = orderSystem.createOrder(cart, "customer@example.com");
+        
+        assertNotNull(order);
+        assertEquals("customer@example.com", order.getCustomerEmail());
+        assertEquals(OrderStatus.PENDING, order.getStatus());
+    }
+    
+    @Test
+    public void testProcessOrderWithValidPayment() {
+        OrderProcessingSystem orderSystem = new OrderProcessingSystem();
+        Order order = createTestOrder();
+        
+        PaymentResult result = orderSystem.processOrder(order, new CreditCardPayment("1234567890123456"));
+        
+        assertTrue(result.isSuccess());
+        assertEquals(OrderStatus.PROCESSING, order.getStatus());
+    }
+    
+    @Test
+    public void testProcessOrderWithInsufficientFunds() {
+        OrderProcessingSystem orderSystem = new OrderProcessingSystem();
+        Order order = createTestOrder();
+        
+        PaymentResult result = orderSystem.processOrder(order, new CreditCardPayment("0000000000000000"));
+        
+        assertFalse(result.isSuccess());
+        assertEquals("Insufficient funds", result.getErrorMessage());
+        assertEquals(OrderStatus.PAYMENT_FAILED, order.getStatus());
+    }
+    
+    @Test
+    public void testCalculateShippingCost() {
+        OrderProcessingSystem orderSystem = new OrderProcessingSystem();
+        Order order = createTestOrder();
+        
+        double shippingCost = orderSystem.calculateShippingCost(order);
+        
+        assertTrue(shippingCost > 0);
+    }
+    
+    @Test
+    public void testSendOrderConfirmation() {
+        OrderProcessingSystem orderSystem = new OrderProcessingSystem();
+        Order order = createTestOrder();
+        
+        NotificationResult result = orderSystem.sendOrderConfirmation(order);
+        
+        assertTrue(result.isSuccess());
+    }
 }
 ```
 
-Implementation:
+**Run tests** - they fail because classes don't exist yet.
+
+### Step 2: Create Basic Domain Classes (Green)
+
 ```java
+public enum OrderStatus {
+    PENDING, PROCESSING, SHIPPED, DELIVERED, CANCELLED, PAYMENT_FAILED
+}
+
 public class Order {
-    private String customerId;
-    private List<OrderItem> items = new ArrayList<>();
-    private OrderStatus status = OrderStatus.CREATED;
+    private String id;
+    private String customerEmail;
+    private List<OrderItem> items;
+    private OrderStatus status;
+    private double totalAmount;
+    private LocalDateTime createdAt;
     
-    public Order(String customerId) {
-        this.customerId = customerId;
+    public Order(String customerEmail, List<OrderItem> items) {
+        this.id = UUID.randomUUID().toString();
+        this.customerEmail = customerEmail;
+        this.items = new ArrayList<>(items);
+        this.status = OrderStatus.PENDING;
+        this.totalAmount = calculateTotal();
+        this.createdAt = LocalDateTime.now();
     }
     
-    public void addItem(OrderItem item) {
-        items.add(item);
+    // Getters and setters...
+}
+
+public class OrderItem {
+    private Product product;
+    private int quantity;
+    private double unitPrice;
+    
+    public OrderItem(Product product, int quantity) {
+        this.product = product;
+        this.quantity = quantity;
+        this.unitPrice = product.getPrice();
+    }
+    
+    // Getters...
+}
+```
+
+### Step 3: Implement Order Creation
+
+```java
+public class OrderProcessingSystem {
+    private InventoryService inventoryService;
+    private PaymentService paymentService;
+    private ShippingService shippingService;
+    private NotificationService notificationService;
+    
+    public OrderProcessingSystem() {
+        this.inventoryService = new InventoryService();
+        this.paymentService = new PaymentService();
+        this.shippingService = new ShippingService();
+        this.notificationService = new NotificationService();
+    }
+    
+    public Order createOrder(ShoppingCart cart, String customerEmail) {
+        List<OrderItem> orderItems = cart.getItems().entrySet().stream()
+                .map(entry -> new OrderItem(entry.getKey(), entry.getValue()))
+                .collect(Collectors.toList());
+        
+        return new Order(customerEmail, orderItems);
     }
 }
 ```
 
-## Test 2: Order Processing
-```java
-@Test
-void shouldProcessValidOrder() {
-    // Setup
-    InventoryService inventory = mock(InventoryService.class);
-    PaymentService payment = mock(PaymentService.class);
-    when(inventory.isAvailable("PROD-001", 2)).thenReturn(true);
-    when(payment.process(any())).thenReturn(true);
-    
-    // Test
-    OrderProcessor processor = new OrderProcessor(inventory, payment);
-    Order order = new Order("CUST-001");
-    order.addItem(new OrderItem("PROD-001", 2));
-    
-    OrderResult result = processor.process(order);
-    assertTrue(result.isSuccess());
-}
-```
+### Step 4: Implement Payment Processing
 
-Updated Implementation:
 ```java
-public class OrderProcessor {
-    private final InventoryService inventory;
-    private final PaymentService payment;
+public interface PaymentMethod {
+    String getPaymentId();
+}
+
+public class CreditCardPayment implements PaymentMethod {
+    private String cardNumber;
     
-    public OrderProcessor(InventoryService inventory, PaymentService payment) {
-        this.inventory = inventory;
-        this.payment = payment;
+    public CreditCardPayment(String cardNumber) {
+        this.cardNumber = cardNumber;
     }
     
-    public OrderResult process(Order order) {
-        // Validate inventory
-        if (!checkInventory(order)) {
-            return OrderResult.error("Insufficient inventory");
+    @Override
+    public String getPaymentId() {
+        return cardNumber;
+    }
+}
+
+public class PaymentResult {
+    private boolean success;
+    private String errorMessage;
+    private String transactionId;
+    
+    public PaymentResult(boolean success, String errorMessage, String transactionId) {
+        this.success = success;
+        this.errorMessage = errorMessage;
+        this.transactionId = transactionId;
+    }
+    
+    // Getters...
+}
+
+public class PaymentService {
+    public PaymentResult processPayment(Order order, PaymentMethod paymentMethod) {
+        // Simulate payment processing
+        if (paymentMethod instanceof CreditCardPayment) {
+            CreditCardPayment ccPayment = (CreditCardPayment) paymentMethod;
+            if (ccPayment.getPaymentId().equals("0000000000000000")) {
+                return new PaymentResult(false, "Insufficient funds", null);
+            }
         }
         
-        // Process payment
-        if (!payment.process(order)) {
-            return OrderResult.error("Payment failed");
-        }
-        
-        order.setStatus(OrderStatus.PROCESSED);
-        return OrderResult.success();
+        String transactionId = "TXN-" + System.currentTimeMillis();
+        return new PaymentResult(true, null, transactionId);
     }
 }
-```
 
-## Test 3: Full Order Workflow
-```java
-@Test
-void shouldHandleCompleteOrderWorkflow() {
-    // Setup services
-    InventoryService inventory = new InventoryService();
-    PaymentService payment = new PaymentService();
-    OrderProcessor processor = new OrderProcessor(inventory, payment);
+public PaymentResult processOrder(Order order, PaymentMethod paymentMethod) {
+    // Validate inventory
+    if (!inventoryService.reserveItems(order.getItems())) {
+        order.setStatus(OrderStatus.CANCELLED);
+        return new PaymentResult(false, "Items not available", null);
+    }
     
-    // Create and process order
-    Order order = new Order("CUST-001");
-    order.addItem(new OrderItem("PROD-001", 2));
+    // Process payment
+    PaymentResult paymentResult = paymentService.processPayment(order, paymentMethod);
     
-    OrderResult result = processor.process(order);
+    if (paymentResult.isSuccess()) {
+        order.setStatus(OrderStatus.PROCESSING);
+        // Schedule shipping
+        shippingService.scheduleShipping(order);
+    } else {
+        order.setStatus(OrderStatus.PAYMENT_FAILED);
+        inventoryService.releaseItems(order.getItems());
+    }
     
-    // Verify
-    assertTrue(result.isSuccess());
-    assertEquals(OrderStatus.PROCESSED, order.getStatus());
-    verify(inventory).reduceStock("PROD-001", 2);
+    return paymentResult;
 }
 ```
 
-Final Implementation:
+### Step 5: Implement Shipping and Notifications
+
 ```java
-public class OrderProcessor {
-    // ...existing constructor and fields...
+public class ShippingService {
+    public void scheduleShipping(Order order) {
+        // Simulate shipping scheduling
+        order.setStatus(OrderStatus.SHIPPED);
+    }
     
-    public OrderResult process(Order order) {
+    public double calculateShippingCost(Order order) {
+        double baseCost = 5.99;
+        double weightCost = order.getItems().stream()
+                .mapToDouble(item -> item.getProduct().getWeight() * item.getQuantity())
+                .sum() * 0.5;
+        
+        return baseCost + weightCost;
+    }
+}
+
+public class NotificationService {
+    public NotificationResult sendOrderConfirmation(Order order) {
+        // Simulate sending email
+        String message = String.format("Order %s confirmed. Total: $%.2f", 
+                order.getId(), order.getTotalAmount());
+        
+        // In real implementation, this would send actual email
+        System.out.println("Sending email to " + order.getCustomerEmail() + ": " + message);
+        
+        return new NotificationResult(true, "Email sent successfully");
+    }
+}
+
+public class NotificationResult {
+    private boolean success;
+    private String message;
+    
+    public NotificationResult(boolean success, String message) {
+        this.success = success;
+        this.message = message;
+    }
+    
+    // Getters...
+}
+```
+
+### Step 6: Add Order Cancellation and Refunds
+
+```java
+@Test
+public void testCancelOrder() {
+    OrderProcessingSystem orderSystem = new OrderProcessingSystem();
+    Order order = createTestOrder();
+    order.setStatus(OrderStatus.PROCESSING);
+    
+    boolean cancelled = orderSystem.cancelOrder(order);
+    
+    assertTrue(cancelled);
+    assertEquals(OrderStatus.CANCELLED, order.getStatus());
+}
+
+@Test
+public void testProcessRefund() {
+    OrderProcessingSystem orderSystem = new OrderProcessingSystem();
+    Order order = createTestOrder();
+    order.setStatus(OrderStatus.PROCESSING);
+    
+    RefundResult result = orderSystem.processRefund(order);
+    
+    assertTrue(result.isSuccess());
+    assertEquals(OrderStatus.CANCELLED, order.getStatus());
+}
+```
+
+```java
+public boolean cancelOrder(Order order) {
+    if (order.getStatus() == OrderStatus.SHIPPED || 
+        order.getStatus() == OrderStatus.DELIVERED) {
+        return false; // Cannot cancel shipped orders
+    }
+    
+    order.setStatus(OrderStatus.CANCELLED);
+    inventoryService.releaseItems(order.getItems());
+    return true;
+}
+
+public RefundResult processRefund(Order order) {
+    if (order.getStatus() != OrderStatus.PROCESSING) {
+        return new RefundResult(false, "Order cannot be refunded");
+    }
+    
+    // Process refund through payment service
+    String refundId = paymentService.processRefund(order);
+    order.setStatus(OrderStatus.CANCELLED);
+    inventoryService.releaseItems(order.getItems());
+    
+    return new RefundResult(true, "Refund processed", refundId);
+}
+```
+
+### Step 7: Refactor for Better Design
+
+```java
+public class OrderProcessingSystem {
+    private final InventoryService inventoryService;
+    private final PaymentService paymentService;
+    private final ShippingService shippingService;
+    private final NotificationService notificationService;
+    
+    public OrderProcessingSystem(InventoryService inventoryService,
+                                PaymentService paymentService,
+                                ShippingService shippingService,
+                                NotificationService notificationService) {
+        this.inventoryService = inventoryService;
+        this.paymentService = paymentService;
+        this.shippingService = shippingService;
+        this.notificationService = notificationService;
+    }
+    
+    public Order createOrder(ShoppingCart cart, String customerEmail) {
+        validateCart(cart);
+        validateCustomerEmail(customerEmail);
+        
+        List<OrderItem> orderItems = convertCartToOrderItems(cart);
+        return new Order(customerEmail, orderItems);
+    }
+    
+    public PaymentResult processOrder(Order order, PaymentMethod paymentMethod) {
         try {
-            if (!validateOrder(order)) {
-                return OrderResult.error("Invalid order");
-            }
+            validateOrderForProcessing(order);
+            reserveInventory(order);
             
-            if (!checkInventory(order)) {
-                return OrderResult.error("Insufficient inventory");
-            }
+            PaymentResult paymentResult = processPayment(order, paymentMethod);
+            handlePaymentResult(order, paymentResult);
             
-            if (!payment.process(order)) {
-                return OrderResult.error("Payment failed");
-            }
-            
-            updateInventory(order);
-            order.setStatus(OrderStatus.PROCESSED);
-            notifyCustomer(order);
-            
-            return OrderResult.success();
-            
-        } catch (Exception e) {
-            return OrderResult.error("Processing failed: " + e.getMessage());
+            return paymentResult;
+        } catch (OrderProcessingException e) {
+            order.setStatus(OrderStatus.CANCELLED);
+            return new PaymentResult(false, e.getMessage(), null);
+        }
+    }
+    
+    private void validateCart(ShoppingCart cart) {
+        if (cart == null || cart.isEmpty()) {
+            throw new IllegalArgumentException("Cart cannot be empty");
+        }
+    }
+    
+    private void validateCustomerEmail(String email) {
+        if (email == null || !email.contains("@")) {
+            throw new IllegalArgumentException("Invalid customer email");
+        }
+    }
+    
+    private List<OrderItem> convertCartToOrderItems(ShoppingCart cart) {
+        return cart.getItems().entrySet().stream()
+                .map(entry -> new OrderItem(entry.getKey(), entry.getValue()))
+                .collect(Collectors.toList());
+    }
+    
+    private void validateOrderForProcessing(Order order) {
+        if (order.getStatus() != OrderStatus.PENDING) {
+            throw new OrderProcessingException("Order is not in pending status");
+        }
+    }
+    
+    private void reserveInventory(Order order) {
+        if (!inventoryService.reserveItems(order.getItems())) {
+            throw new OrderProcessingException("Items not available in inventory");
+        }
+    }
+    
+    private PaymentResult processPayment(Order order, PaymentMethod paymentMethod) {
+        return paymentService.processPayment(order, paymentMethod);
+    }
+    
+    private void handlePaymentResult(Order order, PaymentResult paymentResult) {
+        if (paymentResult.isSuccess()) {
+            order.setStatus(OrderStatus.PROCESSING);
+            shippingService.scheduleShipping(order);
+            notificationService.sendOrderConfirmation(order);
+        } else {
+            order.setStatus(OrderStatus.PAYMENT_FAILED);
+            inventoryService.releaseItems(order.getItems());
         }
     }
 }
 ```
+
+## Key TDD Lessons
+
+1. **Integration Testing**: TDD helps design systems that work well together
+2. **Dependency Injection**: Use interfaces to make testing easier
+3. **Error Handling**: Test both success and failure scenarios
+4. **Business Workflows**: Each business process becomes a test case
+5. **Separation of Concerns**: Each service has a single responsibility
+
+## Complete Test Suite
+
+```java
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class OrderProcessingSystemTest {
+    
+    @Test
+    public void testCreateOrderFromCart() {
+        ShoppingCart cart = createCartWithItems();
+        OrderProcessingSystem orderSystem = createOrderSystem();
+        
+        Order order = orderSystem.createOrder(cart, "customer@example.com");
+        
+        assertNotNull(order);
+        assertEquals("customer@example.com", order.getCustomerEmail());
+        assertEquals(OrderStatus.PENDING, order.getStatus());
+    }
+    
+    @Test
+    public void testProcessOrderWithValidPayment() {
+        OrderProcessingSystem orderSystem = createOrderSystem();
+        Order order = createTestOrder();
+        
+        PaymentResult result = orderSystem.processOrder(order, new CreditCardPayment("1234567890123456"));
+        
+        assertTrue(result.isSuccess());
+        assertEquals(OrderStatus.PROCESSING, order.getStatus());
+    }
+    
+    @Test
+    public void testProcessOrderWithInsufficientFunds() {
+        OrderProcessingSystem orderSystem = createOrderSystem();
+        Order order = createTestOrder();
+        
+        PaymentResult result = orderSystem.processOrder(order, new CreditCardPayment("0000000000000000"));
+        
+        assertFalse(result.isSuccess());
+        assertEquals("Insufficient funds", result.getErrorMessage());
+        assertEquals(OrderStatus.PAYMENT_FAILED, order.getStatus());
+    }
+    
+    @Test
+    public void testCalculateShippingCost() {
+        OrderProcessingSystem orderSystem = createOrderSystem();
+        Order order = createTestOrder();
+        
+        double shippingCost = orderSystem.calculateShippingCost(order);
+        
+        assertTrue(shippingCost > 0);
+    }
+    
+    @Test
+    public void testSendOrderConfirmation() {
+        OrderProcessingSystem orderSystem = createOrderSystem();
+        Order order = createTestOrder();
+        
+        NotificationResult result = orderSystem.sendOrderConfirmation(order);
+        
+        assertTrue(result.isSuccess());
+    }
+    
+    @Test
+    public void testCancelOrder() {
+        OrderProcessingSystem orderSystem = createOrderSystem();
+        Order order = createTestOrder();
+        order.setStatus(OrderStatus.PROCESSING);
+        
+        boolean cancelled = orderSystem.cancelOrder(order);
+        
+        assertTrue(cancelled);
+        assertEquals(OrderStatus.CANCELLED, order.getStatus());
+    }
+    
+    @Test
+    public void testProcessRefund() {
+        OrderProcessingSystem orderSystem = createOrderSystem();
+        Order order = createTestOrder();
+        order.setStatus(OrderStatus.PROCESSING);
+        
+        RefundResult result = orderSystem.processRefund(order);
+        
+        assertTrue(result.isSuccess());
+        assertEquals(OrderStatus.CANCELLED, order.getStatus());
+    }
+    
+    private OrderProcessingSystem createOrderSystem() {
+        return new OrderProcessingSystem(
+            new InventoryService(),
+            new PaymentService(),
+            new ShippingService(),
+            new NotificationService()
+        );
+    }
+    
+    private ShoppingCart createCartWithItems() {
+        ShoppingCart cart = new ShoppingCart();
+        Product laptop = new Product("Laptop", 999.99, 10, 2.5);
+        cart.addItem(laptop, 1);
+        return cart;
+    }
+    
+    private Order createTestOrder() {
+        List<OrderItem> items = Arrays.asList(
+            new OrderItem(new Product("Laptop", 999.99, 10, 2.5), 1)
+        );
+        return new Order("customer@example.com", items);
+    }
+}
+```
+
+## TDD Best Practices Summary
+
+1. **Start Simple**: Begin with the simplest test case
+2. **One Test at a Time**: Add one test, make it pass, then move to the next
+3. **Red-Green-Refactor**: Always follow this cycle
+4. **Test Edge Cases**: Include boundary conditions and error scenarios
+5. **Refactor Regularly**: Keep code clean and maintainable
+6. **Mock Dependencies**: Use interfaces to isolate units under test
+7. **Business-Focused Tests**: Write tests that reflect business requirements
+
+This completes our TDD tutorial series! You now have a comprehensive understanding of how to apply TDD principles to build robust, well-tested Java applications.
