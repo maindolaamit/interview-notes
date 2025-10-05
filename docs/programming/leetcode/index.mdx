@@ -152,11 +152,9 @@ import TabItem from "@theme/TabItem";
     ```java
     String s = "hello";
     char[] chars = s.toCharArray();
-    String[] words = s.split("\\s+");
-    // split by space
-    String[] words = s.split("\\s+");
-    // split by comma
-    String[] items = s.split(",");
+    
+    String[] words = s.split("\\s+"); // split by space
+    String[] items = s.split(",");    // split by comma
     // join array to string with delimiter
     String joined = String.join(",", words); // join array to string with delimiter
 
