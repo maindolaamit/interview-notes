@@ -80,61 +80,187 @@ Let’s consider below assumptions :
 ### API Design
 We can have SOAP or REST APIs to expose the functionality of our service. Let’s see the REST APIs for our service.
 
-- **A service to store post
-- **A service to retrieve post
+- **Post Service:** A service to store post in Database
+- **Media Service:** A service to store media in Object Storage
+- **User Service:** A service to store user and user relationships
+- **Search Service:** A service to search posts and users
+- **News Feed Service:** A service to generate news feed for users
+- **Notification Service:** A service to send notifications to users
+- **Analytics Service:** A service to send analytics
 
+<Tabs>
+<TabItem value="Post Service">
 ```java
 /**
-POST API to upload post
-api/v1/post/create
-    api_dev_key - A developer key to track the user who created the paste and to block abuse
-
-returns
+POST API to create a new post
+api/v1/posts
+    api_dev_key - A developer key to track the user who created the post and to block abuse
+    user_id - ID of the user creating the post
+    content - The post content
+    media_urls - URLs of attached media files
+returns: success or error message
 */
-boolean createPost(api_dev_key, post)
-    returns True if the post is created successfully or False if failed
-
-/**
-GET API to get a paste
-api/v1/get/<shortened_url>
-    api_dev_key - A developer key to track the user who created the paste and to block abuse
-    post_id - key to find the post
-returns the original code snippet
-*/
-String getPost(api_dev_key, post_id)
-    returns the post
+String createPost(String api_dev_key, String user_id, String content, String media_urls)
 
 /**
-DELETE API to delete a paste
-api/v1/delete/<paste_key>
-    api_dev_key - A developer key to track the user who created the paste and to block abuse
-    post_id - key to find the post
-returns True if the paste existed and was deleted successfully
+GET API to get a post
+api/v1/posts/{post_id}
+    api_dev_key - A developer key to track the user who created the post and to block abuse
+    post_id - ID of the post to get
+returns: post
 */
-boolean deletePost(api_dev_key, post_id)
-    returns True if the post is deleted successfully or False if failed
+String getPost(String api_dev_key, String post_id)
+```
+
+</TabItem>
+<TabItem value="Media Service">
+```java
+/**
+POST API to upload a media file - image or video
+api/v1/media/upload
+    api_dev_key - A developer key
+    user_id - ID of the user uploading the media
+    media_type - Type of the media
+    media_url - URL of the media
+returns: success or error message
+*/
+String uploadMedia(String api_dev_key, String user_id, String media_type, String media_url)
+
+/**
+GET API to get a media file - image or video
+api/v1/media/{media_url}
+    api_dev_key - A developer key to track the user who created the media and to block abuse
+    media_url - URL of the media to get
+returns: media
+*/
+String getMedia(String api_dev_key, String user_id, String media_type, String media_url)
+
+
+/**
+DELETE API to delete a media file - image or video
+api/v1/media/{media_url}
+    api_dev_key - A developer key to track the user who created the media and to block abuse
+    media_url - URL of the media to delete
+returns: success or error message
+*/
+String deleteMedia(String api_dev_key, String user_id, String media_type, String media_url)
+
+```
+</TabItem>
+<TabItem value="User Service">
+```java
+/**
+POST API to create a new user and to store user in Database
+api/v1/users
+    api_dev_key - A developer key to track the user who created the user and to block abuse
+    user_id - ID of the user creating the user
+    name - The user name
+    email - The user email
+returns: success or error message
+*/
+String createUser(String api_dev_key, String user_id, String name, String email)
+
+/**
+GET API to get a user
+api/v1/users/{user_id}
+    api_dev_key - A developer key to track the user who created the user and to block abuse
+    user_id - ID of the user to get
+returns: user
+*/
+String getUser(String api_dev_key, String user_id)
 
 /**
 POST API to follow a user
-api/v1/follow
-    api_dev_key - A developer key to track the user who created the paste and to block abuse
-    user_id - key to find the user
-returns True if the user is followed successfully or False if failed
+api/v1/users/{user_id}/follow
+    api_dev_key - A developer key to track the user who created the user and to block abuse
+    user_id - ID of the user to follow
+    target_user_id - ID of the user to follow
+returns: success or error message
 */
-boolean followUser(api_dev_key, user_id)
-    returns True if the user is followed successfully or False if failed
+String followUser(String api_dev_key, String user_id, String target_user_id)
+
+/**
+POST API to unfollow a user
+api/v1/users/{user_id}/unfollow
+    api_dev_key - A developer key to track the user who created the user and to block abuse
+    user_id - ID of the user to unfollow
+    target_user_id - ID of the user to unfollow
+returns: success or error message
+*/
+String unfollowUser(String api_dev_key, String user_id, String target_user_id)
+```
+
+</TabItem>
+<TabItem value="Search Service">
+```java
+/**
+POST API to search for a user
+api/v1/search/users
+    api_dev_key - A developer key to track the user who created the user and to block abuse
+    user_id - ID of the user to search for
+    query - search query
+returns: success or error message
+*/
+String followUser(String api_dev_key, String user_id, String target_user_id)
+
+```
+</TabItem>
+</Tabs>
+
+<Tabs>
+<TabItem value="News Feed Service">
+```java
+/**
+POST API to generate news feed
+api/v1/newsfeed/generate
+    api_dev_key - A developer key
+    user_id - ID of the user generating the news feed
+returns: success or error message
+*/
+void generateNewsFeed(String api_dev_key, String user_id)
 
 
 /**
-GET API to Search User, Post, etc by tags or title
-api/v1/search
-    api_dev_key - A developer key to track the user who created the paste and to block abuse
-    query - search query
-returns list of posts
+GET API to get news feed
+api/v1/newsfeed/{user_id}
+    api_dev_key - A developer key
+    user_id - ID of the user getting the news feed
+returns: news feed
 */
-List<Post> search(api_dev_key, query)
-    returns list of posts
+List<Post> getNewsFeed(String api_dev_key, String user_id)
 ```
+</TabItem>
+
+<TabItem value="Notification Service">
+```java
+/**
+POST API to send notification
+api/v1/notification/send
+    api_dev_key - A developer key
+    user_id - ID of the user sending the notification
+    notification_type - Type of the notification
+    notification_message - Message of the notification
+returns: success or error message
+*/
+String sendNotification(String api_dev_key, String user_id, String notification_type, String notification_message)
+```
+</TabItem>
+<TabItem value="Analytics Service">
+```java
+/**
+POST API to send analytics
+api/v1/analytics/send
+    api_dev_key - A developer key
+    user_id - ID of the user sending the analytics
+    analytics_type - Type of the analytics
+    analytics_message - Message of the analytics
+returns: success or error message
+*/
+String sendAnalytics(String api_dev_key, String user_id, String analytics_type, String analytics_message)
+```
+</TabItem>
+</Tabs>
+
 
 ---
 
@@ -303,6 +429,102 @@ We can remove **Single point of Failure** by bringing redundancy, to provide bac
 import FinalDesignSVG from './high-level-design.svg';
 
 <FinalDesignSVG width="100%" height="80%"/>
+
+### Data Sharding
+Let's discuss how we can shard the data.
+
+<details>
+<summary>**User-based Partitioning**</summary>
+
+We can partition data based on UserId to keep all posts together
+- Above approach can lead to hotspots, for hot users we can use consistent hashing to distribute data evenly across nodes.
+- Some users have more posts than others, distribution will be uneven. Similarly some users will upload more media files than others.
+- What if we cannot store all posts or media files on a single shard? What if they are distributed across multiple shards?
+- Storing all posts or media files on a single shard can lead to unavailability if the shard is down.
+
+```mermaid
+erDiagram
+    User {
+        BIGINT user_id PK
+        VARCHAR name
+        VARCHAR email
+        DATE date_of_birth
+    }
+```
+
+PhotoId/VideoId/PostId - Appending shard id to the PhotoId/VideoId/PostId will look like this:
+```sql
+photo_id = 1234567890
+shard_id = 1
+photo_id_with_shard_id = 1234567890_1
+```
+
+
+</details>
+
+<details>
+<summary>**Post/Media ID based Partitioning**</summary>
+
+We can partition data based on PostId or MediaUrl to keep all posts together
+- Above approach can lead to hotspots, for hot posts we can use consistent hashing to distribute data evenly across nodes.
+- Some posts have more likes than others, distribution will be uneven.
+- What if we cannot store all likes on a single shard? What if they are distributed across multiple shards?
+- Storing all likes on a single shard can lead to unavailability if the shard is down.
+
+Generating PostId/MediaUrl - Auto-incrementing Id will not work as we need to store data across multiple shards, so need to know the id to determine the shard.
+We can have a separate service to generate PostId/MediaUrl and store it in a separate table.
+
+```sql
+CREATE TABLE PostId (
+    post_id BIGINT,
+    shard_id BIGINT,
+    PRIMARY KEY (post_id)
+);
+```
+
+</details>
+
+### Feed Generation
+We can generate feed for a user based on the following criteria:
+- Posts from the users the user follows
+- Posts from the users the user is mentioned in
+- Posts from the users the user has liked
+- Posts from the users the user has commented on
+
+```sql
+CREATE TABLE Feed (
+    user_id BIGINT,
+    post_id BIGINT,
+    PRIMARY KEY (user_id, post_id)
+);
+```
+
+To create feed for a user we need to fetch the latest posts/media from above mentioned criteria and store it in a separate table.
+For simplicity we will fetch only 100 posts/media for a user.
+
+A possible problem with this approach is that we need to fetch the latest posts/media for a user from multiple shards, which can be slow.
+We can use a `News Feed service` to pre-fetch the latest posts/media for a user in the background.
+
+Different approaches to generate feed:
+- **Pull Model** : User will pull the latest posts/media for a user from the server.
+- **Push Model** : Server will push the latest posts/media for a user to the client.
+- **Hybrid Model** : Combine pull and push model for optimal performance.
+
+```mermaid
+graph TD
+    subgraph "Feed Generation Components"
+    PostCollector[Post Collector]
+    UserFeedTable[User Feed Table]
+    FeedIndex[Feed Index]
+    HotFeedCache[Hot Feed Cache]
+    RelevanceScorer[Relevance Scorer]
+    TimeDecay[Time Decay Factor]
+    EngagementScore[Engagement Score]
+    Personalization[Personalization Engine]
+end
+```
+
+---
 
 ### Topics of Discussion
 - In our design we have issue of `Reliability` : Loosing files or any Service node dies.
