@@ -136,6 +136,8 @@ List<Post> search(api_dev_key, query)
     returns list of posts
 ```
 
+---
+
 ### Database Design
 - **We need to store billions of posts**.
 - **We need to store metadata** with each post, including **tags**, **creation date**, **the number of likes**, **the number of visits**, **etc**.
@@ -169,6 +171,11 @@ List<Post> search(api_dev_key, query)
 - **PostLikes** table will store all the likes for each post.
 - **PostComments** table will store all the comments on each post.
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<Tabs>
+<TabItem value="User">
 ```sql
 CREATE TABLE User (
     user_id BIGINT,
@@ -178,6 +185,16 @@ CREATE TABLE User (
     PRIMARY KEY (user_id)
 );
 
+CREATE TABLE UserFollows (
+    user_id BIGINT,
+    follower_user_id BIGINT,
+    PRIMARY KEY (user_id, follower_user_id)
+);
+
+```
+</TabItem>
+<TabItem value="Post">
+```sql
 CREATE TABLE Post (
     post_id BIGINT,
     user_id BIGINT,
@@ -186,25 +203,28 @@ CREATE TABLE Post (
     updated_at DATETIME,
     PRIMARY KEY (post_id)
 );
-
-CREATE TABLE UserFollows (
-    user_id BIGINT,
-    follower_user_id BIGINT,
-    PRIMARY KEY (user_id, follower_user_id)
-);
-
+```
+</TabItem>
+<TabItem value="PostTags">
+```sql
 CREATE TABLE PostTags (
     post_id BIGINT,
     tag_id BIGINT,
     PRIMARY KEY (post_id, tag_id)
 );
-
+```
+</TabItem>
+<TabItem value="PostLikes">
+```sql
 CREATE TABLE PostLikes (
     post_id BIGINT,
     user_id BIGINT,
     PRIMARY KEY (post_id, user_id)
 );
-
+```
+</TabItem>
+<TabItem value="PostComments">
+```sql
 CREATE TABLE PostComments (
     post_id BIGINT,
     user_id BIGINT,
@@ -215,7 +235,64 @@ CREATE TABLE PostComments (
     PRIMARY KEY (post_id, user_id)
 );
 ```
-_![Database Schema](./db-schema.png)_
+</TabItem>
+</Tabs>
+
+
+
+```mermaid
+erDiagram
+    User {
+        BIGINT user_id PK
+        VARCHAR name
+        VARCHAR email
+        DATE date_of_birth
+    }
+    
+    Post {
+        BIGINT post_id PK
+        BIGINT user_id FK
+        VARCHAR content
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    
+    UserFollows {
+        BIGINT user_id PK,FK
+        BIGINT follower_user_id PK,FK
+    }
+    
+    PostTags {
+        BIGINT post_id PK,FK
+        BIGINT tag_id PK
+    }
+    
+    PostLikes {
+        BIGINT post_id PK,FK
+        BIGINT user_id PK,FK
+    }
+    
+    PostComments {
+        BIGINT post_id PK,FK
+        BIGINT user_id PK,FK
+        BIGINT comment_id
+        BIGINT parent_comment_id FK
+        VARCHAR content
+        DATETIME created_at
+    }
+    
+    User ||--o{ Post : "creates"
+    User ||--o{ UserFollows : "follows"
+    User ||--o{ UserFollows : "is_followed_by"
+    Post ||--o{ PostTags : "has"
+    Post ||--o{ PostLikes : "receives"
+    Post ||--o{ PostComments : "has"
+    User ||--o{ PostLikes : "gives"
+    User ||--o{ PostComments : "writes"
+    PostComments ||--o{ PostComments : "replies_to"
+```
+
+---
 
 ### High Level Design
 Since it's a very read heavy system and uploading post can consume most of the data, we can keep **Read** and **Write** as
