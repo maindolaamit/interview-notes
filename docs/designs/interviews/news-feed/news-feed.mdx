@@ -1,13 +1,11 @@
 ---
 title: NewsFeed System
-description : "System Interview Questions"
+description: "System Interview Questions"
 sidebar_position: 5
 ---
 
-
-## Design a NewsFeed System like Facebook, Instagram, Twitter
-A NewsFeed system is continuously changing list of Stories comprised of Photos, Videos, Post updates, activity
-from People, Page/Channel & Groups that you have Subscribed or Follow.
+# Design a NewsFeed System like Facebook, Instagram, Twitter
+A NewsFeed system is a continuously changing list of Stories comprised of Photos, Videos, Post updates, and activities from People, Pages/Channels & Groups that you have Subscribed or Follow.
 
 
 ### Requirements and Goals of the System
@@ -78,141 +76,974 @@ Let’s consider below assumptions :
 
 
 ### API Design
-We can have SOAP or REST APIs to expose the functionality of our service. Let’s see the REST APIs for our service.
+This problem can be decomposed into several main components:
+- **User Service:** Handles user registration, authentication, and profile management.
+- **Post Service:** Handles post creation, updates, and retrieval.
+- **Feed Service:** Handles news feed generation and delivery.
+- **Social Service:** Handles follow relationships and social interactions.
+- **Media Service:** Handles image and video uploads and processing.
 
-- **A service to generate the news feed
-- **A service to publish the feed to the user
-
+<Tabs>
+<TabItem value="Post Service">
 ```java
 /**
-POST API to generate news feed
-api/v1/feed
-    api_dev_key - A developer key to track the user who created the paste and to block abuse
-    user_id - key to find the user
+POST API to create a new post
+api/v1/posts
+    api_dev_key - A developer key to track the user who created the post and to block abuse
+    user_id - ID of the user creating the post
+    content - The post content
+    media_urls - URLs of attached media files
+returns: success or error message
 */
-void generateFeed(api_dev_key, user_id)
+String createPost(String api_dev_key, String user_id, String content, String media_urls)
 
 /**
-GET API to get news feed
-api/v1/feed
-    api_dev_key - A developer key to track the user who created the paste and to block abuse
-    user_id - key to find the user
-returns list of posts
+POST API to like a post
+api/v1/posts/{post_id}/like
+    api_dev_key - A developer key
+    user_id - ID of the user liking the post
+    post_id - ID of the post to like
+returns: success or error message
 */
-List<Post> getFeed(api_dev_key, user_id)
-    returns list of posts
+String likePost(String api_dev_key, String user_id, String post_id)
+
+/**
+POST API to comment on a post
+api/v1/posts/{post_id}/comment
+    api_dev_key - A developer key
+    user_id - ID of the user commenting
+    post_id - ID of the post to comment on
+    comment - The comment content
+returns: success or error message
+*/
+String commentOnPost(String api_dev_key, String user_id, String post_id, String comment)
 ```
+</TabItem>
+<TabItem value="Feed Service">
+```java
+/**
+GET API to get user's news feed
+api/v1/feed
+    api_dev_key - A developer key to track the user
+    user_id - ID of the user requesting the feed
+    page - Page number for pagination
+    limit - Number of posts per page
+returns: list of posts in the user's feed
+*/
+List<Post> getFeed(String api_dev_key, String user_id, int page, int limit)
 
-### Database Design
-- **We need to store billions of posts**.
-- **We need to store metadata** with each post, including **tags**, **creation date**, **the number of likes**, **the number of visits**, **etc**.
-- **Each post can have millions of likes** and **comments**.
-- **Users can perform CRUD operations** on their posts.
-- **Users can follow other users**.
-- **Users can search posts** by tags.
-- **Users can search posts** by title.
-- **Users can search posts** by user.
-- **Our service is read-heavy**.
-- **Our services has relationships** between **entities**.
+/**
+POST API to create a user's news feed
+api/v1/feed
+    api_dev_key - A developer key to track the user
+    user_id - ID of the user creating the feed
+    post_ids - List of post IDs to create the feed
+returns: list of posts in the user's feed
+*/
+String createFeed(String api_dev_key, String user_id, List<String> post_ids)
+```
+</TabItem>
+<TabItem value="Social Service">
+```java
+/**
+POST API to follow a user
+api/v1/follow
+    api_dev_key - A developer key
+    user_id - ID of the user who wants to follow
+    target_user_id - ID of the user to follow
+returns: success or error message
+*/
+String followUser(String api_dev_key, String user_id, String target_user_id)
 
-#### What kind of database should we use?
-- **SQL** databases are not a good fit for such a large scale system as they don’t scale well horizontally.
-- **NoSQL** databases are a better choice for such a large dataset as we can add more machines easily when we need to scale out our system.
-- **Cassandra** is a good choice because it is specifically designed to handle huge amounts of data and **scale** horizontally across multiple nodes.
-- We can store **post** in a distributed **Blob Storage** like **HDFS** or **S3**.
-- We can use **MySQL** or a **key-value store** to store **metadata** about the post like **tags**, **number of likes**, **number of comments**, etc.
+/**
+POST API to unfollow a user
+api/v1/unfollow
+    api_dev_key - A developer key
+    user_id - ID of the user who wants to unfollow
+    target_user_id - ID of the user to unfollow
+returns: success or error message
+*/
+String unfollowUser(String api_dev_key, String user_id, String target_user_id)
+```
+</TabItem>
+<TabItem value="Media Service">
+```java
+/**
+POST API to upload a media file
+api/v1/media/upload
+    api_dev_key - A developer key
+    user_id - ID of the user uploading the media
+    media_type - Type of the media
+    media_url - URL of the media
+returns: success or error message
+*/
+String uploadMedia(String api_dev_key, String user_id, String media_type, String media_url)
 
-:::tip
-- **We can also use** a **key-value** store like **DynamoDB** or **Riak** to store a **huge amount of data**. **These stores provide** **predictable performance** and **low latency** for **read** and **write** operations, but **the only drawback** is that **they don’t support range queries**.
+/**
+POST API to download a media file
+api/v1/media/download
+    api_dev_key - A developer key
+    user_id - ID of the user downloading the media
+    media_url - URL of the media
+returns: success or error message
+*/
+String downloadMedia(String api_dev_key, String user_id, String media_type, String media_url)
+```
+</TabItem>
+<TabItem value="Notification Service">
+```java
+/**
+POST API to send notification
+api/v1/notification/send
+    api_dev_key - A developer key
+    user_id - ID of the user sending the notification
+    notification_type - Type of the notification
+    notification_message - Message of the notification
+returns: success or error message
+*/
+String sendNotification(String api_dev_key, String user_id, String notification_type, String notification_message)
 
-**Cassandra** is a better choice **if we want to run different queries** on our data.
-:::
+/**
+POST API to send analytics
+api/v1/analytics/send
+    api_dev_key - A developer key
+    user_id - ID of the user sending the analytics
+    analytics_type - Type of the analytics
+    analytics_message - Message of the analytics
+returns: success or error message
+*/
+String sendAnalytics(String api_dev_key, String user_id, String analytics_type, String analytics_message)
+```
+</TabItem>
+</Tabs>
 
-#### Database Schema
-- **User** table will store all the user information who have registered with our system.
-- **Post** table will store all the posts.
-- **UserFollows** table will store all the follow relationships.
-- **PostTags** table will store all the tags for each post.
-- **PostLikes** table will store all the likes for each post.
-- **PostComments** table will store all the comments on each post.
+---
 
+### Database Schema
+We need to store user data, posts, social relationships, and interactions. Below is a comprehensive schema for the database:
+
+#### Core Tables
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<Tabs>
+<TabItem value="User">
 ```sql
 CREATE TABLE User (
-    user_id BIGINT,
-    name VARCHAR(30),
-    email VARCHAR(30),
+    user_id BIGINT PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    first_name VARCHAR(50),
+    last_name VARCHAR(50),
+    bio TEXT,
+    profile_picture_url VARCHAR(500),
+    cover_photo_url VARCHAR(500),
     date_of_birth DATE,
-    PRIMARY KEY (user_id)
-);
-
-CREATE TABLE Post (
-    post_id BIGINT,
-    user_id BIGINT,
-    content VARCHAR(MAX),
-    created_at DATETIME,
-    updated_at DATETIME,
-    PRIMARY KEY (post_id)
-);
-
-CREATE TABLE UserFollows (
-    user_id BIGINT,
-    follower_user_id BIGINT,
-    PRIMARY KEY (user_id, follower_user_id)
-);
-
-CREATE TABLE PostTags (
-    post_id BIGINT,
-    tag_id BIGINT,
-    PRIMARY KEY (post_id, tag_id)
-);
-
-CREATE TABLE PostLikes (
-    post_id BIGINT,
-    user_id BIGINT,
-    PRIMARY KEY (post_id, user_id)
-);
-
-CREATE TABLE PostComments (
-    post_id BIGINT,
-    user_id BIGINT,
-    comment_id BIGINT,
-    parent_comment_id BIGINT,
-    content VARCHAR(MAX),
-    created_at DATETIME,
-    PRIMARY KEY (post_id, user_id)
+    location VARCHAR(100),
+    website_url VARCHAR(500),
+    is_verified BOOLEAN DEFAULT FALSE,
+    is_private BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    last_login TIMESTAMP,
+    is_active BOOLEAN DEFAULT TRUE,
+    INDEX idx_email (email),
+    INDEX idx_username (username),
+    INDEX idx_created_at (created_at)
 );
 ```
-_![Database Schema](./db-schema.png)_
+</TabItem>
+<TabItem value="Post">
+```sql
+CREATE TABLE Post (
+    post_id BIGINT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    content TEXT,
+    post_type ENUM('text', 'image', 'video', 'link') DEFAULT 'text',
+    media_urls JSON,
+    location_latitude DECIMAL(10, 8),
+    location_longitude DECIMAL(11, 8),
+    location_name VARCHAR(200),
+    is_public BOOLEAN DEFAULT TRUE,
+    allow_comments BOOLEAN DEFAULT TRUE,
+    allow_shares BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    is_active BOOLEAN DEFAULT TRUE,
+    FOREIGN KEY (user_id) REFERENCES User(user_id),
+    INDEX idx_user (user_id),
+    INDEX idx_created_at (created_at),
+    INDEX idx_post_type (post_type),
+    INDEX idx_location (location_latitude, location_longitude)
+);
+```
+</TabItem>
+<TabItem value="UserFollows">
+```sql
+CREATE TABLE UserFollows (
+    user_id BIGINT NOT NULL,
+    follower_user_id BIGINT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_active BOOLEAN DEFAULT TRUE,
+    PRIMARY KEY (user_id, follower_user_id),
+    FOREIGN KEY (user_id) REFERENCES User(user_id),
+    FOREIGN KEY (follower_user_id) REFERENCES User(user_id),
+    INDEX idx_follower (follower_user_id),
+    INDEX idx_following (user_id)
+);
+```
+</TabItem>
+<TabItem value="PostLikes">
+```sql
+CREATE TABLE PostLikes (
+    post_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (post_id, user_id),
+    FOREIGN KEY (post_id) REFERENCES Post(post_id),
+    FOREIGN KEY (user_id) REFERENCES User(user_id),
+    INDEX idx_user (user_id),
+    INDEX idx_created_at (created_at)
+);
+```
+</TabItem>
+<TabItem value="PostComments">
+```sql
+CREATE TABLE PostComments (
+    comment_id BIGINT PRIMARY KEY,
+    post_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    parent_comment_id BIGINT,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    is_active BOOLEAN DEFAULT TRUE,
+    FOREIGN KEY (post_id) REFERENCES Post(post_id),
+    FOREIGN KEY (user_id) REFERENCES User(user_id),
+    FOREIGN KEY (parent_comment_id) REFERENCES PostComments(comment_id),
+    INDEX idx_post (post_id),
+    INDEX idx_user (user_id),
+    INDEX idx_parent (parent_comment_id),
+    INDEX idx_created_at (created_at)
+);
+```
+</TabItem>
+</Tabs>
+
+<Tabs>
+<TabItem value="PostTags">
+```sql
+CREATE TABLE PostTags (
+    post_id BIGINT NOT NULL,
+    tag_id BIGINT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (post_id, tag_id),
+    FOREIGN KEY (post_id) REFERENCES Post(post_id),
+    FOREIGN KEY (tag_id) REFERENCES Tags(tag_id),
+    INDEX idx_post (post_id),
+    INDEX idx_tag (tag_id)
+);
+```
+</TabItem>
+<TabItem value="Tags">
+```sql
+CREATE TABLE Tags (
+    tag_id BIGINT PRIMARY KEY,
+    tag_name VARCHAR(100) UNIQUE NOT NULL,
+    tag_description TEXT,
+    usage_count INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_name (tag_name),
+    INDEX idx_usage (usage_count)
+);
+```
+</TabItem>
+<TabItem value="UserFeed">
+```sql
+CREATE TABLE UserFeed (
+    feed_id BIGINT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    post_id BIGINT NOT NULL,
+    post_user_id BIGINT NOT NULL,
+    feed_score DECIMAL(10, 6),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES User(user_id),
+    FOREIGN KEY (post_id) REFERENCES Post(post_id),
+    FOREIGN KEY (post_user_id) REFERENCES User(user_id),
+    INDEX idx_user (user_id),
+    INDEX idx_user_created (user_id, created_at),
+    INDEX idx_score (feed_score)
+);
+```
+</TabItem>
+<TabItem value="Notifications">
+```sql
+CREATE TABLE Notifications (
+    notification_id BIGINT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    from_user_id BIGINT,
+    post_id BIGINT,
+    notification_type ENUM('like', 'comment', 'follow', 'mention', 'share') NOT NULL,
+    title VARCHAR(200),
+    message TEXT,
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES User(user_id),
+    FOREIGN KEY (from_user_id) REFERENCES User(user_id),
+    FOREIGN KEY (post_id) REFERENCES Post(post_id),
+    INDEX idx_user (user_id),
+    INDEX idx_unread (user_id, is_read),
+    INDEX idx_created_at (created_at)
+);
+```
+</TabItem>
+</Tabs>
+
+#### Entity Relationship Diagram
+
+```mermaid
+erDiagram
+    User {
+        BIGINT user_id PK
+        VARCHAR username UK
+        VARCHAR email UK
+        VARCHAR password_hash
+        VARCHAR first_name
+        VARCHAR last_name
+        TEXT bio
+        VARCHAR profile_picture_url
+        VARCHAR cover_photo_url
+        DATE date_of_birth
+        VARCHAR location
+        VARCHAR website_url
+        BOOLEAN is_verified
+        BOOLEAN is_private
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+        TIMESTAMP last_login
+        BOOLEAN is_active
+    }
+    
+    Post {
+        BIGINT post_id PK
+        BIGINT user_id FK
+        TEXT content
+        ENUM post_type
+        JSON media_urls
+        DECIMAL location_latitude
+        DECIMAL location_longitude
+        VARCHAR location_name
+        BOOLEAN is_public
+        BOOLEAN allow_comments
+        BOOLEAN allow_shares
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+        BOOLEAN is_active
+    }
+    
+    UserFollows {
+        BIGINT user_id FK
+        BIGINT follower_user_id FK
+        TIMESTAMP created_at
+        BOOLEAN is_active
+    }
+    
+    PostLikes {
+        BIGINT post_id FK
+        BIGINT user_id FK
+        TIMESTAMP created_at
+    }
+    
+    PostComments {
+        BIGINT comment_id PK
+        BIGINT post_id FK
+        BIGINT user_id FK
+        BIGINT parent_comment_id FK
+        TEXT content
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+        BOOLEAN is_active
+    }
+    
+    PostTags {
+        BIGINT post_id FK
+        BIGINT tag_id FK
+        TIMESTAMP created_at
+    }
+    
+    Tags {
+        BIGINT tag_id PK
+        VARCHAR tag_name UK
+        TEXT tag_description
+        INT usage_count
+        TIMESTAMP created_at
+    }
+    
+    UserFeed {
+        BIGINT feed_id PK
+        BIGINT user_id FK
+        BIGINT post_id FK
+        BIGINT post_user_id FK
+        DECIMAL feed_score
+        TIMESTAMP created_at
+    }
+    
+    Notifications {
+        BIGINT notification_id PK
+        BIGINT user_id FK
+        BIGINT from_user_id FK
+        BIGINT post_id FK
+        ENUM notification_type
+        VARCHAR title
+        TEXT message
+        BOOLEAN is_read
+        TIMESTAMP created_at
+    }
+    
+    User ||--o{ Post : "creates"
+    User ||--o{ UserFollows : "follows"
+    User ||--o{ UserFollows : "followed_by"
+    User ||--o{ PostLikes : "likes"
+    User ||--o{ PostComments : "comments"
+    User ||--o{ UserFeed : "receives"
+    User ||--o{ Notifications : "receives"
+    User ||--o{ Notifications : "triggers"
+    
+    Post ||--o{ PostLikes : "receives"
+    Post ||--o{ PostComments : "receives"
+    Post ||--o{ PostTags : "tagged_with"
+    Post ||--o{ UserFeed : "appears_in"
+    Post ||--o{ Notifications : "triggers"
+    
+    Tags ||--o{ PostTags : "tags"
+    
+    PostComments ||--o{ PostComments : "replies_to"
+```
+
+### Step-by-Step Architecture Design
+
+To better understand the system, let's break down the architecture into smaller, manageable components:
+
+#### 1. Core Services Architecture
+
+```mermaid
+graph TB
+    subgraph "Client Layer"
+        Mobile[Mobile App]
+        Web[Web App]
+        API_Gateway[API Gateway]
+    end
+    
+    subgraph "Application Services"
+        UserService[User Service]
+        PostService[Post Service]
+        FeedService[Feed Service]
+        SocialService[Social Service]
+        MediaService[Media Service]
+        NotificationService[Notification Service]
+    end
+    
+    subgraph "Data Layer"
+        UserDB[(User Database)]
+        PostDB[(Post Database)]
+        FeedDB[(Feed Database)]
+        MediaDB[(Media Database)]
+    end
+    
+    subgraph "External Services"
+        CDN[CDN]
+        ImageStorage[Image Storage]
+        VideoStorage[Video Storage]
+        EmailService[Email Service]
+    end
+    
+    Mobile --> API_Gateway
+    Web --> API_Gateway
+    API_Gateway --> UserService
+    API_Gateway --> PostService
+    API_Gateway --> FeedService
+    API_Gateway --> SocialService
+    API_Gateway --> MediaService
+    API_Gateway --> NotificationService
+    
+    UserService --> UserDB
+    PostService --> PostDB
+    FeedService --> FeedDB
+    MediaService --> MediaDB
+    
+    MediaService --> CDN
+    MediaService --> ImageStorage
+    MediaService --> VideoStorage
+    NotificationService --> EmailService
+```
+
+#### 2. Feed Generation Module
+
+```mermaid
+graph TB
+    subgraph "Feed Generation Flow"
+        NewPost[New Post Created]
+        FollowGraph[Follow Graph Service]
+        FeedGenerator[Feed Generator]
+        RankingEngine[Ranking Engine]
+        FeedCache[Feed Cache]
+    end
+    
+    subgraph "Feed Generation Components"
+        PostCollector[Post Collector]
+        RelevanceScorer[Relevance Scorer]
+        TimeDecay[Time Decay Factor]
+        EngagementScore[Engagement Score]
+        Personalization[Personalization Engine]
+    end
+    
+    subgraph "Feed Storage"
+        UserFeedTable[User Feed Table]
+        FeedIndex[Feed Index]
+        HotFeedCache[Hot Feed Cache]
+    end
+    
+    NewPost --> FollowGraph
+    FollowGraph --> FeedGenerator
+    FeedGenerator --> PostCollector
+    PostCollector --> RelevanceScorer
+    RelevanceScorer --> TimeDecay
+    TimeDecay --> EngagementScore
+    EngagementScore --> Personalization
+    Personalization --> RankingEngine
+    RankingEngine --> FeedCache
+    
+    FeedCache --> UserFeedTable
+    FeedCache --> FeedIndex
+    FeedCache --> HotFeedCache
+```
+
+#### 3. Data Flow Architecture
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant API_Gateway
+    participant PostService
+    participant FeedService
+    participant Cache
+    participant Database
+    
+    User->>API_Gateway: Create Post
+    API_Gateway->>PostService: Process Post
+    PostService->>Database: Store Post
+    PostService->>Cache: Update Cache
+    PostService->>FeedService: Trigger Feed Update
+    FeedService->>Database: Update User Feeds
+    FeedService->>Cache: Update Feed Cache
+    
+    User->>API_Gateway: Get Feed
+    API_Gateway->>FeedService: Request Feed
+    FeedService->>Cache: Check Cache
+    alt Cache Hit
+        Cache-->>FeedService: Return Cached Feed
+    else Cache Miss
+        FeedService->>Database: Query Database
+        Database-->>FeedService: Return Feed Data
+        FeedService->>Cache: Update Cache
+    end
+    FeedService-->>API_Gateway: Return Feed
+    API_Gateway-->>User: Display Feed
+```
+
+#### 4. Caching Strategy
+
+```mermaid
+graph TB
+    subgraph "Caching Layers"
+        CDN[CDN Cache]
+        Redis[Redis Cache]
+        ApplicationCache[Application Cache]
+    end
+    
+    subgraph "Cache Types"
+        UserFeeds[User Feeds]
+        HotPosts[Hot Posts]
+        UserProfiles[User Profiles]
+        SocialGraph[Social Graph]
+    end
+    
+    subgraph "Cache Policies"
+        TTL[Time To Live]
+        LRU[Least Recently Used]
+        WriteThrough[Write Through]
+        WriteBack[Write Back]
+    end
+    
+    CDN --> HotPosts
+    Redis --> UserFeeds
+    Redis --> UserProfiles
+    ApplicationCache --> SocialGraph
+    
+    HotPosts --> TTL
+    UserFeeds --> LRU
+    UserProfiles --> WriteThrough
+    SocialGraph --> WriteBack
+```
+
+#### 5. Database Partitioning Strategy
+
+```mermaid
+graph TB
+    subgraph "Partitioning Strategy"
+        UserPartition[User-based Partitioning]
+        PostPartition[Post-based Partitioning]
+        FeedPartition[Feed-based Partitioning]
+    end
+    
+    subgraph "User Shards"
+        UserShard1[User Shard 1]
+        UserShard2[User Shard 2]
+        UserShard3[User Shard 3]
+        UserShardN[User Shard N]
+    end
+    
+    subgraph "Post Shards"
+        PostShard1[Post Shard 1]
+        PostShard2[Post Shard 2]
+        PostShard3[Post Shard 3]
+        PostShardN[Post Shard N]
+    end
+    
+    subgraph "Feed Shards"
+        FeedShard1[Feed Shard 1]
+        FeedShard2[Feed Shard 2]
+        FeedShard3[Feed Shard 3]
+        FeedShardN[Feed Shard N]
+    end
+    
+    UserPartition --> UserShard1
+    UserPartition --> UserShard2
+    UserPartition --> UserShard3
+    UserPartition --> UserShardN
+    
+    PostPartition --> PostShard1
+    PostPartition --> PostShard2
+    PostPartition --> PostShard3
+    PostPartition --> PostShardN
+    
+    FeedPartition --> FeedShard1
+    FeedPartition --> FeedShard2
+    FeedPartition --> FeedShard3
+    FeedPartition --> FeedShardN
+```
+
+#### 6. Notification System
+
+```mermaid
+graph TB
+    subgraph "Notification Components"
+        EventTrigger[Event Trigger]
+        NotificationEngine[Notification Engine]
+        MessageQueue[Message Queue]
+        DeliveryService[Delivery Service]
+    end
+    
+    subgraph "Notification Types"
+        LikeNotification[Like Notifications]
+        CommentNotification[Comment Notifications]
+        FollowNotification[Follow Notifications]
+        MentionNotification[Mention Notifications]
+    end
+    
+    subgraph "Delivery Channels"
+        PushNotification[Push Notifications]
+        EmailNotification[Email Notifications]
+        InAppNotification[In-App Notifications]
+        SMSNotification[SMS Notifications]
+    end
+    
+    EventTrigger --> NotificationEngine
+    NotificationEngine --> MessageQueue
+    MessageQueue --> DeliveryService
+    
+    DeliveryService --> LikeNotification
+    DeliveryService --> CommentNotification
+    DeliveryService --> FollowNotification
+    DeliveryService --> MentionNotification
+    
+    LikeNotification --> PushNotification
+    CommentNotification --> EmailNotification
+    FollowNotification --> InAppNotification
+    MentionNotification --> SMSNotification
+```
 
 ### High Level Design
-Since it's a very read heavy system and uploading post can consume most of the data, we can keep **Read** and **Write** as
-separate services to scale out separately as well.
 
-We can remove **Single point of Failure** by bringing redundancy, to provide backup or analytics.
+Now that we understand the individual components, here's how they all work together:
 
-import FinalDesignSVG from './high-level-design.svg';
-
-<FinalDesignSVG width="100%" height="80%"/>
+```mermaid
+graph TB
+    subgraph "Client Layer"
+        Mobile[Mobile Apps]
+        Web[Web Applications]
+        ThirdParty[Third-party Apps]
+    end
+    
+    subgraph "Load Balancing & API Gateway"
+        LoadBalancer[Load Balancer]
+        APIGateway[API Gateway]
+        RateLimiter[Rate Limiter]
+    end
+    
+    subgraph "Application Services"
+        UserService[User Service]
+        PostService[Post Service]
+        FeedService[Feed Service]
+        SocialService[Social Service]
+        MediaService[Media Service]
+        NotificationService[Notification Service]
+        AnalyticsService[Analytics Service]
+    end
+    
+    subgraph "Caching Layer"
+        RedisCluster[Redis Cluster]
+        Memcached[Memcached]
+        CDN[CDN]
+    end
+    
+    subgraph "Database Layer"
+        UserDB[(User Database)]
+        PostDB[(Post Database)]
+        FeedDB[(Feed Database)]
+        MediaDB[(Media Database)]
+    end
+    
+    subgraph "Search & Indexing"
+        Elasticsearch[Elasticsearch]
+        FeedIndex[Feed Index]
+        SearchEngine[Search Engine]
+    end
+    
+    subgraph "External Services"
+        ImageStorage[AWS S3]
+        VideoStorage[Video Storage]
+        EmailService[Email Service]
+        PushService[Push Notification Service]
+    end
+    
+    subgraph "Message Queue"
+        Kafka[Apache Kafka]
+        RabbitMQ[RabbitMQ]
+    end
+    
+    subgraph "Monitoring & Analytics"
+        Logging[Logging Service]
+        Metrics[Metrics Collection]
+        Alerting[Alerting System]
+    end
+    
+    Mobile --> LoadBalancer
+    Web --> LoadBalancer
+    ThirdParty --> LoadBalancer
+    
+    LoadBalancer --> APIGateway
+    APIGateway --> RateLimiter
+    RateLimiter --> UserService
+    RateLimiter --> PostService
+    RateLimiter --> FeedService
+    RateLimiter --> SocialService
+    RateLimiter --> MediaService
+    RateLimiter --> NotificationService
+    RateLimiter --> AnalyticsService
+    
+    UserService --> UserDB
+    PostService --> PostDB
+    FeedService --> FeedDB
+    MediaService --> MediaDB
+    SocialService --> UserDB
+    SocialService --> PostDB
+    
+    UserService --> RedisCluster
+    PostService --> RedisCluster
+    FeedService --> RedisCluster
+    SocialService --> RedisCluster
+    
+    PostService --> Elasticsearch
+    FeedService --> FeedIndex
+    SocialService --> SearchEngine
+    
+    MediaService --> ImageStorage
+    MediaService --> VideoStorage
+    NotificationService --> EmailService
+    NotificationService --> PushService
+    
+    NotificationService --> Kafka
+    AnalyticsService --> Kafka
+    AnalyticsService --> RabbitMQ
+    
+    UserService --> Logging
+    PostService --> Logging
+    FeedService --> Logging
+    SocialService --> Logging
+    
+    Logging --> Metrics
+    Metrics --> Alerting
+```
 
 ### Topics of Discussion
-- In our design we have issue of `Reliability` : Loosing files or any Service node dies.
-- Single point of failure.
-- `DataSharding`: How to partition data to handle issues such as.
-    - Imbalanced load distribution.
-    - Hotspots.
-    - Saving all posts of a user on a single node can lead to `Unavailability` if the Shard is down.
 
-#### Workaround
-Below are some of the possible work around.
-- **Replication** : Replicate data on multiple nodes.
-- **Redundancy** : Keep multiple copies of data on different nodes.
-- **Consistent Hashing** : To distribute data evenly across nodes.
-- **UserId Partitioning** : We can partition based on UserId to keep all posts together
-    - Above approach can lead to hotspots.
-    - Some users have more posts than others, distribution will be uneven.
-    -
-  :::warning
-  - Ids can be predicted and can be used to access other urls.
-  :::
+At a high level, we need to store and index social media data and handle real-time feed generation.
+Given that posts are created frequently and feeds are accessed constantly, our system is going to be both read and write heavy.
+
+The topic of discussion for this problem is mainly around the following components:
+- How to store and index social media posts efficiently.
+- How to generate personalized feeds in real-time.
+- How to handle the fan-out problem for popular users.
+
+#### Key Challenges
+
+1. **Feed Generation Performance**: 
+   - Real-time feed generation for millions of users
+   - Balancing freshness vs. performance
+   - Handling viral posts and celebrity users
+
+2. **Data Partitioning**:
+   - How to partition data to handle issues such as:
+   - Imbalanced load distribution
+   - Hotspots for popular users
+   - Saving all posts of a user on a single node can lead to unavailability if the shard is down
+
+3. **Scalability Issues**:
+   - Read-heavy system with 100:1 read to write ratio
+   - Handling millions of concurrent users
+   - Managing storage for billions of posts
+
+#### Solutions
+
+Below are some of the possible solutions:
+
+- **Replication**: Replicate data on multiple nodes for high availability
+- **Redundancy**: Keep multiple copies of data on different nodes
+- **Consistent Hashing**: To distribute data evenly across nodes
+- **Hybrid Fan-out**: Combine push and pull models for optimal performance
+- **Caching Strategy**: Multi-layer caching for hot data
+- **Database Sharding**: Partition data based on user ID, post ID, or geographic location
+
+:::warning
+- User IDs can be predicted and can be used to access other users' data
+- Need proper authentication and authorization mechanisms
+- Consider privacy implications of data partitioning
+:::
+
+### AI Generation Prompts
+
+For creating high-quality diagrams using AI tools like ChatGPT, Gemini, or Claude, use these prompts:
+
+#### 1. Entity Relationship Diagram
+```
+Create a comprehensive ER diagram for a social media newsfeed system with the following entities:
+- User (user_id, username, email, profile info)
+- Post (post_id, user_id, content, media, location)
+- UserFollows (user_id, follower_user_id)
+- PostLikes (post_id, user_id)
+- PostComments (comment_id, post_id, user_id, content)
+- PostTags (post_id, tag_id)
+- UserFeed (feed_id, user_id, post_id, score)
+- Notifications (notification_id, user_id, type, message)
+
+Include all relationships, foreign keys, and cardinalities. Use a professional color scheme with clear labels.
+```
+
+#### 2. System Architecture Diagram
+```
+Design a high-level system architecture diagram for a social media newsfeed system showing:
+- Client layer (mobile, web apps)
+- API Gateway and Load Balancer
+- Microservices (User, Post, Feed, Social, Media, Notification services)
+- Database layer (User DB, Post DB, Feed DB, Media DB)
+- Caching layer (Redis, CDN)
+- External services (AWS S3, Email service)
+- Message queues (Kafka, RabbitMQ)
+
+Use different colors for each layer and show data flow with arrows.
+```
+
+#### 3. Feed Generation Flow
+```
+Create a detailed flowchart showing the newsfeed generation process:
+- New post creation trigger
+- Follow graph traversal
+- Post collection from followed users
+- Relevance scoring algorithm
+- Time decay factor application
+- Engagement score calculation
+- Personalization engine
+- Final ranking and caching
+
+Use decision diamonds for algorithmic steps and rectangles for processes.
+```
+
+#### 4. Data Flow Sequence Diagram
+```
+Design a sequence diagram showing the complete flow from post creation to feed delivery:
+- User creates post
+- Post service processes and stores
+- Feed service updates user feeds
+- Cache updates
+- User requests feed
+- Feed retrieval and delivery
+
+Include all services, databases, and caches with proper timing and alternatives.
+```
+
+#### 5. Caching Strategy Diagram
+```
+Create a multi-layer caching architecture diagram showing:
+- CDN layer for static content
+- Redis cluster for hot data
+- Application-level caching
+- Cache policies (TTL, LRU, Write-through, Write-back)
+- Cache invalidation strategies
+
+Use different shapes and colors for each cache layer.
+```
+
+#### 6. Database Partitioning Strategy
+```
+Design a database partitioning diagram showing:
+- User-based partitioning
+- Post-based partitioning
+- Feed-based partitioning
+- Shard distribution across servers
+- Consistent hashing implementation
+- Replication strategies
+
+Include partition keys and replication factors.
+```
+
+#### 7. Notification System Architecture
+```
+Create a notification system architecture showing:
+- Event triggers (like, comment, follow, mention)
+- Notification engine
+- Message queue processing
+- Delivery channels (push, email, SMS, in-app)
+- User preference management
+- Rate limiting and batching
+
+Use different colors for each notification type and delivery channel.
+```
+
+#### 8. High-Level System Overview
+```
+Design a comprehensive system overview diagram showing the complete social media platform:
+- All microservices and their interactions
+- Database clusters and sharding
+- Caching layers and CDN
+- External integrations
+- Monitoring and analytics
+- Security and authentication layers
+
+Use a professional color scheme with clear service boundaries and data flow indicators.
+```
+
 
 

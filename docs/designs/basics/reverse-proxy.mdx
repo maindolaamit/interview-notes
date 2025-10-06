@@ -1,25 +1,63 @@
 ---
-title: Reverse Proxy
+title: Proxies
 description : "Systems Design Basics"
-sidebar_position: 3
+sidebar_position: 4
 ---
 
-<details>
-<summary>API Gateway</summary>
+A proxy is a server that acts as an intermediary between a client and a server.
+Client make connections to the proxy for web, file, or other requests, and the proxy makes connections to the server.
 
-API Gateway is a design pattern that aggregates multiple microservice APIs into a single entry point, simplifying external access and enforcing security policies.
-Key features of an API Gateway include:
-- **Request routing:** Directs incoming requests to the appropriate microservice based on the request URL or parameters.
-- **Security:** Enforces authentication, authorization, and rate limiting policies to protect microservices from unauthorized access and abuse.
+Typically, proxies are used to logging, transformation, filtering requests and responses, like adding authentication, authorization, rate limiting, caching, etc.
+
+```mermaid
+graph LR
+    A[Client] --> |Request| B[Proxy]
+    E[Client] --> |Request| B[Proxy]
+    F[Client] --> |Request| B[Proxy]
+
+    B --> |Filtered/Transformed Request| C[Server]
+    C --> |Response| B
+
+
+    style B fill:#e1f5fe
+    style C fill:#f3e5f5
+    style A fill:#e8f5e8
+    style E fill:#e8f5e8
+    style F fill:#e8f5e8
+```
+
+Proxies are commonly used to add functionality to a server.
+- **Authentication:** Enforces authentication, authorization, and rate limiting policies to protect microservices from unauthorized access and abuse.
 - **Protocol translation:** Translates incoming requests from external clients to the appropriate protocol and message format used by microservices.
 - **Aggregation:** Combines multiple microservice responses into a single response to fulfill complex client requests.
 - **Monitoring and logging:** Provides centralized monitoring and logging capabilities to track API usage and performance.
 - **Caching:** Caches responses from microservices to improve response times and reduce load on backend services.
-API Gateways are commonly implemented using technologies like NGINX, Kong, Apigee, and AWS API Gateway.
-</details>
 
-### What is a Reverse Proxy ?
-A reverse proxy is a web server that centralizes internal services and provides unified interfaces to the public. Requests from clients are forwarded to a server that can fulfill it before the reverse proxy returns the server's response to the client.
+## Proxy Types
+- **Forward Proxy:** A forward proxy is a proxy that sits between a client and a server.
+    - **Anonymous Proxy:** An anonymous proxy is a proxy that does not reveal the client's IP address to the server.
+    - **Transparent Proxy:** A transparent proxy is a proxy that is transparent to the client.
+- **Reverse Proxy:** A reverse proxy is a proxy that sits between a server and a client.
+
+
+## Forward Proxy
+A forward proxy is a proxy that sits between a client and a server.
+If exposed to the internet, it is called a `public forward proxy` or `Open Proxy`.
+
+It is typically used to add authentication, authorization, rate limiting, caching, etc.
+```mermaid
+graph LR
+    A[Client] --> |Request| B[Forward Proxy]
+    B --> |Filtered/Transformed Request| C[Server]
+    C --> |Response| B
+    B --> |Filtered/Transformed Response| A
+```
+
+### Reverse Proxy 
+A reverse proxy is a web server that centralizes internal services and provides unified interfaces to the public.
+Requests from clients are forwarded to a server that can fulfill it before the reverse proxy returns the server's response to the client.
+
+It is typically used to act on behalf of a client, apprearing as if requests are coming from the proxy.
 
 ```mermaid
 graph LR
@@ -57,3 +95,17 @@ Introducing a reverse proxy results in increased complexity.
 - A single reverse proxy is a single point of failure
 - Configuring multiple reverse proxies (ie a failover) further increases complexity.
 
+
+---
+
+### API Gateway
+
+API Gateway is a design pattern that aggregates multiple microservice APIs into a single entry point, simplifying external access and enforcing security policies.
+Key features of an API Gateway include:
+- **Request routing:** Directs incoming requests to the appropriate microservice based on the request URL or parameters.
+- **Security:** Enforces authentication, authorization, and rate limiting policies to protect microservices from unauthorized access and abuse.
+- **Protocol translation:** Translates incoming requests from external clients to the appropriate protocol and message format used by microservices.
+- **Aggregation:** Combines multiple microservice responses into a single response to fulfill complex client requests.
+- **Monitoring and logging:** Provides centralized monitoring and logging capabilities to track API usage and performance.
+- **Caching:** Caches responses from microservices to improve response times and reduce load on backend services.
+API Gateways are commonly implemented using technologies like NGINX, Kong, Apigee, and AWS API Gateway.

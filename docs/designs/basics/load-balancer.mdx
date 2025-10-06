@@ -11,7 +11,9 @@ Load balancing improves responsiveness and increases availability of application
 - Load balancing can be implemented at the network level, transport level and application level.
 - Load balancing can be implemented with a single server/data center/cloud provider or multiple servers/data centers/cloud providers.
 
-### What is a Load Balancer?
+<details>
+    <summary>**What is a Load Balancer?**</summary>
+
 A load balancer is a device that acts as a reverse proxy and distributes network or application traffic across a number of servers.
 - Are used to increase capacity (concurrent users) and reliability of applications.
 - Can be implemented with hardware (expensive) or with software such as HAProxy, nginx or Apache (open source).
@@ -26,17 +28,51 @@ A load balancer is a device that acts as a reverse proxy and distributes network
     - Layer 4
     - Layer 7
 
-### Classifications of Load Balancers
+</details>
+
+There is a variety of load balancers available in the market, some of them are:
+- NGINX
+- HAProxy
+- Apache
+
+
+![./img/load-balancer.png](./img/load-balancer.png)
+
+<details>
+    <summary>**Classifications of Load Balancers**</summary>
+
 - **Layer 4 Load Balancer**: A layer 4 load balancer operates at the network level.
  It forwards traffic based on IP address and port number. Layer 4 load balancers make routing decisions based on the source and destination IP addresses and ports, and are the most efficient load balancers.
 - **Layer 7 Load Balancer**: A layer 7 load balancer operates at the application level, and can make routing decisions based on various characteristics of the HTTP header, cookies, or data within the application message itself.
  Layer 7 load balancers are more powerful, but also more resource intensive.
 
+</details>
 
-#### Load balancer vs reverse proxy
+<details>
+    <summary>**Load balancer vs reverse proxy**</summary>
+
 - Deploying a load balancer is useful when you have multiple servers. Often, load balancers route traffic to a set of servers serving the same function.
 - Reverse proxies can be useful even with just one web server or application server, opening up the benefits described in the previous section.
 - Solutions such as NGINX and HAProxy can support both layer 7 reverse proxying and load balancing.
+
+</details>
+
+:::danger
+To prevent the load balancer from becoming a single point of failure, organizations often deploy redundant load balancers in a high-availability configuration.
+
+In this setup, multiple load balancers work together, with one acting as primary and others as backups. They continuously monitor each other's status, and if the primary load balancer experiences issues, a backup automatically assumes control to maintain uninterrupted service.
+:::
+
+### Load balacing algorithms
+
+Load balacing algorithms/techniques are:
+- **Round Robin** : Directs traffic to the server in a round robin manner.
+- **Weighted Round Robin** : Directs traffic to the server based on the weight of the server.
+- **Least Connections** : Directs traffic to the server with the least number of connections.
+- **Least Response Time** : Directs traffic to the server with the least response time.
+- **IP Hash** : Directs traffic to the server based on a hash of the request IP address.
+- **Consistent Hashing** : Directs traffic to the server based on a hash of the request.
+
 
 ---
 

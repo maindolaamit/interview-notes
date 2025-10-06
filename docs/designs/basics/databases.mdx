@@ -28,6 +28,8 @@ can be overwritten. B-trees are the biggest example of this philosophy, being us
 in all major relational databases and also many non-relational ones.
 
 ### Indexes
+The goal of an index is to speed up the retrieval of data from a database, to quickly find the rows that match the query.
+
 The most common type of index is a `B-tree index`, which is well suited to the most common access pattern where you look up a single document by its key.
 
 :::note
@@ -65,8 +67,40 @@ graph TB
 
 ```
 
+:::tip Performance
+ Avoid using too many indexes, it is better to have a few indexes that are used frequently, than many indexes that are not used frequently.
+
+Indexes are not used for write operations.
+:::
+
+<details>
+    <summary>How do Index decrease write performance?</summary>
+
+    Indexes are stored in a separate file from the data, and they need to be updated when the data is updated.
+    This means that writing to the database is slower when there are indexes.
+    When writing to the database, the index also needs to be updated, which takes time.
+    This is why indexes decrease write performance.
+    This is why indexes are not used for write operations.
+</details>
 
 ### Transactions
+
+<details>
+    <summary>What is BASE?</summary>
+    - BASE is an acronym for Basically Available, Soft state, Eventual consistency.
+    - BASE is a set of principles that inform how distributed systems should be designed.
+    - BASE is an alternative to ACID.
+    - BASE is used to describe the properties of many NoSQL databases.
+</details>
+
+<details>
+    <summary>What is ACID?</summary>
+    - ACID is an acronym for Atomicity, Consistency, Isolation, Durability.
+    - ACID is a set of principles that inform how distributed systems should be designed.
+    - ACID is used to describe the properties of many SQL databases.
+</details>
+
+
 Most databases are accessed by several clients at the same time. That is no problem if
 they are reading and writing different parts of the database, but if they are accessing
 the same database records, you can run into concurrency problems (race conditions)
