@@ -1,7 +1,7 @@
 ---
-title: Network
+title: Network Protocols
 description : "High Level Design concepts"
-sidebar_position: 1
+sidebar_position: 2
 ---
 
 <details>
@@ -286,3 +286,94 @@ This makes TLS-1.3 more secure and faster.
 ### SSH
 SSH is a protocol that provides security for communication between two parties.
 It is used to encrypt the data sent between two parties.
+
+### SSL Pinning
+SSL pinning is a technique where the client stores the public key of the server in the client.
+When the client makes a request to the server, the client sends the public key of the server to the server.
+The server then uses the public key to encrypt the data sent to the client.
+This makes the communication more secure.
+
+:::tip
+SSL pinning is a good way to ensure that the client is communicating with the correct server.
+:::
+
+### Certificate Transparency
+Certificate transparency is a system where a certificate authority (CA) is publicly accountable for the certificates it issues.
+This system allows the public to monitor the issuance of certificates and detect any unauthorized or fraudulent certificates.
+
+:::tip
+Certificate transparency is a good way to ensure that the server is using a valid certificate.
+:::
+
+---
+
+## Long Polling vs WebSockets
+
+Polling is a technique where the client makes a request to the server and the server sends the data to the client.
+
+```mermaid
+graph LR
+    A[Client] --> |repeatedly make requests| B[Server]
+    B --> |send data| A[Data]
+```
+The problem with polling is that it is not efficient, it is a waste of resources.
+The server is constantly sending data to the client, even if the client is not interested in the data.
+
+### Long Polling
+Long polling is a technique where the client makes a request to the server and the server holds the request open until new data is available.
+The server then sends the data to the client and closes the request. Sometimes also referred as `Hanging GET` or `HTTP Streaming`.
+
+```mermaid
+graph LR
+    A[Client] --> |hold request open| B[Server]
+    B --> |send data| A[Data]
+    B --> |close request| A[Data]
+```
+
+### WebSockets
+WebSockets is a protocol that allows for full-duplex communication between a client and a server.
+It is a persistent connection between a client and a server that allows for real-time communication.
+Client establishes a connection(WebSocket handshake) to the server and keeps it open.
+WebSocket enables communication with lower latency and higher throughput, which is made possible by using a single TCP connection for both directions.
+
+```mermaid
+graph LR
+    A[Client] --> |establish connection| B[Server]
+    B --> |keep connection open| A[Data]
+    A --> |send data| B[Server]
+    B --> |send data| A[Data]
+```
+
+### Server Sent Events
+Server Sent Events (SSE) is a technology where a browser receives automatic updates from a server via HTTP connection.
+It is a simple way to push data from the server to the client.
+It is a persistent connection between a client and a server that allows for real-time communication.
+Client establishes a connection(SSE handshake) to the server and keeps it open.
+SSE enables communication with lower latency and higher throughput, which is made possible by using a single TCP connection for both directions.
+SSE is a good alternative to WebSockets for simple use cases.
+
+```mermaid
+graph LR
+    A[Client] --> |establish connection| B[Server]
+    B --> |keep connection open| A[Data]
+    A --> |send data| B[Server]
+    B --> |send data| A[Data]
+```
+
+### Difference between Long Polling, WebSockets and Server Sent Events
+| Aspect | Long Polling | WebSockets | Server Sent Events |
+|--------|-------------|------------|------------|
+| Latency | High | Low | Low |
+| Throughput | Low | High | Low |   
+| Connection | Persistent | Persistent | Persistent |
+| Protocol | HTTP | WebSocket | HTTP |
+| Handshake | None | Yes | None |
+| Data Transfer | Polling | Streaming | Streaming |
+
+### When to use Long Polling, WebSockets and Server Sent Events
+| Use Case | Long Polling | WebSockets | Server Sent Events |
+|--------|-------------|------------|------------|
+| Real-time communication | Yes | Yes | Yes |
+| Low latency | Yes | Yes | Yes |
+| High throughput | No | Yes | Yes |
+| Simple use case | Yes | No | Yes |

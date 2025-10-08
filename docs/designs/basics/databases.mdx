@@ -4,6 +4,10 @@ description: "Systems Design Basics"
 sidebar_position: 7
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+
 ## Relational Databases
 A relational database is a type of database that stores and provides access to data points that are related to one another.
 There are no restrictions on the number of relationships that can be stored in a relational database.
@@ -28,6 +32,8 @@ can be overwritten. B-trees are the biggest example of this philosophy, being us
 in all major relational databases and also many non-relational ones.
 
 ### Indexes
+The goal of an index is to speed up the retrieval of data from a database, to quickly find the rows that match the query.
+
 The most common type of index is a `B-tree index`, which is well suited to the most common access pattern where you look up a single document by its key.
 
 :::note
@@ -65,8 +71,50 @@ graph TB
 
 ```
 
+:::tip Performance
+ Avoid using too many indexes, it is better to have a few indexes that are used frequently, than many indexes that are not used frequently.
+
+Indexes are not used for write operations.
+:::
+
+<details>
+    <summary>How do Index decrease write performance?</summary>
+
+    Indexes are stored in a separate file from the data, and they need to be updated when the data is updated.
+    This means that writing to the database is slower when there are indexes.
+    When writing to the database, the index also needs to be updated, which takes time.
+    This is why indexes decrease write performance.
+    This is why indexes are not used for write operations.
+</details>
+
+
+<details>
+    <summary>Why there is only one primary key in a table?</summary>
+
+    There can only be one primary key in a table because it is used to identify the row uniquely.
+    It would be difficult to identify the row uniquely, join the tables and perform transactions on the row. 
+
+    It would be difficult to perform CRUD operations on the row.
+</details>
 
 ### Transactions
+
+<details>
+    <summary>What is BASE?</summary>
+    - BASE is an acronym for Basically Available, Soft state, Eventual consistency.
+    - BASE is a set of principles that inform how distributed systems should be designed.
+    - BASE is an alternative to ACID.
+    - BASE is used to describe the properties of many NoSQL databases.
+</details>
+
+<details>
+    <summary>What is ACID?</summary>
+    - ACID is an acronym for Atomicity, Consistency, Isolation, Durability.
+    - ACID is a set of principles that inform how distributed systems should be designed.
+    - ACID is used to describe the properties of many SQL databases.
+</details>
+
+
 Most databases are accessed by several clients at the same time. That is no problem if
 they are reading and writing different parts of the database, but if they are accessing
 the same database records, you can run into concurrency problems (race conditions)
@@ -155,6 +203,36 @@ comfortably in the CPU's L1 cache and iterate through it in a tight loop (that i
 ## NoSQL Databases
 The main arguments in favor of the document data model are schema flexibility, better performance due to locality, and that for some applications it is closer to the data
 structures used by the application.
+
+#### Most common types of NoSQL databases
+<Tabs>
+<TabItem value="Key-value stores">
+
+Key-value stores are a simple data model that store data in key-value pairs.
+
+**Example:** Redis, DynamoDB, Riak
+</TabItem>
+<TabItem value="Document databases">
+
+Document databases are a data model that store data in documents.
+
+**Example:** MongoDB, Couchbase
+</TabItem>
+<TabItem value="Column-family or wide-column stores">
+
+Column-family or wide-column stores are a data model that store data in columns.
+
+**Example:** Cassandra, HBase
+</TabItem>
+<TabItem value="Graph databases">
+
+Graph databases are a data model that store data in graphs.
+
+**Example:** Neo4j, JanusGraph
+</TabItem>
+</Tabs>
+
+---
 
 The document model has limitations: for example, you cannot refer directly to a nested item within a document, but instead you need to say something like “the second item in the list of positions for user 251” (much like an access path in the hierarchical model).
  However, as long as documents are not too deeply nested, that is not usually a problem.
