@@ -1,7 +1,7 @@
 ---
 title: Proximity Service
 description: "System Interview Questions"
-sidebar_position: 10
+sidebar_position: 9
 ---
 
 # Design a Nearby or Proximity Service
@@ -142,46 +142,646 @@ List<Review> getReviews(String attraction_id){
 ```
 
 ### Database Schema
-We need to store attraction data, user data, reviews, and location updates. Below is a possible schema for the database:
+We need to store attraction data, user data, reviews, and location updates. Below is a comprehensive schema for the database:
 
-<details>
-    <summary>**Location Table**</summary>
-    - LocationID (PK)
-    - Name
-    - Description
-    - Category
-    - Location
-    - AverageRating
-</details>
+#### Core Tables
 
-<details>
-    <summary>**User Table**</summary>
-    - UserID (PK)
-    - Name
-    - Email
-    - Password
-    - LastLocation
-</details>
+#### Database Schema with SQL Definitions
 
-<details>
-    <summary>**Review Table**</summary>
-    - ReviewID (PK)
-    - LocationID (FK)
-    - UserID (FK)
-    - Review
-    - Rating
-    - Timestamp
-</details>
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
-<details>
-    <summary>**Location Table**</summary>
-    - LocationID (PK)
-    - UserID (FK)
-    - Location
-    - Timestamp
-</details>
+<Tabs>
+<TabItem value="User">
+```sql
+CREATE TABLE User (
+    user_id BIGINT PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    first_name VARCHAR(50),
+    last_name VARCHAR(50),
+    phone_number VARCHAR(20),
+    profile_picture_url VARCHAR(500),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    is_active BOOLEAN DEFAULT TRUE,
+    INDEX idx_email (email),
+    INDEX idx_username (username)
+);
+```
+</TabItem>
+<TabItem value="Attraction">
+```sql
+CREATE TABLE Attraction (
+    attraction_id BIGINT PRIMARY KEY,
+    name VARCHAR(200) NOT NULL,
+    description TEXT,
+    category VARCHAR(50) NOT NULL,
+    subcategory VARCHAR(50),
+    latitude DECIMAL(10, 8) NOT NULL,
+    longitude DECIMAL(11, 8) NOT NULL,
+    address VARCHAR(500),
+    city VARCHAR(100),
+    state VARCHAR(100),
+    country VARCHAR(100),
+    postal_code VARCHAR(20),
+    phone_number VARCHAR(20),
+    website_url VARCHAR(500),
+    average_rating DECIMAL(3, 2) DEFAULT 0.00,
+    total_reviews INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    is_active BOOLEAN DEFAULT TRUE,
+    owner_user_id BIGINT,
+    FOREIGN KEY (owner_user_id) REFERENCES User(user_id),
+    INDEX idx_location (latitude, longitude),
+    INDEX idx_category (category),
+    INDEX idx_rating (average_rating),
+    SPATIAL INDEX idx_spatial (latitude, longitude)
+);
+```
+</TabItem>
+<TabItem value="Review">
+```sql
+CREATE TABLE Review (
+    review_id BIGINT PRIMARY KEY,
+    attraction_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    rating TINYINT NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    review_text TEXT,
+    review_images JSON,
+    helpful_count INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    is_active BOOLEAN DEFAULT TRUE,
+    FOREIGN KEY (attraction_id) REFERENCES Attraction(attraction_id),
+    FOREIGN KEY (user_id) REFERENCES User(user_id),
+    INDEX idx_attraction (attraction_id),
+    INDEX idx_user (user_id),
+    INDEX idx_rating (rating),
+    INDEX idx_created_at (created_at)
+);
+```
+</TabItem>
+<TabItem value="User_Location">
+```sql
+CREATE TABLE User_Location (
+    location_id BIGINT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    latitude DECIMAL(10, 8) NOT NULL,
+    longitude DECIMAL(11, 8) NOT NULL,
+    accuracy DECIMAL(8, 2),
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_current BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (user_id) REFERENCES User(user_id),
+    INDEX idx_user (user_id),
+    INDEX idx_current (is_current),
+    INDEX idx_timestamp (timestamp),
+    SPATIAL INDEX idx_spatial (latitude, longitude)
+);
+```
+</TabItem>
+<TabItem value="Category">
+```sql
+CREATE TABLE Category (
+    category_id BIGINT PRIMARY KEY,
+    category_name VARCHAR(50) UNIQUE NOT NULL,
+    category_description TEXT,
+    icon_url VARCHAR(500),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_name (category_name)
+);
+```
+</TabItem>
+</Tabs>
+
+
+
+<Tabs>
+<TabItem value="Attraction_Images">
+```sql
+CREATE TABLE Attraction_Images (
+    image_id BIGINT PRIMARY KEY,
+    attraction_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    image_url VARCHAR(500) NOT NULL,
+    image_caption VARCHAR(500),
+    is_primary BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (attraction_id) REFERENCES Attraction(attraction_id),
+    FOREIGN KEY (user_id) REFERENCES User(user_id),
+    INDEX idx_attraction (attraction_id),
+    INDEX idx_user (user_id),
+    INDEX idx_primary (is_primary)
+);
+```
+</TabItem>
+<TabItem value="User_Favorites">
+```sql
+CREATE TABLE User_Favorites (
+    favorite_id BIGINT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    attraction_id BIGINT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES User(user_id),
+    FOREIGN KEY (attraction_id) REFERENCES Attraction(attraction_id),
+    INDEX idx_user (user_id),
+    INDEX idx_attraction (attraction_id)
+);
+```
+</TabItem>
+
+<TabItem value="Search_History" >
+```sql
+CREATE TABLE Search_History (
+    search_id BIGINT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    search_query VARCHAR(500) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+);
+```
+</TabItem>
+<TabItem value="Notifications">
+```sql
+CREATE TABLE Notifications (
+    notification_id BIGINT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    notification_type VARCHAR(500) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+);
+```
+</TabItem>
+</Tabs>
+
+
+#### Entity Relationship Diagram
+
+```mermaid
+erDiagram
+    User {
+        BIGINT user_id PK
+        VARCHAR username UK
+        VARCHAR email UK
+        VARCHAR password_hash
+        VARCHAR first_name
+        VARCHAR last_name
+        VARCHAR phone_number
+        VARCHAR profile_picture_url
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+        BOOLEAN is_active
+    }
+    
+    Attraction {
+        BIGINT attraction_id PK
+        VARCHAR name
+        TEXT description
+        VARCHAR category
+        VARCHAR subcategory
+        DECIMAL latitude
+        DECIMAL longitude
+        VARCHAR address
+        VARCHAR city
+        VARCHAR state
+        VARCHAR country
+        VARCHAR postal_code
+        VARCHAR phone_number
+        VARCHAR website_url
+        DECIMAL average_rating
+        INT total_reviews
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+        BOOLEAN is_active
+        BIGINT owner_user_id FK
+    }
+    
+    Review {
+        BIGINT review_id PK
+        BIGINT attraction_id FK
+        BIGINT user_id FK
+        TINYINT rating
+        TEXT review_text
+        JSON review_images
+        INT helpful_count
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+        BOOLEAN is_active
+    }
+    
+    User_Location {
+        BIGINT location_id PK
+        BIGINT user_id FK
+        DECIMAL latitude
+        DECIMAL longitude
+        DECIMAL accuracy
+        TIMESTAMP timestamp
+        BOOLEAN is_current
+    }
+    
+    Category {
+        BIGINT category_id PK
+        VARCHAR category_name UK
+        TEXT category_description
+        VARCHAR icon_url
+        TIMESTAMP created_at
+    }
+    
+    Attraction_Images {
+        BIGINT image_id PK
+        BIGINT attraction_id FK
+        BIGINT user_id FK
+        VARCHAR image_url
+        VARCHAR image_caption
+        BOOLEAN is_primary
+        TIMESTAMP created_at
+    }
+    
+    User_Favorites {
+        BIGINT favorite_id PK
+        BIGINT user_id FK
+        BIGINT attraction_id FK
+        TIMESTAMP created_at
+    }
+    
+    Search_History {
+        BIGINT search_id PK
+        BIGINT user_id FK
+        VARCHAR search_query
+        DECIMAL search_location_lat
+        DECIMAL search_location_long
+        DECIMAL search_radius
+        VARCHAR category_filter
+        TIMESTAMP created_at
+    }
+    
+    Notifications {
+        BIGINT notification_id PK
+        BIGINT user_id FK
+        VARCHAR notification_type
+        VARCHAR title
+        TEXT message
+        BIGINT attraction_id FK
+        BOOLEAN is_read
+        TIMESTAMP created_at
+    }
+    
+    User ||--o{ Attraction : "owns"
+    User ||--o{ Review : "writes"
+    User ||--o{ User_Location : "has"
+    User ||--o{ User_Favorites : "favorites"
+    User ||--o{ Search_History : "searches"
+    User ||--o{ Notifications : "receives"
+    User ||--o{ Attraction_Images : "uploads"
+    
+    Attraction ||--o{ Review : "receives"
+    Attraction ||--o{ Attraction_Images : "has"
+    Attraction ||--o{ User_Favorites : "favorited_by"
+    Attraction ||--o{ Notifications : "triggers"
+    
+    Category ||--o{ Attraction : "categorizes"
+```
+
+### Step-by-Step Architecture Design
+
+To better understand the system, let's break down the architecture into smaller, manageable components:
+
+#### 1. Core Services Architecture
+
+```mermaid
+graph TB
+    subgraph "Client Layer"
+        Mobile[Mobile App]
+        Web[Web App]
+        API_Gateway[API Gateway]
+    end
+    
+    subgraph "Application Services"
+        UserService[User Service]
+        LocationService[Location Service]
+        AttractionService[Attraction Service]
+        ReviewService[Review Service]
+        NotificationService[Notification Service]
+    end
+    
+    subgraph "Data Layer"
+        UserDB[(User Database)]
+        LocationDB[(Location Database)]
+        AttractionDB[(Attraction Database)]
+        ReviewDB[(Review Database)]
+    end
+    
+    subgraph "External Services"
+        MapsAPI[Maps API]
+        ImageStorage[Image Storage]
+        EmailService[Email Service]
+    end
+    
+    Mobile --> API_Gateway
+    Web --> API_Gateway
+    API_Gateway --> UserService
+    API_Gateway --> LocationService
+    API_Gateway --> AttractionService
+    API_Gateway --> ReviewService
+    API_Gateway --> NotificationService
+    
+    UserService --> UserDB
+    LocationService --> LocationDB
+    AttractionService --> AttractionDB
+    ReviewService --> ReviewDB
+    
+    AttractionService --> MapsAPI
+    AttractionService --> ImageStorage
+    NotificationService --> EmailService
+```
+
+#### 2. Location Processing Module
+
+```mermaid
+graph TB
+    subgraph "Location Processing Flow"
+        UserLocation[User Location Update]
+        LocationValidator[Location Validator]
+        GridSystem[Grid System]
+        SpatialIndex[Spatial Index]
+        NearbySearch[Nearby Search Engine]
+    end
+    
+    subgraph "Grid System Components"
+        Quadtree[Quadtree Structure]
+        GridCells[Grid Cells]
+        NeighborFinder[Neighbor Finder]
+    end
+    
+    subgraph "Search Components"
+        RadiusFilter[Radius Filter]
+        CategoryFilter[Category Filter]
+        RatingFilter[Rating Filter]
+        ResultRanker[Result Ranker]
+    end
+    
+    UserLocation --> LocationValidator
+    LocationValidator --> GridSystem
+    GridSystem --> Quadtree
+    Quadtree --> GridCells
+    GridCells --> NeighborFinder
+    NeighborFinder --> NearbySearch
+    
+    NearbySearch --> RadiusFilter
+    RadiusFilter --> CategoryFilter
+    CategoryFilter --> RatingFilter
+    RatingFilter --> ResultRanker
+```
+
+#### 3. Data Flow Architecture
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant API_Gateway
+    participant LocationService
+    participant AttractionService
+    participant Cache
+    participant Database
+    
+    User->>API_Gateway: Update Location
+    API_Gateway->>LocationService: Process Location
+    LocationService->>Database: Store Location
+    LocationService->>Cache: Update Cache
+    
+    User->>API_Gateway: Search Nearby Attractions
+    API_Gateway->>AttractionService: Search Request
+    AttractionService->>Cache: Check Cache
+    alt Cache Hit
+        Cache-->>AttractionService: Return Cached Data
+    else Cache Miss
+        AttractionService->>Database: Query Database
+        Database-->>AttractionService: Return Results
+        AttractionService->>Cache: Update Cache
+    end
+    AttractionService-->>API_Gateway: Return Results
+    API_Gateway-->>User: Nearby Attractions
+```
+
+#### 4. Caching Strategy
+
+```mermaid
+graph TB
+    subgraph "Caching Layers"
+        CDN[CDN Cache]
+        Redis[Redis Cache]
+        ApplicationCache[Application Cache]
+    end
+    
+    subgraph "Cache Types"
+        HotAttractions[Hot Attractions]
+        UserLocations[User Locations]
+        SearchResults[Search Results]
+        Reviews[Reviews & Ratings]
+    end
+    
+    subgraph "Cache Policies"
+        TTL[Time To Live]
+        LRU[Least Recently Used]
+        WriteThrough[Write Through]
+        WriteBack[Write Back]
+    end
+    
+    CDN --> HotAttractions
+    Redis --> UserLocations
+    Redis --> SearchResults
+    ApplicationCache --> Reviews
+    
+    HotAttractions --> TTL
+    UserLocations --> LRU
+    SearchResults --> WriteThrough
+    Reviews --> WriteBack
+```
+
+#### 5. Database Partitioning Strategy
+
+```mermaid
+graph TB
+    subgraph "Partitioning Strategy"
+        GeographicPartition[Geographic Partitioning]
+        CategoryPartition[Category Partitioning]
+        UserPartition[User-based Partitioning]
+    end
+    
+    subgraph "Geographic Regions"
+        NorthAmerica[North America]
+        Europe[Europe]
+        Asia[Asia]
+        Other[Other Regions]
+    end
+    
+    subgraph "Category Shards"
+        Restaurants[Restaurants]
+        Hotels[Hotels]
+        Entertainment[Entertainment]
+        Shopping[Shopping]
+    end
+    
+    GeographicPartition --> NorthAmerica
+    GeographicPartition --> Europe
+    GeographicPartition --> Asia
+    GeographicPartition --> Other
+    
+    CategoryPartition --> Restaurants
+    CategoryPartition --> Hotels
+    CategoryPartition --> Entertainment
+    CategoryPartition --> Shopping
+```
+
+#### 6. Notification System
+
+```mermaid
+graph TB
+    subgraph "Notification Components"
+        EventTrigger[Event Trigger]
+        NotificationEngine[Notification Engine]
+        MessageQueue[Message Queue]
+        DeliveryService[Delivery Service]
+    end
+    
+    subgraph "Notification Types"
+        PushNotification[Push Notifications]
+        EmailNotification[Email Notifications]
+        SMSNotification[SMS Notifications]
+        InAppNotification[In-App Notifications]
+    end
+    
+    subgraph "Delivery Channels"
+        Firebase[Firebase]
+        SendGrid[SendGrid]
+        Twilio[Twilio]
+        WebSocket[WebSocket]
+    end
+    
+    EventTrigger --> NotificationEngine
+    NotificationEngine --> MessageQueue
+    MessageQueue --> DeliveryService
+    
+    DeliveryService --> PushNotification
+    DeliveryService --> EmailNotification
+    DeliveryService --> SMSNotification
+    DeliveryService --> InAppNotification
+    
+    PushNotification --> Firebase
+    EmailNotification --> SendGrid
+    SMSNotification --> Twilio
+    InAppNotification --> WebSocket
+```
 
 ### High Level Design
+
+Now that we understand the individual components, here's how they all work together:
+
+```mermaid
+graph TB
+    subgraph "Client Layer"
+        Mobile[Mobile Apps]
+        Web[Web Applications]
+        ThirdParty[Third-party Apps]
+    end
+    
+    subgraph "Load Balancing & API Gateway"
+        LoadBalancer[Load Balancer]
+        APIGateway[API Gateway]
+        RateLimiter[Rate Limiter]
+    end
+    
+    subgraph "Application Services"
+        UserService[User Service]
+        LocationService[Location Service]
+        AttractionService[Attraction Service]
+        ReviewService[Review Service]
+        SearchService[Search Service]
+        NotificationService[Notification Service]
+        AnalyticsService[Analytics Service]
+    end
+    
+    subgraph "Caching Layer"
+        RedisCluster[Redis Cluster]
+        Memcached[Memcached]
+        CDN[CDN]
+    end
+    
+    subgraph "Database Layer"
+        UserDB[(User Database)]
+        AttractionDB[(Attraction Database)]
+        ReviewDB[(Review Database)]
+        LocationDB[(Location Database)]
+    end
+    
+    subgraph "Search & Indexing"
+        Elasticsearch[Elasticsearch]
+        SpatialIndex[Spatial Index]
+        GridSystem[Grid System]
+    end
+    
+    subgraph "External Services"
+        MapsAPI[Google Maps API]
+        ImageStorage[AWS S3]
+        EmailService[Email Service]
+        PushService[Push Notification Service]
+    end
+    
+    subgraph "Message Queue"
+        Kafka[Apache Kafka]
+        RabbitMQ[RabbitMQ]
+    end
+    
+    subgraph "Monitoring & Analytics"
+        Logging[Logging Service]
+        Metrics[Metrics Collection]
+        Alerting[Alerting System]
+    end
+    
+    Mobile --> LoadBalancer
+    Web --> LoadBalancer
+    ThirdParty --> LoadBalancer
+    
+    LoadBalancer --> APIGateway
+    APIGateway --> RateLimiter
+    RateLimiter --> UserService
+    RateLimiter --> LocationService
+    RateLimiter --> AttractionService
+    RateLimiter --> ReviewService
+    RateLimiter --> SearchService
+    RateLimiter --> NotificationService
+    RateLimiter --> AnalyticsService
+    
+    UserService --> UserDB
+    LocationService --> LocationDB
+    AttractionService --> AttractionDB
+    ReviewService --> ReviewDB
+    SearchService --> Elasticsearch
+    SearchService --> SpatialIndex
+    SearchService --> GridSystem
+    
+    UserService --> RedisCluster
+    LocationService --> RedisCluster
+    AttractionService --> RedisCluster
+    ReviewService --> RedisCluster
+    
+    AttractionService --> MapsAPI
+    AttractionService --> ImageStorage
+    NotificationService --> EmailService
+    NotificationService --> PushService
+    
+    NotificationService --> Kafka
+    AnalyticsService --> Kafka
+    AnalyticsService --> RabbitMQ
+    
+    UserService --> Logging
+    LocationService --> Logging
+    AttractionService --> Logging
+    ReviewService --> Logging
+    
+    Logging --> Metrics
+    Metrics --> Alerting
+```
 
 ![High Level Design](./final-design.svg)
 

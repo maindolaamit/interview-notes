@@ -1,14 +1,11 @@
 ---
-title: Cab Booking
+title: Cab Booking System
 description: "System Interview Questions"
 sidebar_position: 11
 ---
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-
-# Design a Cab Booking service
-Cab Booking service like Uber connects users with drivers. Users can book a cab, track the cab in real-time, and pay for the ride. Drivers can accept ride requests, navigate to the user's location, and complete the ride. The system should match users with the nearest available driver and handle payments and receipts.
+# Design a Cab Booking System like Uber
+A Cab Booking system like Uber connects users with drivers in real-time. Users can book a cab, track the driver's location, and pay for the ride. Drivers can accept ride requests, navigate to pickup locations, and complete rides. The system handles real-time location tracking, driver matching, payment processing, and ride management.
 
 ### Requirements and Goals of the System
 Let's discuss what features we will be designing so that we can come up with a set of useful requirements.
@@ -40,237 +37,1146 @@ Let's discuss what features we will be designing so that we can come up with a s
 </details>
 
 ### Capacity Estimation and Constraints
-Let’s consider below assumptions:
-- We have **1M daily active users**.
-- On average, each user books **2 rides per day**.
-- Each ride generates **10 events** (e.g., booking, driver assignment, ride start, ride end, payment, etc.).
+Let's consider below assumptions:
+- **Total Users**: 100 Million
+- **Daily Active Users**: 10 Million
+- **Daily Active Drivers**: 1 Million
+- **Daily Rides**: 5 Million
+- **Average Ride Duration**: 20 minutes
+- **Location Update Frequency**: Every 3 seconds
+- **Average Ride Distance**: 5 miles
 
 <details>
     <summary>**Traffic**</summary>
-    - Total rides per day: 1M * 2 = 2M
-    - Total events per day: 2M * 10 = 20M
-    - Events per second: 20M / (24 * 3600) ≈ 231
+    - Total rides per day: 5M
+    - Rides per second: 5M / (24 * 3600) ≈ 58
+    - Location updates per second: 1M drivers * (3600/3) = 1.2M updates/second
+    - Peak traffic (rush hours): 3x normal = 174 rides/second, 3.6M location updates/second
 </details>
 
 <details>
     <summary>**Storage**</summary>
-    - Assuming each event takes 1KB of storage, daily storage requirement: 20M * 1KB = 20GB
-    - Monthly storage requirement: 20GB * 30 = 600GB
-    - Yearly storage requirement: 600GB * 12 = 7.2TB
+    - Each ride record: 1KB (ride details, payment, rating)
+    - Daily ride storage: 5M * 1KB = 5GB
+    - Location history per driver: 1MB per day
+    - Total location storage: 1M drivers * 1MB = 1TB per day
+    - Monthly storage: (5GB + 1TB) * 30 = 30TB
+    - Yearly storage: 30TB * 12 = 360TB
 </details>
 
 <details>
     <summary>**Bandwidth**</summary>
-    - Incoming data: 20M * 1KB = 20GB per day
-    - Outgoing data: 20M * 1KB = 20GB per day
+    - Location updates: 1.2M * 20 bytes = 24MB/second
+    - Ride requests: 58 * 1KB = 58KB/second
+    - Total incoming: 24MB + 58KB ≈ 24MB/second
+    - Total outgoing: 24MB/second (location broadcasts)
 </details>
 
 <details>
     <summary>**Memory**</summary>
-    - If we want to cache 10% of the hot data, we would need to cache 10% of 20M events, i.e., 2M events.
-    - Size of each event would be 1KB, so we would need 2M * 1KB = 2GB of memory to cache hot data.
+    - Active driver locations: 1M * 20 bytes = 20MB
+    - Active ride sessions: 5M * 1KB = 5GB
+    - Driver availability cache: 1M * 1KB = 1GB
+    - Total memory requirement: ~6GB for active data
 </details>
 
 ### API Design
 This problem can be decomposed into several main components:
-- **User Management:** Handles user registration, authentication, and profile management.
-- **Driver Management:** Handles driver registration, authentication, and profile management.
-- **Ride Management:** Handles ride booking, matching, tracking, and completion.
-- **Payment Management:** Handles payment processing and receipts.
-- **Rating and Feedback:** Handles user and driver ratings and feedback.
+- **User Service:** Handles user registration, authentication, and profile management.
+- **Driver Service:** Handles driver registration, authentication, and profile management.
+- **Ride Service:** Handles ride booking, matching, tracking, and completion.
+- **Location Service:** Handles real-time location tracking and updates.
+- **Payment Service:** Handles payment processing and receipts.
+- **Notification Service:** Handles real-time notifications and updates.
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<Tabs>
+<TabItem value="User Service">
+```java
+/**
+POST API to create a new user
+api/v1/users
+    api_dev_key - A developer key to track the user
+    user_id - ID of the user
+    name - User's name
+    email - User's email
+    phone_number - User's phone number
+returns: success or error message
+*/
+String createUser(String api_dev_key, String user_id, String name, String email, String phone_number)
+
+/**
+GET API to get user profile
+api/v1/users/{user_id}
+    api_dev_key - A developer key
+    user_id - ID of the user
+returns: user profile or error message
+*/
+UserProfile getUserProfile(String api_dev_key, String user_id)
+
+/**
+PUT API to update user profile
+api/v1/users/{user_id}
+    api_dev_key - A developer key
+    user_id - ID of the user
+    profile_data - Updated profile information
+returns: success or error message
+*/
+String updateUserProfile(String api_dev_key, String user_id, UserProfile profile_data)
+```
+</TabItem>
+<TabItem value="Driver Service">
+```java
+/**
+POST API to register a new driver
+api/v1/drivers
+    api_dev_key - A developer key
+    driver_id - ID of the driver
+    name - Driver's name
+    email - Driver's email
+    phone_number - Driver's phone number
+    vehicle_info - Vehicle information
+    license_number - Driver's license number
+returns: success or error message
+*/
+String registerDriver(String api_dev_key, String driver_id, String name, String email, String phone_number, VehicleInfo vehicle_info, String license_number)
+
+/**
+POST API to update driver location
+api/v1/drivers/{driver_id}/location
+    api_dev_key - A developer key
+    driver_id - ID of the driver
+    latitude - Current latitude
+    longitude - Current longitude
+    availability_status - Driver's availability status
+returns: success or error message
+*/
+String updateDriverLocation(String api_dev_key, String driver_id, double latitude, double longitude, String availability_status)
+
+/**
+GET API to get nearby drivers
+api/v1/drivers/nearby
+    api_dev_key - A developer key
+    user_latitude - User's latitude
+    user_longitude - User's longitude
+    radius - Search radius in meters
+returns: list of nearby drivers
+*/
+List<Driver> getNearbyDrivers(String api_dev_key, double user_latitude, double user_longitude, int radius)
+```
+</TabItem>
+<TabItem value="Ride Service">
 ```java
 record Location(double latitude, double longitude) {}
-/**
-POST API to book a ride
-api/v1/book
-    user_id - ID of the user booking the ride
-    pickup_location - Location where the user wants to be picked up
-    dropoff_location - Location where the user wants to be dropped off
-    payment_method - Payment method for the ride
-returns: ride_id or error message
-*/
-String bookRide(String user_id, Location pickup_location,
-    Location dropoff_location, String payment_method)
-    {
-        return ride_id;
-}
 
 enum RideStatus {
-    WAITING_FOR_DRIVER,
+    REQUESTED,
+    DRIVER_ASSIGNED,
+    DRIVER_ARRIVED,
     IN_PROGRESS,
     COMPLETED,
     CANCELLED
 }
+
+/**
+POST API to request a ride
+api/v1/rides
+    api_dev_key - A developer key
+    user_id - ID of the user requesting the ride
+    pickup_location - Pickup location
+    dropoff_location - Dropoff location
+    ride_type - Type of ride (economy, premium, etc.)
+returns: ride_id or error message
+*/
+String requestRide(String api_dev_key, String user_id, Location pickup_location, Location dropoff_location, String ride_type)
+
+/**
+POST API to accept a ride
+api/v1/rides/{ride_id}/accept
+    api_dev_key - A developer key
+    driver_id - ID of the driver accepting the ride
+    ride_id - ID of the ride
+returns: success or error message
+*/
+String acceptRide(String api_dev_key, String driver_id, String ride_id)
+
 /**
 GET API to get ride status
-api/v1/status/<ride_id>
+api/v1/rides/{ride_id}/status
+    api_dev_key - A developer key
     ride_id - ID of the ride
-returns: ride_status or error message
+returns: ride status and details
 */
-RideStatus getRideStatus(String ride_id){
-    return ride_status;
-}
+RideStatus getRideStatus(String api_dev_key, String ride_id)
+
+/**
+POST API to start a ride
+api/v1/rides/{ride_id}/start
+    api_dev_key - A developer key
+    driver_id - ID of the driver
+    ride_id - ID of the ride
+returns: success or error message
+*/
+String startRide(String api_dev_key, String driver_id, String ride_id)
 
 /**
 POST API to complete a ride
-api/v1/complete
+api/v1/rides/{ride_id}/complete
+    api_dev_key - A developer key
+    driver_id - ID of the driver
     ride_id - ID of the ride
-    payment_info - Payment information for the ride
-returns: receipt or error message
-*/
-String completeRide(String ride_id, String payment_info){
-    return receipt;
-}
-
-/**
-POST API to rate a ride
-api/v1/rate
-    ride_id - ID of the ride
-    rating - Rating given by the user
-    feedback - Feedback provided by the user
+    final_location - Final location
 returns: success or error message
 */
-String rateRide(String ride_id, Integer rating, String feedback){
-    return status;
-}
+String completeRide(String api_dev_key, String driver_id, String ride_id, Location final_location)
+```
+</TabItem>
+<TabItem value="Payment Service">
+```java
+/**
+POST API to process payment
+api/v1/payments
+    api_dev_key - A developer key
+    ride_id - ID of the ride
+    payment_method - Payment method (credit_card, digital_wallet, etc.)
+    amount - Payment amount
+returns: payment_id or error message
+*/
+String processPayment(String api_dev_key, String ride_id, String payment_method, double amount)
+
+/**
+GET API to get payment receipt
+api/v1/payments/{payment_id}/receipt
+    api_dev_key - A developer key
+    payment_id - ID of the payment
+returns: payment receipt
+*/
+PaymentReceipt getPaymentReceipt(String api_dev_key, String payment_id)
+
+/**
+POST API to refund payment
+api/v1/payments/{payment_id}/refund
+    api_dev_key - A developer key
+    payment_id - ID of the payment
+    refund_amount - Amount to refund
+returns: refund_id or error message
+*/
+String refundPayment(String api_dev_key, String payment_id, double refund_amount)
+```
+</TabItem>
+<TabItem value="Rating Service">
+```java
+/**
+POST API to rate a ride
+api/v1/rides/{ride_id}/rate
+    api_dev_key - A developer key
+    user_id - ID of the user rating
+    ride_id - ID of the ride
+    driver_rating - Rating for the driver (1-5)
+    driver_feedback - Feedback for the driver
+returns: success or error message
+*/
+String rateDriver(String api_dev_key, String user_id, String ride_id, int driver_rating, String driver_feedback)
+
+/**
+POST API to rate a passenger
+api/v1/rides/{ride_id}/rate-passenger
+    api_dev_key - A developer key
+    driver_id - ID of the driver rating
+    ride_id - ID of the ride
+    passenger_rating - Rating for the passenger (1-5)
+    passenger_feedback - Feedback for the passenger
+returns: success or error message
+*/
+String ratePassenger(String api_dev_key, String driver_id, String ride_id, int passenger_rating, String passenger_feedback)
+```
+</TabItem>
+</Tabs>
+
+### Database Schema
+We need to store user data, driver data, ride information, payments, and ratings. Below is a comprehensive schema for the database:
+
+#### Core Tables
+
+<Tabs>
+<TabItem value="User">
+```sql
+CREATE TABLE User (
+    user_id BIGINT PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    first_name VARCHAR(50),
+    last_name VARCHAR(50),
+    phone_number VARCHAR(20),
+    profile_picture_url VARCHAR(500),
+    date_of_birth DATE,
+    address TEXT,
+    emergency_contact_name VARCHAR(100),
+    emergency_contact_phone VARCHAR(20),
+    is_verified BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    last_login TIMESTAMP,
+    is_active BOOLEAN DEFAULT TRUE,
+    INDEX idx_email (email),
+    INDEX idx_phone (phone_number),
+    INDEX idx_created_at (created_at)
+);
+```
+</TabItem>
+<TabItem value="Driver">
+```sql
+CREATE TABLE Driver (
+    driver_id BIGINT PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    first_name VARCHAR(50),
+    last_name VARCHAR(50),
+    phone_number VARCHAR(20),
+    profile_picture_url VARCHAR(500),
+    license_number VARCHAR(50) UNIQUE NOT NULL,
+    license_expiry DATE,
+    date_of_birth DATE,
+    address TEXT,
+    current_latitude DECIMAL(10, 8),
+    current_longitude DECIMAL(11, 8),
+    availability_status ENUM('AVAILABLE', 'BUSY', 'OFFLINE') DEFAULT 'OFFLINE',
+    is_verified BOOLEAN DEFAULT FALSE,
+    is_approved BOOLEAN DEFAULT FALSE,
+    rating DECIMAL(3, 2) DEFAULT 0.00,
+    total_rides INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    last_location_update TIMESTAMP,
+    is_active BOOLEAN DEFAULT TRUE,
+    INDEX idx_email (email),
+    INDEX idx_phone (phone_number),
+    INDEX idx_license (license_number),
+    INDEX idx_availability (availability_status),
+    INDEX idx_location (current_latitude, current_longitude),
+    INDEX idx_rating (rating)
+);
+```
+</TabItem>
+<TabItem value="Vehicle">
+```sql
+CREATE TABLE Vehicle (
+    vehicle_id BIGINT PRIMARY KEY,
+    driver_id BIGINT NOT NULL,
+    make VARCHAR(50) NOT NULL,
+    model VARCHAR(50) NOT NULL,
+    year INT NOT NULL,
+    color VARCHAR(30),
+    license_plate VARCHAR(20) UNIQUE NOT NULL,
+    vehicle_type ENUM('SEDAN', 'SUV', 'HATCHBACK', 'LUXURY') DEFAULT 'SEDAN',
+    capacity INT DEFAULT 4,
+    is_verified BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (driver_id) REFERENCES Driver(driver_id),
+    INDEX idx_driver (driver_id),
+    INDEX idx_license_plate (license_plate),
+    INDEX idx_type (vehicle_type)
+);
+```
+</TabItem>
+<TabItem value="Ride">
+```sql
+CREATE TABLE Ride (
+    ride_id BIGINT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    driver_id BIGINT,
+    pickup_latitude DECIMAL(10, 8) NOT NULL,
+    pickup_longitude DECIMAL(11, 8) NOT NULL,
+    pickup_address TEXT,
+    dropoff_latitude DECIMAL(10, 8) NOT NULL,
+    dropoff_longitude DECIMAL(11, 8) NOT NULL,
+    dropoff_address TEXT,
+    ride_type ENUM('ECONOMY', 'PREMIUM', 'LUXURY', 'SHARED') DEFAULT 'ECONOMY',
+    status ENUM('REQUESTED', 'DRIVER_ASSIGNED', 'DRIVER_ARRIVED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED') DEFAULT 'REQUESTED',
+    estimated_fare DECIMAL(10, 2),
+    actual_fare DECIMAL(10, 2),
+    distance_km DECIMAL(8, 2),
+    duration_minutes INT,
+    requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    accepted_at TIMESTAMP NULL,
+    started_at TIMESTAMP NULL,
+    completed_at TIMESTAMP NULL,
+    cancelled_at TIMESTAMP NULL,
+    cancellation_reason VARCHAR(200),
+    FOREIGN KEY (user_id) REFERENCES User(user_id),
+    FOREIGN KEY (driver_id) REFERENCES Driver(driver_id),
+    INDEX idx_user (user_id),
+    INDEX idx_driver (driver_id),
+    INDEX idx_status (status),
+    INDEX idx_requested_at (requested_at),
+    INDEX idx_pickup_location (pickup_latitude, pickup_longitude)
+);
+```
+</TabItem>
+</Tabs>
+
+<Tabs>
+<TabItem value="Payment">
+```sql
+CREATE TABLE Payment (
+    payment_id BIGINT PRIMARY KEY,
+    ride_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    driver_id BIGINT NOT NULL,
+    amount DECIMAL(10, 2) NOT NULL,
+    payment_method ENUM('CREDIT_CARD', 'DEBIT_CARD', 'DIGITAL_WALLET', 'CASH') NOT NULL,
+    payment_status ENUM('PENDING', 'COMPLETED', 'FAILED', 'REFUNDED') DEFAULT 'PENDING',
+    transaction_id VARCHAR(100),
+    payment_gateway VARCHAR(50),
+    commission_amount DECIMAL(10, 2),
+    driver_earnings DECIMAL(10, 2),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    completed_at TIMESTAMP NULL,
+    FOREIGN KEY (ride_id) REFERENCES Ride(ride_id),
+    FOREIGN KEY (user_id) REFERENCES User(user_id),
+    FOREIGN KEY (driver_id) REFERENCES Driver(driver_id),
+    INDEX idx_ride (ride_id),
+    INDEX idx_user (user_id),
+    INDEX idx_driver (driver_id),
+    INDEX idx_status (payment_status),
+    INDEX idx_created_at (created_at)
+);
+```
+</TabItem>
+<TabItem value="Rating">
+```sql
+CREATE TABLE Rating (
+    rating_id BIGINT PRIMARY KEY,
+    ride_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    driver_id BIGINT NOT NULL,
+    user_rating TINYINT CHECK (user_rating >= 1 AND user_rating <= 5),
+    driver_rating TINYINT CHECK (driver_rating >= 1 AND driver_rating <= 5),
+    user_feedback TEXT,
+    driver_feedback TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (ride_id) REFERENCES Ride(ride_id),
+    FOREIGN KEY (user_id) REFERENCES User(user_id),
+    FOREIGN KEY (driver_id) REFERENCES Driver(driver_id),
+    INDEX idx_ride (ride_id),
+    INDEX idx_user (user_id),
+    INDEX idx_driver (driver_id),
+    INDEX idx_created_at (created_at)
+);
+```
+</TabItem>
+<TabItem value="Location_History">
+```sql
+CREATE TABLE Location_History (
+    location_id BIGINT PRIMARY KEY,
+    driver_id BIGINT NOT NULL,
+    latitude DECIMAL(10, 8) NOT NULL,
+    longitude DECIMAL(11, 8) NOT NULL,
+    accuracy DECIMAL(8, 2),
+    speed DECIMAL(8, 2),
+    heading DECIMAL(8, 2),
+    recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (driver_id) REFERENCES Driver(driver_id),
+    INDEX idx_driver (driver_id),
+    INDEX idx_recorded_at (recorded_at),
+    INDEX idx_location (latitude, longitude)
+);
+```
+</TabItem>
+<TabItem value="Notifications">
+```sql
+CREATE TABLE Notifications (
+    notification_id BIGINT PRIMARY KEY,
+    user_id BIGINT,
+    driver_id BIGINT,
+    ride_id BIGINT,
+    notification_type ENUM('RIDE_REQUEST', 'RIDE_ACCEPTED', 'DRIVER_ARRIVED', 'RIDE_STARTED', 'RIDE_COMPLETED', 'PAYMENT_PROCESSED') NOT NULL,
+    title VARCHAR(200),
+    message TEXT,
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES User(user_id),
+    FOREIGN KEY (driver_id) REFERENCES Driver(driver_id),
+    FOREIGN KEY (ride_id) REFERENCES Ride(ride_id),
+    INDEX idx_user (user_id),
+    INDEX idx_driver (driver_id),
+    INDEX idx_ride (ride_id),
+    INDEX idx_type (notification_type),
+    INDEX idx_unread (is_read),
+    INDEX idx_created_at (created_at)
+);
+```
+</TabItem>
+</Tabs>
+
+#### Entity Relationship Diagram
+
+```mermaid
+erDiagram
+    User {
+        BIGINT user_id PK
+        VARCHAR username UK
+        VARCHAR email UK
+        VARCHAR password_hash
+        VARCHAR first_name
+        VARCHAR last_name
+        VARCHAR phone_number
+        VARCHAR profile_picture_url
+        DATE date_of_birth
+        TEXT address
+        VARCHAR emergency_contact_name
+        VARCHAR emergency_contact_phone
+        BOOLEAN is_verified
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+        TIMESTAMP last_login
+        BOOLEAN is_active
+    }
+    
+    Driver {
+        BIGINT driver_id PK
+        VARCHAR username UK
+        VARCHAR email UK
+        VARCHAR password_hash
+        VARCHAR first_name
+        VARCHAR last_name
+        VARCHAR phone_number
+        VARCHAR profile_picture_url
+        VARCHAR license_number UK
+        DATE license_expiry
+        DATE date_of_birth
+        TEXT address
+        DECIMAL current_latitude
+        DECIMAL current_longitude
+        ENUM availability_status
+        BOOLEAN is_verified
+        BOOLEAN is_approved
+        DECIMAL rating
+        INT total_rides
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+        TIMESTAMP last_location_update
+        BOOLEAN is_active
+    }
+    
+    Vehicle {
+        BIGINT vehicle_id PK
+        BIGINT driver_id FK
+        VARCHAR make
+        VARCHAR model
+        INT year
+        VARCHAR color
+        VARCHAR license_plate UK
+        ENUM vehicle_type
+        INT capacity
+        BOOLEAN is_verified
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+    
+    Ride {
+        BIGINT ride_id PK
+        BIGINT user_id FK
+        BIGINT driver_id FK
+        DECIMAL pickup_latitude
+        DECIMAL pickup_longitude
+        TEXT pickup_address
+        DECIMAL dropoff_latitude
+        DECIMAL dropoff_longitude
+        TEXT dropoff_address
+        ENUM ride_type
+        ENUM status
+        DECIMAL estimated_fare
+        DECIMAL actual_fare
+        DECIMAL distance_km
+        INT duration_minutes
+        TIMESTAMP requested_at
+        TIMESTAMP accepted_at
+        TIMESTAMP started_at
+        TIMESTAMP completed_at
+        TIMESTAMP cancelled_at
+        VARCHAR cancellation_reason
+    }
+    
+    Payment {
+        BIGINT payment_id PK
+        BIGINT ride_id FK
+        BIGINT user_id FK
+        BIGINT driver_id FK
+        DECIMAL amount
+        ENUM payment_method
+        ENUM payment_status
+        VARCHAR transaction_id
+        VARCHAR payment_gateway
+        DECIMAL commission_amount
+        DECIMAL driver_earnings
+        TIMESTAMP created_at
+        TIMESTAMP completed_at
+    }
+    
+    Rating {
+        BIGINT rating_id PK
+        BIGINT ride_id FK
+        BIGINT user_id FK
+        BIGINT driver_id FK
+        TINYINT user_rating
+        TINYINT driver_rating
+        TEXT user_feedback
+        TEXT driver_feedback
+        TIMESTAMP created_at
+    }
+    
+    Location_History {
+        BIGINT location_id PK
+        BIGINT driver_id FK
+        DECIMAL latitude
+        DECIMAL longitude
+        DECIMAL accuracy
+        DECIMAL speed
+        DECIMAL heading
+        TIMESTAMP recorded_at
+    }
+    
+    Notifications {
+        BIGINT notification_id PK
+        BIGINT user_id FK
+        BIGINT driver_id FK
+        BIGINT ride_id FK
+        ENUM notification_type
+        VARCHAR title
+        TEXT message
+        BOOLEAN is_read
+        TIMESTAMP created_at
+    }
+    
+    User ||--o{ Ride : "requests"
+    Driver ||--o{ Ride : "accepts"
+    Driver ||--o{ Vehicle : "owns"
+    Ride ||--o{ Payment : "has"
+    Ride ||--o{ Rating : "receives"
+    User ||--o{ Rating : "gives"
+    Driver ||--o{ Rating : "receives"
+    Driver ||--o{ Location_History : "tracks"
+    User ||--o{ Notifications : "receives"
+    Driver ||--o{ Notifications : "receives"
+    Ride ||--o{ Notifications : "triggers"
 ```
 
-### Database Design
-We need to store data about users, drivers, rides, payments, and ratings.
+### Step-by-Step Architecture Design
 
-- We need to store user and driver profiles, ride details, payment information, and ratings/feedback.
-- We need to support millions of writes and reads per second.
-- Our service is read-heavy.
-- Data consistency and integrity are crucial.
+To better understand the system, let's break down the architecture into smaller, manageable components:
 
-#### What kind of database should we use?
-- **Relational Database:** SQL databases can be used for user and driver profiles where relationships are important. A relational database like MySQL or PostgreSQL would be a good choice.
-- **NoSQL Database:** NoSQL databases like MongoDB or Cassandra can be used for storing ride details, payments, and ratings. These databases can handle large amounts of data and are horizontally scalable.
+#### 1. Core Services Architecture
 
+```mermaid
+graph TB
+    subgraph "Client Layer"
+        Mobile[Mobile App]
+        Web[Web App]
+        API_Gateway[API Gateway]
+    end
+    
+    subgraph "Application Services"
+        UserService[User Service]
+        DriverService[Driver Service]
+        RideService[Ride Service]
+        LocationService[Location Service]
+        PaymentService[Payment Service]
+        NotificationService[Notification Service]
+    end
+    
+    subgraph "Data Layer"
+        UserDB[(User Database)]
+        DriverDB[(Driver Database)]
+        RideDB[(Ride Database)]
+        LocationDB[(Location Database)]
+    end
+    
+    subgraph "External Services"
+        MapsAPI[Maps API]
+        PaymentGateway[Payment Gateway]
+        SMSService[SMS Service]
+        EmailService[Email Service]
+    end
+    
+    Mobile --> API_Gateway
+    Web --> API_Gateway
+    API_Gateway --> UserService
+    API_Gateway --> DriverService
+    API_Gateway --> RideService
+    API_Gateway --> LocationService
+    API_Gateway --> PaymentService
+    API_Gateway --> NotificationService
+    
+    UserService --> UserDB
+    DriverService --> DriverDB
+    RideService --> RideDB
+    LocationService --> LocationDB
+    
+    RideService --> MapsAPI
+    PaymentService --> PaymentGateway
+    NotificationService --> SMSService
+    NotificationService --> EmailService
+```
 
-#### Schema Design
-Let's discuss the schema for each entity.
+#### 2. Ride Matching Flow
 
-<details>
-    <summary>**User**</summary>
-    - user_id (PK)
-    - name
-    - email
-    - phone_number
-    - created_at
-</details>
+```mermaid
+graph TB
+    subgraph "Ride Matching Process"
+        RideRequest[Ride Request]
+        LocationQuery[Location Query]
+        DriverSearch[Driver Search]
+        DriverSelection[Driver Selection]
+        Notification[Driver Notification]
+    end
+    
+    subgraph "Matching Components"
+        GeoIndex[Geographic Index]
+        AvailabilityCheck[Availability Check]
+        RatingFilter[Rating Filter]
+        DistanceCalc[Distance Calculation]
+        ETAEstimation[ETA Estimation]
+    end
+    
+    subgraph "Selection Criteria"
+        Proximity[Proximity Score]
+        Rating[Driver Rating]
+        Availability[Availability Status]
+        VehicleType[Vehicle Type Match]
+        FinalScore[Final Score]
+    end
+    
+    RideRequest --> LocationQuery
+    LocationQuery --> DriverSearch
+    DriverSearch --> GeoIndex
+    GeoIndex --> AvailabilityCheck
+    AvailabilityCheck --> RatingFilter
+    RatingFilter --> DistanceCalc
+    DistanceCalc --> ETAEstimation
+    ETAEstimation --> DriverSelection
+    
+    DriverSelection --> Proximity
+    Proximity --> Rating
+    Rating --> Availability
+    Availability --> VehicleType
+    VehicleType --> FinalScore
+    FinalScore --> Notification
+```
 
-<details>
-    <summary>**Driver**</summary>
-    - driver_id (PK)
-    - name
-    - email
-    - phone_number
-    - car_details
-    - created_at
-</details>
+#### 3. Real-time Location Tracking
 
-<details>
-    <summary>**Ride**</summary>
-    - ride_id (PK)
-    - user_id (FK)
-    - driver_id (FK)
-    - pickup_location
-    - dropoff_location
-    - status
-    - created_at
-</details>
+```mermaid
+sequenceDiagram
+    participant Driver
+    participant LocationService
+    participant Cache
+    participant Database
+    participant User
+    participant RideService
+    
+    Driver->>LocationService: Update Location
+    LocationService->>Cache: Store Current Location
+    LocationService->>Database: Store Location History
+    LocationService->>RideService: Notify Active Rides
+    
+    User->>RideService: Request Driver Location
+    RideService->>Cache: Get Current Location
+    alt Cache Hit
+        Cache-->>RideService: Return Location
+    else Cache Miss
+        RideService->>Database: Query Location
+        Database-->>RideService: Return Location
+    end
+    RideService-->>User: Send Location Update
+```
 
-<details>
-    <summary>**Payment**</summary>
-    - payment_id (PK)
-    - ride_id (FK)
-    - amount
-    - payment_method
-    - created_at
-</details>
+#### 4. Payment Processing Flow
 
-<details>
-    <summary>**Rating**</summary>
-    - rating_id (PK)
-    - ride_id (FK)
-    - user_id (FK)
-    - driver_id (FK)
-    - rating
-    - feedback
-    - created_at
-</details>
+```mermaid
+graph TB
+    subgraph "Payment Processing"
+        PaymentRequest[Payment Request]
+        Validation[Payment Validation]
+        Gateway[Payment Gateway]
+        Processing[Payment Processing]
+        Confirmation[Payment Confirmation]
+    end
+    
+    subgraph "Payment Components"
+        CardValidation[Card Validation]
+        FraudCheck[Fraud Detection]
+        GatewayAPI[Gateway API]
+        TransactionLog[Transaction Log]
+        ReceiptGen[Receipt Generation]
+    end
+    
+    subgraph "Payment Methods"
+        CreditCard[Credit Card]
+        DigitalWallet[Digital Wallet]
+        BankTransfer[Bank Transfer]
+        CashPayment[Cash Payment]
+    end
+    
+    PaymentRequest --> Validation
+    Validation --> CardValidation
+    CardValidation --> FraudCheck
+    FraudCheck --> Gateway
+    Gateway --> GatewayAPI
+    GatewayAPI --> Processing
+    Processing --> TransactionLog
+    TransactionLog --> Confirmation
+    Confirmation --> ReceiptGen
+    
+    CreditCard --> GatewayAPI
+    DigitalWallet --> GatewayAPI
+    BankTransfer --> GatewayAPI
+    CashPayment --> TransactionLog
+```
+
+#### 5. Notification System
+
+```mermaid
+graph TB
+    subgraph "Notification Components"
+        EventTrigger[Event Trigger]
+        NotificationEngine[Notification Engine]
+        MessageQueue[Message Queue]
+        DeliveryService[Delivery Service]
+    end
+    
+    subgraph "Notification Types"
+        RideRequest[Ride Request]
+        DriverArrived[Driver Arrived]
+        RideStarted[Ride Started]
+        RideCompleted[Ride Completed]
+        PaymentProcessed[Payment Processed]
+    end
+    
+    subgraph "Delivery Channels"
+        PushNotification[Push Notifications]
+        SMSNotification[SMS Notifications]
+        EmailNotification[Email Notifications]
+        InAppNotification[In-App Notifications]
+    end
+    
+    EventTrigger --> NotificationEngine
+    NotificationEngine --> MessageQueue
+    MessageQueue --> DeliveryService
+    
+    DeliveryService --> RideRequest
+    DeliveryService --> DriverArrived
+    DeliveryService --> RideStarted
+    DeliveryService --> RideCompleted
+    DeliveryService --> PaymentProcessed
+    
+    RideRequest --> PushNotification
+    DriverArrived --> SMSNotification
+    RideStarted --> InAppNotification
+    RideCompleted --> EmailNotification
+    PaymentProcessed --> PushNotification
+```
+
+#### 6. Caching Strategy
+
+```mermaid
+graph TB
+    subgraph "Caching Layers"
+        CDN[CDN Cache]
+        Redis[Redis Cache]
+        ApplicationCache[Application Cache]
+    end
+    
+    subgraph "Cache Types"
+        DriverLocations[Driver Locations]
+        UserProfiles[User Profiles]
+        RideDetails[Ride Details]
+        PaymentInfo[Payment Information]
+    end
+    
+    subgraph "Cache Policies"
+        TTL[Time To Live]
+        LRU[Least Recently Used]
+        WriteThrough[Write Through]
+        WriteBack[Write Back]
+    end
+    
+    CDN --> DriverLocations
+    Redis --> UserProfiles
+    Redis --> RideDetails
+    ApplicationCache --> PaymentInfo
+    
+    DriverLocations --> TTL
+    UserProfiles --> LRU
+    RideDetails --> WriteThrough
+    PaymentInfo --> WriteBack
+```
 
 ### High Level Design
-We can have the following components in our system:
-- **API Gateway:** Handles API requests, authentication, and routing.
-- **User Service:** Manages user profiles, authentication, and registration.
-- **Driver Service:** Manages driver profiles, authentication, and registration.
-- **Ride Service:** Manages ride booking, matching, tracking, and completion.
-- **Payment Service:** Manages payment processing and receipts.
-- **Rating Service:** Manages user and driver ratings and feedback.
-- **Notification Service:** Sends notifications to users and drivers about ride updates.
 
+Now that we understand the individual components, here's how they all work together:
 
-
-### Detailed Component Design
-
-
-### Fault Tolerance
-
-### Data Partitioning
-
-
-### Cache
-To improve the performance of our system, we can use caching. We can cache the following:
-- **User and Driver Profiles:** We can cache user and driver profiles to reduce database reads.
-- **Ride Details:** We can cache ride details to reduce database reads.
-- **Payment Information:** We can cache payment information to reduce database reads.
-- **Ratings and Feedback:** We can cache ratings and feedback to reduce database reads.
-
-### Load Balancer
-
-
-### Monitoring
-
-
-### Security
-
-
-### Rate Limiting
-
-
-### Data Sharding
+```mermaid
+graph TB
+    subgraph "Client Layer"
+        Mobile[Mobile Apps]
+        Web[Web Applications]
+        DriverApp[Driver Apps]
+    end
+    
+    subgraph "Load Balancing & API Gateway"
+        LoadBalancer[Load Balancer]
+        APIGateway[API Gateway]
+        RateLimiter[Rate Limiter]
+    end
+    
+    subgraph "Application Services"
+        UserService[User Service]
+        DriverService[Driver Service]
+        RideService[Ride Service]
+        LocationService[Location Service]
+        PaymentService[Payment Service]
+        NotificationService[Notification Service]
+        AnalyticsService[Analytics Service]
+    end
+    
+    subgraph "Caching Layer"
+        RedisCluster[Redis Cluster]
+        Memcached[Memcached]
+        CDN[CDN]
+    end
+    
+    subgraph "Database Layer"
+        UserDB[(User Database)]
+        DriverDB[(Driver Database)]
+        RideDB[(Ride Database)]
+        LocationDB[(Location Database)]
+        PaymentDB[(Payment Database)]
+    end
+    
+    subgraph "Search & Indexing"
+        Elasticsearch[Elasticsearch]
+        GeoIndex[Geographic Index]
+        SearchEngine[Search Engine]
+    end
+    
+    subgraph "External Services"
+        MapsAPI[Google Maps API]
+        PaymentGateway[Payment Gateway]
+        SMSService[SMS Service]
+        EmailService[Email Service]
+        PushService[Push Notification Service]
+    end
+    
+    subgraph "Message Queue"
+        Kafka[Apache Kafka]
+        RabbitMQ[RabbitMQ]
+    end
+    
+    subgraph "Monitoring & Analytics"
+        Logging[Logging Service]
+        Metrics[Metrics Collection]
+        Alerting[Alerting System]
+    end
+    
+    Mobile --> LoadBalancer
+    Web --> LoadBalancer
+    DriverApp --> LoadBalancer
+    
+    LoadBalancer --> APIGateway
+    APIGateway --> RateLimiter
+    RateLimiter --> UserService
+    RateLimiter --> DriverService
+    RateLimiter --> RideService
+    RateLimiter --> LocationService
+    RateLimiter --> PaymentService
+    RateLimiter --> NotificationService
+    RateLimiter --> AnalyticsService
+    
+    UserService --> UserDB
+    DriverService --> DriverDB
+    RideService --> RideDB
+    LocationService --> LocationDB
+    PaymentService --> PaymentDB
+    
+    UserService --> RedisCluster
+    DriverService --> RedisCluster
+    RideService --> RedisCluster
+    LocationService --> RedisCluster
+    
+    RideService --> Elasticsearch
+    LocationService --> GeoIndex
+    DriverService --> SearchEngine
+    
+    RideService --> MapsAPI
+    PaymentService --> PaymentGateway
+    NotificationService --> SMSService
+    NotificationService --> EmailService
+    NotificationService --> PushService
+    
+    NotificationService --> Kafka
+    AnalyticsService --> Kafka
+    AnalyticsService --> RabbitMQ
+    
+    UserService --> Logging
+    DriverService --> Logging
+    RideService --> Logging
+    LocationService --> Logging
+    
+    Logging --> Metrics
+    Metrics --> Alerting
+```
 
 ### Topics of Discussion
-- **How to handle surge pricing?**
-- **How to handle ride cancellations?**
-- **How to handle driver unavailability?**
-- **How to handle payment failures?**
-- **How to handle ride tracking?**
-- **How to handle driver ratings?**
-- **How to handle user feedback?**
-- **How to handle user authentication?**
-- **How to handle driver verification?**
-- **How to handle ride history?**
-- **How to handle ride analytics?**
-- **How to handle driver incentives?**
-- **How to handle user incentives?**
-- **How to handle driver tracking?**
-- **How to handle user tracking?**
-- **How to handle driver earnings?**
-- **How to handle user payments?**
-- **How to handle user refunds?**
-- **How to handle driver disputes?**
-- **How to handle user disputes?**
-- **How to handle driver ratings?**
-- **How to handle user ratings?**
-- **How to handle driver earnings?**
-- **How to handle user payments?**
-- **How to handle user refunds?**
-- **How to handle driver disputes?**
-- **How to handle user disputes?**
-- **How to handle driver ratings?**
 
+At a high level, we need to handle real-time location tracking, driver matching, and payment processing for a ride-sharing platform.
 
+The topic of discussion for this problem is mainly around the following components:
+- How to handle real-time location updates efficiently.
+- How to match users with the nearest available drivers.
+- How to handle surge pricing and dynamic pricing.
+
+#### Key Challenges
+
+1. **Real-time Location Tracking**: 
+   - Handling millions of location updates per second
+   - Efficient storage and retrieval of location data
+   - Managing location history and analytics
+
+2. **Driver Matching**:
+   - Finding the nearest available drivers
+   - Balancing load across drivers
+   - Handling driver preferences and ratings
+
+3. **Scalability Issues**:
+   - High-frequency location updates
+   - Real-time matching algorithms
+   - Payment processing at scale
+
+#### Solutions
+
+Below are some of the possible solutions:
+
+- **Geographic Indexing**: Use spatial data structures like QuadTree or R-tree for efficient location queries
+- **Caching Strategy**: Multi-layer caching for hot location data and user profiles
+- **Message Queues**: Use Kafka or RabbitMQ for handling high-frequency location updates
+- **Database Sharding**: Partition data based on geographic regions or user IDs
+- **Load Balancing**: Distribute load across multiple servers and regions
+
+:::warning
+- Location data is sensitive and requires proper privacy controls
+- Need to handle driver safety and emergency situations
+- Consider data retention policies for location history
+:::
+
+### AI Generation Prompts
+
+For creating high-quality diagrams using AI tools like ChatGPT, Gemini, or Claude, use these prompts:
+
+#### 1. Entity Relationship Diagram
+```
+Create a comprehensive ER diagram for a ride-sharing system with the following entities:
+- User (user_id, profile info, contact details)
+- Driver (driver_id, license info, vehicle details, location)
+- Vehicle (vehicle_id, make, model, license_plate)
+- Ride (ride_id, pickup/dropoff locations, status, fare)
+- Payment (payment_id, amount, method, status)
+- Rating (rating_id, user_rating, driver_rating, feedback)
+- Location_History (location_id, driver_id, coordinates, timestamp)
+- Notifications (notification_id, type, message, delivery_status)
+
+Include all relationships, foreign keys, and cardinalities. Use a professional color scheme with clear labels.
+```
+
+#### 2. System Architecture Diagram
+```
+Design a high-level system architecture diagram for a ride-sharing platform showing:
+- Client layer (mobile apps, web apps)
+- API Gateway and Load Balancer
+- Microservices (User, Driver, Ride, Location, Payment, Notification services)
+- Database layer (User DB, Driver DB, Ride DB, Location DB)
+- Caching layer (Redis, CDN)
+- External services (Maps API, Payment Gateway, SMS/Email services)
+- Message queues (Kafka, RabbitMQ)
+
+Use different colors for each layer and show data flow with arrows.
+```
+
+#### 3. Ride Matching Flow
+```
+Create a detailed flowchart showing the ride matching process:
+- User requests a ride
+- System finds nearby drivers
+- Geographic indexing and filtering
+- Driver selection algorithm
+- Notification to selected driver
+- Driver acceptance/rejection handling
+
+Use decision diamonds for algorithmic steps and rectangles for processes.
+```
+
+#### 4. Real-time Location Tracking
+```
+Design a sequence diagram showing real-time location tracking:
+- Driver updates location
+- Location service processes update
+- Cache and database updates
+- User requests driver location
+- Location retrieval and delivery
+
+Include all services, databases, and caches with proper timing and alternatives.
+```
+
+#### 5. Payment Processing Flow
+```
+Create a payment processing workflow diagram showing:
+- Payment request initiation
+- Payment validation and fraud detection
+- Payment gateway integration
+- Transaction processing
+- Receipt generation and confirmation
+
+Use different shapes for each process step and show error handling paths.
+```
+
+#### 6. Notification System Architecture
+```
+Design a notification system architecture showing:
+- Event triggers (ride requests, driver updates, payment confirmations)
+- Notification engine and message queue
+- Delivery channels (push, SMS, email, in-app)
+- User preference management
+- Rate limiting and batching
+
+Use different colors for each notification type and delivery channel.
+```
+
+#### 7. Geographic Data Management
+```
+Create a geographic data management diagram showing:
+- Location update ingestion
+- Spatial indexing (QuadTree/R-tree)
+- Geographic partitioning
+- Location history storage
+- Proximity search algorithms
+
+Include data flow and storage strategies for location data.
+```
+
+#### 8. High-Level System Overview
+```
+Design a comprehensive system overview diagram showing the complete ride-sharing platform:
+- All microservices and their interactions
+- Database clusters and geographic partitioning
+- Caching layers and CDN
+- External integrations (Maps, Payment, Communication)
+- Monitoring and analytics
+- Security and authentication layers
+
+Use a professional color scheme with clear service boundaries and data flow indicators.
+```
