@@ -484,6 +484,128 @@ CREATE TABLE PostId (
 
 </details>
 
+<details>
+<summary>**Epoch Time-based ID Generation**</summary>
+
+To enable efficient searching of new posts and better sharding, we can incorporate epoch time into our ID generation strategy.
+
+#### Benefits of Epoch Time in IDs
+- **Efficient Time-based Queries**: Easy to fetch recent posts without complex timestamp filtering
+- **Natural Sharding**: Time-based distribution helps balance load across shards
+- **Reduced Write Latency**: No need for secondary indexes on creation time
+- **Better Performance**: Primary key already includes time information
+
+#### ID Structure with Epoch Time
+
+```mermaid
+graph LR
+    subgraph "64-bit Post ID Structure"
+        A["31 bits<br/>Epoch Seconds"] --> B["17 bits<br/>Auto-increment"] --> C["16 bits<br/>Shard ID"]
+    end
+    
+    style A fill:#ff9800
+    style B fill:#4caf50
+    style C fill:#2196f3
+```
+
+#### ID Generation Strategy
+
+**64-bit Post ID Components:**
+- **Epoch Seconds (31 bits)**: Current timestamp in seconds since Unix epoch
+- **Auto-increment Sequence (17 bits)**: Allows ~130K posts per second
+- **Shard ID (16 bits)**: Determines which shard stores the post
+
+**Example ID Generation:**
+```java
+// Current epoch time: 1703123456
+// Auto-increment: 00001
+// Shard ID: 0001
+// Final Post ID: 1703123456000010001
+
+public class PostIdGenerator {
+    private static final int EPOCH_BITS = 31;
+    private static final int SEQUENCE_BITS = 17;
+    private static final int SHARD_BITS = 16;
+    
+    public long generatePostId(int shardId) {
+        long epochTime = System.currentTimeMillis() / 1000;
+        long sequence = getNextSequence(); // Auto-increment per second
+        long shardIdMask = shardId & ((1L << SHARD_BITS) - 1);
+        
+        return (epochTime << (SEQUENCE_BITS + SHARD_BITS)) | 
+               (sequence << SHARD_BITS) | 
+               shardIdMask;
+    }
+}
+```
+
+#### Sharding Strategy with Epoch Time
+
+```mermaid
+graph TD
+    A[New Post Request] --> B[Generate ID with Epoch Time]
+    B --> C[Extract Shard from ID]
+    C --> D[Route to Appropriate Shard]
+    D --> E[Store Post with Time-based ID]
+    
+    F[Search Recent Posts] --> G[Query by ID Range]
+    G --> H[Filter by Time Range]
+    H --> I[Return Recent Posts]
+    
+    style B fill:#ffeb3b
+    style G fill:#4caf50
+```
+
+#### Advantages of This Approach
+
+**Performance Benefits:**
+- **Fast Recent Post Queries**: No need to scan entire tables for recent posts
+- **Efficient Sharding**: Time-based distribution naturally balances load
+- **Reduced Index Overhead**: Time is part of primary key, no secondary indexes needed
+
+**Scalability Benefits:**
+- **Horizontal Scaling**: Easy to add new shards based on time ranges
+- **Load Distribution**: Recent posts spread across multiple shards
+- **Query Optimization**: Range queries on IDs are very efficient
+
+**Example Queries:**
+```sql
+-- Get posts from last 24 hours
+SELECT * FROM posts 
+WHERE post_id >= 1703037056000000000  -- 24 hours ago
+  AND post_id < 1703123456000000000;  -- current time
+
+-- Get posts from specific time range
+SELECT * FROM posts 
+WHERE post_id BETWEEN 1703120000000000000 AND 1703123456000000000;
+```
+
+#### Shard Distribution Strategy
+
+```mermaid
+graph LR
+    subgraph "Time-based Shard Distribution"
+        A[Shard 1<br/>Jan 2024] --> B[Shard 2<br/>Feb 2024]
+        B --> C[Shard 3<br/>Mar 2024]
+        C --> D[Shard 4<br/>Apr 2024]
+        D --> E[Shard 5<br/>May 2024]
+    end
+    
+    style A fill:#e3f2fd
+    style B fill:#e8f5e8
+    style C fill:#fff3e0
+    style D fill:#f3e5f5
+    style E fill:#e1f5fe
+```
+
+**Shard Assignment Rules:**
+- **Current Month**: Active shards for new posts
+- **Previous Months**: Read-only shards for historical data
+- **Hot Data**: Recent posts cached in multiple shards
+- **Cold Data**: Older posts moved to cheaper storage
+
+</details>
+
 ### Feed Generation
 We can generate feed for a user based on the following criteria:
 - Posts from the users the user follows
