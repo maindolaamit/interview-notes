@@ -30,6 +30,14 @@ import TabItem from "@theme/TabItem";
     Arrays.sort(arr); 
     // descending for Integer[]
     Arrays.sort(arr, Collections.reverseOrder()); 
+
+    // Sort Custom Objects, by single field
+    Arrays.sort(intervals, (a, b) -> a[0] - b[0]);
+    // Sort by multiple fields
+    Arrays.sort(people, (a, b) -> {
+        if (a[0] != b[0]) return a[0] - b[0];
+        return b[1] - a[1];
+    });
     ```
 
     ### Array to List
@@ -51,38 +59,23 @@ import TabItem from "@theme/TabItem";
     Integer[] array = list.toArray(new Integer[0]);
     ```
 
-    ### Sort Custom Objects
-    ```java
-    // Sort by single field
-    Arrays.sort(intervals, (a, b) -> a[0] - b[0]);
-    
-    // Sort by multiple fields
-    Arrays.sort(people, (a, b) -> {
-        if (a[0] != b[0]) return a[0] - b[0];
-        return b[1] - a[1];
-    });
-    ```
   </TabItem>
 
-  <TabItem value="Datastructures">
-    ### PriorityQueue (Heap)
+  <TabItem value="HashMap">
+      ### HashMap Operations
     ```java
-    // Min heap
-    PriorityQueue<Integer> minHeap = new PriorityQueue<>();
-    
-    // Max heap
-    PriorityQueue<Integer> maxHeap = new PriorityQueue<>((a, b) -> b - a);
-    
-    // Custom object heap
-    PriorityQueue<int[]> pq = new PriorityQueue<>((a, b) -> a[1] - b[1]);
-    ```
 
-    ### HashMap Operations
-    ```java
     Map<Integer, Integer> map = new HashMap<>();
+    // get the count of keys
+    map.size();
+    // get the value of a key, if the key is not present, return the defaultValue
     map.getOrDefault(key, defaultValue);
-    map.putIfAbsent(key, value);
+    // check if a key exists
     map.containsKey(key);
+    // check if a value exists
+    map.containsValue(value);
+    // put a key-value pair, if the key is not present
+    map.putIfAbsent(key, value);
     map.merge(key, 1, Integer::sum); // increment value
     // loop through map
     for (Map.Entry<Integer, Integer> entry : map.entrySet()) {
@@ -97,6 +90,22 @@ import TabItem from "@theme/TabItem";
     // compute if absent is same as putIfAbsent
     // useful for lazy initialization
     map.computeIfAbsent(key, k -> new ArrayList<>());
+    map.remove(key);// remove a key
+    map.clear();// clear the map
+    ```
+  </TabItem>
+
+  <TabItem value="Heap">
+    ### PriorityQueue (Heap)
+    ```java
+    // Min heap
+    PriorityQueue<Integer> minHeap = new PriorityQueue<>();
+    
+    // Max heap
+    PriorityQueue<Integer> maxHeap = new PriorityQueue<>((a, b) -> b - a);
+    
+    // Custom object heap
+    PriorityQueue<int[]> pq = new PriorityQueue<>((a, b) -> a[1] - b[1]);
     ```
   </TabItem>
 
