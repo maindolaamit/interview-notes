@@ -113,16 +113,38 @@ const config: Config = {
       },
       items: [
         {
-          type: 'docSidebar',
-          sidebarId: 'langSidebar',
+          type: 'dropdown',
+          label: 'Coding',
           position: 'left',
-          label: 'Languages & Frameworks',
+          items: [
+            {
+              type: 'docSidebar',
+              sidebarId: 'langSidebar',
+              label: 'Languages & Frameworks',
+            },
+            {
+              type: 'docSidebar',
+              sidebarId: 'programmingSidebar',
+              label: 'Programming',
+            },
+          ],
         },
         {
-          type: 'docSidebar',
-          sidebarId: 'architectureSidebar',
+          type: 'dropdown',
+          label: 'Design',
           position: 'left',
-          label: 'Architecture',
+          items: [
+            {
+              type: 'docSidebar',
+              sidebarId: 'architectureSidebar',
+              label: 'Architecture',
+            },
+            {
+              type: 'docSidebar',
+              sidebarId: 'systemDesignSidebar',
+              label: 'System Design',
+            },
+          ],
         },
         {
           type: 'docSidebar',
@@ -135,18 +157,6 @@ const config: Config = {
           sidebarId: 'genAiSidebar',
           position: 'left',
           label: 'GenAI',
-        },
-        {
-          type: 'docSidebar',
-          sidebarId: 'programmingSidebar',
-          position: 'left',
-          label: 'Programming',
-        },
-        {
-          type: 'docSidebar',
-          sidebarId: 'systemDesignSidebar',
-          position: 'left',
-          label: 'System Design',
         },
         {
           type: 'docSidebar',
