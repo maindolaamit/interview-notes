@@ -9,6 +9,9 @@ Personal interview-preparation notes, built with Docusaurus and deployed to GitH
 - `npm run build` — production build; must pass before committing (`onBrokenLinks: 'throw'` catches broken links)
 - `npm run serve` — serve the production build locally
 
+Deployment: merging a PR into `main` deploys the site (`.github/workflows/deploy.yml`); `ci.yml` checks every PR into `main`.
+Branch from the latest `main`, and don't stack branches: PRs are squash-merged, so a branch built on another unmerged branch will conflict.
+
 If `artifactory.nordstrom.com` is unreachable, install from the public registry for that command only:
 `npm ci --registry=https://registry.npmjs.org/`. Don't edit `~/.npmrc`. Lockfile URLs must stay on `registry.npmjs.org`.
 

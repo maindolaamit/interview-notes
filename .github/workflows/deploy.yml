@@ -1,11 +1,17 @@
 name: Deploy to GitHub Pages
 
 on:
+  # Every merged PR deploys; CI (ci.yml) has already checked it
   push:
     branches:
-      - gh-pages
-    # Review gh actions docs if you want to further define triggers, paths, etc
-    # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#on
+      - main
+  # "Run workflow" button in the Actions tab, to redeploy without a new commit
+  workflow_dispatch:
+
+# One deploy at a time; a newer merge replaces a queued one, but an in-progress deploy finishes
+concurrency:
+  group: pages
+  cancel-in-progress: false
 
 jobs:
   build:
