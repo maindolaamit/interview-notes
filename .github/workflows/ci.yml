@@ -1,17 +1,14 @@
 name: CI
 
 on:
-  # PR checks run against the merge result (refs/pull/N/merge), i.e. "what main would look like after merging"
+  # Runs against the merge result (refs/pull/N/merge), i.e. "what main would look like after merging"
   pull_request:
-  # Early feedback on every pushed branch; main and gh-pages are checked by their PRs and deploy.yml
-  push:
-    branches-ignore:
+    branches:
       - main
-      - gh-pages
 
-# Cancel an in-progress run when a newer commit is pushed to the same branch or PR
+# Cancel an in-progress run when a newer commit is pushed to the same PR
 concurrency:
-  group: ci-${{ github.event_name }}-${{ github.head_ref || github.ref_name }}
+  group: ci-${{ github.head_ref }}
   cancel-in-progress: true
 
 permissions:
@@ -30,8 +27,20 @@ jobs:
           node-version: 22
           cache: npm
 
+      # Registry connections occasionally reset (ECONNRESET). npm retries each download,
+      # and the whole install is retried in case a retry budget runs out.
       - name: Install dependencies
-        run: npm ci
+        env:
+          npm_config_fetch_retries: 5
+          npm_config_fetch_retry_mintimeout: 10000
+          npm_config_fetch_retry_maxtimeout: 60000
+        run: |
+          for attempt in 1 2 3; do
+            npm ci && exit 0
+            echo "::warning::npm ci failed (attempt $attempt of 3), retrying in 15s"
+            sleep 15
+          done
+          exit 1
       - name: Typecheck
         run: npm run typecheck
       # Fails on broken links and anchors (onBrokenLinks: 'throw')
