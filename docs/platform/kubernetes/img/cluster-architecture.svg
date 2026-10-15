@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 400" width="760" height="400" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13">
+  <rect x="0" y="0" width="760" height="400" fill="#ffffff"/>
+  <defs>
+    <marker id="arr" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#475569"/>
+    </marker>
+  </defs>
+
+  <!-- kubectl -->
+  <rect x="20" y="20" width="110" height="36" rx="6" fill="#f1f5f9" stroke="#475569"/>
+  <text x="75" y="43" text-anchor="middle" fill="#0f172a">kubectl / CI</text>
+  <path d="M75 56 L75 98" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="82" y="82" fill="#475569" font-size="11">apply YAML</text>
+
+  <!-- Control plane -->
+  <rect x="20" y="100" width="300" height="280" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5"/>
+  <text x="170" y="122" text-anchor="middle" fill="#1d4ed8" font-weight="bold">Control plane</text>
+
+  <rect x="40" y="140" width="260" height="48" rx="6" fill="#1d4ed8"/>
+  <text x="170" y="161" text-anchor="middle" fill="#ffffff" font-weight="bold">kube-apiserver</text>
+  <text x="170" y="178" text-anchor="middle" fill="#dbeafe" font-size="11">the only component that talks to etcd</text>
+
+  <rect x="40" y="220" width="120" height="56" rx="6" fill="#ffffff" stroke="#1d4ed8"/>
+  <text x="100" y="244" text-anchor="middle" fill="#0f172a" font-weight="bold">etcd</text>
+  <text x="100" y="262" text-anchor="middle" fill="#475569" font-size="11">desired + actual state</text>
+
+  <rect x="180" y="220" width="120" height="56" rx="6" fill="#ffffff" stroke="#1d4ed8"/>
+  <text x="240" y="244" text-anchor="middle" fill="#0f172a" font-weight="bold">scheduler</text>
+  <text x="240" y="262" text-anchor="middle" fill="#475569" font-size="11">picks a node per pod</text>
+
+  <rect x="40" y="300" width="260" height="56" rx="6" fill="#ffffff" stroke="#1d4ed8"/>
+  <text x="170" y="324" text-anchor="middle" fill="#0f172a" font-weight="bold">controller-manager</text>
+  <text x="170" y="342" text-anchor="middle" fill="#475569" font-size="11">reconcile loops: Deployment, ReplicaSet, Node…</text>
+
+  <path d="M100 188 L100 218" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+  <path d="M240 218 L240 190" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+  <path d="M310 328 L310 168 L302 168" stroke="#475569" stroke-width="1.5" fill="none" marker-end="url(#arr)"/>
+
+  <!-- Worker nodes -->
+  <g>
+    <rect x="400" y="40" width="340" height="160" rx="10" fill="#f0fdf4" stroke="#15803d" stroke-width="1.5"/>
+    <text x="570" y="62" text-anchor="middle" fill="#15803d" font-weight="bold">Worker node 1</text>
+    <rect x="415" y="76" width="95" height="40" rx="6" fill="#15803d"/>
+    <text x="462" y="101" text-anchor="middle" fill="#ffffff">kubelet</text>
+    <rect x="520" y="76" width="95" height="40" rx="6" fill="#ffffff" stroke="#15803d"/>
+    <text x="567" y="101" text-anchor="middle" fill="#0f172a">kube-proxy</text>
+    <rect x="625" y="76" width="100" height="40" rx="6" fill="#ffffff" stroke="#15803d"/>
+    <text x="675" y="94" text-anchor="middle" fill="#0f172a" font-size="12">container</text>
+    <text x="675" y="109" text-anchor="middle" fill="#0f172a" font-size="12">runtime</text>
+    <rect x="415" y="134" width="150" height="50" rx="6" fill="#fef3c7" stroke="#b45309"/>
+    <text x="490" y="164" text-anchor="middle" fill="#0f172a">Pod: orders-7f9c</text>
+    <rect x="575" y="134" width="150" height="50" rx="6" fill="#fef3c7" stroke="#b45309"/>
+    <text x="650" y="164" text-anchor="middle" fill="#0f172a">Pod: payments-2k1x</text>
+  </g>
+  <g>
+    <rect x="400" y="220" width="340" height="160" rx="10" fill="#f0fdf4" stroke="#15803d" stroke-width="1.5"/>
+    <text x="570" y="242" text-anchor="middle" fill="#15803d" font-weight="bold">Worker node 2</text>
+    <rect x="415" y="256" width="95" height="40" rx="6" fill="#15803d"/>
+    <text x="462" y="281" text-anchor="middle" fill="#ffffff">kubelet</text>
+    <rect x="520" y="256" width="95" height="40" rx="6" fill="#ffffff" stroke="#15803d"/>
+    <text x="567" y="281" text-anchor="middle" fill="#0f172a">kube-proxy</text>
+    <rect x="625" y="256" width="100" height="40" rx="6" fill="#ffffff" stroke="#15803d"/>
+    <text x="675" y="274" text-anchor="middle" fill="#0f172a" font-size="12">container</text>
+    <text x="675" y="289" text-anchor="middle" fill="#0f172a" font-size="12">runtime</text>
+    <rect x="415" y="314" width="150" height="50" rx="6" fill="#fef3c7" stroke="#b45309"/>
+    <text x="490" y="344" text-anchor="middle" fill="#0f172a">Pod: orders-a81d</text>
+    <rect x="575" y="314" width="150" height="50" rx="6" fill="#fef3c7" stroke="#b45309"/>
+    <text x="650" y="344" text-anchor="middle" fill="#0f172a">Pod: log-agent</text>
+  </g>
+
+  <!-- API server to kubelets -->
+  <path d="M300 152 L413 96" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+  <path d="M300 176 L413 276" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="335" y="210" fill="#475569" font-size="11">watch &amp;</text>
+  <text x="335" y="224" fill="#475569" font-size="11">report status</text>
+</svg>

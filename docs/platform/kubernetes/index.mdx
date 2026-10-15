@@ -4,16 +4,56 @@ description: "Kubernetes Interview Questions"
 sidebar_position: 3
 ---
 
-Kubernetes objects and operations. How microservices are deployed in general lives in
-[Deployment in Microservices](/docs/architecture/microservices/deployment).
+import DocCardList from '@theme/DocCardList';
 
-## Topics to cover
-- Architecture: control plane (API server, etcd, scheduler, controller manager), kubelet, kube-proxy
-- Workloads: Pod, ReplicaSet, Deployment, StatefulSet, DaemonSet, Job / CronJob
-- Networking: Service types, Ingress, DNS, NetworkPolicy
-- Configuration: ConfigMap, Secret, resource requests and limits
-- Health: liveness, readiness and startup probes
-- Scaling: HPA, VPA, cluster autoscaler
-- Deployment strategies: rolling update, blue-green, canary
-- Storage: PersistentVolume, PersistentVolumeClaim, StorageClass
-- Helm, troubleshooting (`CrashLoopBackOff`, `OOMKilled`, pending pods)
+:::tip Key takeaways
+- Kubernetes is a **desired-state system**. You declare what you want in YAML; controllers keep reconciling the
+  cluster until reality matches.
+- The **Pod** is the unit of scheduling, but you rarely create one directly. A Deployment, StatefulSet, DaemonSet or
+  Job owns it.
+- A **Service** gives a changing set of Pods one stable name and IP. Labels and selectors are what tie them together.
+- **Requests** decide where a Pod is scheduled; **limits** decide when it is throttled (CPU) or killed (memory).
+- **Readiness** controls traffic; **liveness** controls restarts. Mixing them up causes most self-inflicted outages.
+:::
+
+## The mental model: a reconciliation loop
+
+You never tell Kubernetes "start three containers". You store an object that says "three replicas should exist" in
+the API server. The scheduler picks nodes, the kubelet on each node starts containers, and controllers keep watching.
+If a Pod dies or a node disappears, the observed state no longer matches the desired state, so a controller fixes it.
+
+<details>
+<summary>Why this matters: three consequences</summary>
+
+- **Self-healing is the default.** Deleting a Pod owned by a Deployment just gets you a new Pod. To stop it, change
+  the desired state (`replicas: 0`) instead.
+- **Everything is eventually consistent.** `kubectl apply` returns as soon as the object is stored, not when the
+  rollout finishes. Use `kubectl rollout status` or readiness to know when you're done.
+- **Git can be the source of truth.** Desired state is plain YAML, so tools such as Kustomize, Helm and Argo CD can
+  generate it, review it and sync it. See [Deployment Strategies](/docs/platform/kubernetes/deployment-strategies).
+
+</details>
+
+## Cheat sheet
+
+| Concept | One-liner |
+|---|---|
+| Pod | One or more containers that share a network namespace and volumes. Ephemeral; its IP changes when it's recreated. |
+| Deployment | Manages ReplicaSets for stateless apps. Gives you rolling updates and rollback. |
+| StatefulSet | Stable names (`db-0`, `db-1`), ordered rollout and one volume per Pod. |
+| DaemonSet | One Pod per node, used for log agents, node exporters and CNI plugins. |
+| Job / CronJob | Runs a task to completion, once or on a schedule. |
+| Service | Stable virtual IP and DNS name in front of the Pods its selector matches. |
+| Ingress | HTTP routing from outside the cluster to Services. It needs an ingress controller. |
+| ConfigMap / Secret | Configuration injected as environment variables or files. Secrets are base64-encoded, not encrypted. |
+| Requests / limits | Requests are used for scheduling. Limits cap usage: CPU over the limit is throttled, memory over the limit is OOMKilled. |
+| Probes | Readiness controls traffic, liveness controls restarts, startup delays both for slow starters. |
+| HPA | Scales replicas on CPU, memory or custom metrics. |
+| RBAC | Subjects (users, ServiceAccounts) are bound to Roles that allow verbs on resources. |
+
+## Pages in this section
+
+<DocCardList />
+
+How microservices are deployed in general, independent of Kubernetes, is in
+[Deployment in Microservices](/docs/architecture/microservices/deployment).

@@ -1,0 +1,681 @@
+---
+title: Interview Questions
+description: "Kubernetes interview questions: foundations, practical and scenario-based"
+sidebar_position: 16
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+:::tip How to use this page
+Expand a question, pick an answer, then open **Show answer**. The questions target common traps, not trivia.
+:::
+
+<Tabs>
+<TabItem value="foundations" label="Foundations">
+
+Architecture, Pods, Services and probes. See [Core Concepts](./core-concepts), [Workloads](./workloads), [Networking](./networking) and [Observability](./observability).
+
+<details>
+<summary>**Q1 · architecture.** Someone runs `kubectl apply -f deployment.yaml`. Which component actually creates the Pods?</summary>
+
+- **A.** The kubelet on each node reads the YAML file and starts containers
+- **B.** The API server stores the Deployment in etcd; the Deployment and ReplicaSet controllers in the controller manager create Pod objects; the scheduler assigns them to nodes; the kubelet starts the containers
+- **C.** The scheduler creates Pods directly from the Deployment
+- **D.** kubectl connects to each node over SSH and runs the containers
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: B
+The API server stores the Deployment in etcd; the Deployment and ReplicaSet controllers in the controller manager create Pod objects; the scheduler assigns them to nodes; the kubelet starts the containers
+:::
+
+Kubernetes is a set of control loops reading and writing desired state through the API server. The Deployment controller creates a ReplicaSet, the ReplicaSet controller creates Pods, the scheduler only sets `spec.nodeName`, and the kubelet on that node starts the containers. No component pushes commands directly to another; each watches the API server.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q2 · etcd.** What happens to already-running Pods if etcd becomes unavailable?</summary>
+
+- **A.** All Pods are killed immediately
+- **B.** Running Pods keep running, but you cannot create, change or reschedule anything until the control plane recovers
+- **C.** Pods are moved to other nodes
+- **D.** Pods restart in a loop until etcd is back
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: B
+Running Pods keep running, but you cannot create, change or reschedule anything until the control plane recovers
+:::
+
+etcd holds the cluster state, not the workloads. Kubelets keep running their containers, and kube-proxy rules stay in place. What you lose is every write: deployments, scaling, rescheduling after a node failure. That's why production etcd runs as an odd-sized quorum (3 or 5 members) and gets backed up.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q3 · pods.** Why does a Deployment manage Pods through a ReplicaSet instead of managing Pods directly?</summary>
+
+- **A.** ReplicaSets are faster at starting containers
+- **B.** ReplicaSets add load balancing that Deployments lack
+- **C.** Pods can't be created without a ReplicaSet
+- **D.** Each Deployment revision is its own ReplicaSet, so a rolling update scales the new ReplicaSet up and the old one down, and a rollback just scales an old ReplicaSet back up
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: D
+Each Deployment revision is its own ReplicaSet, so a rolling update scales the new ReplicaSet up and the old one down, and a rollback just scales an old ReplicaSet back up
+:::
+
+The ReplicaSet keeps N identical Pods running; the Deployment adds versioning on top. Changing the Pod template creates a new ReplicaSet (named by template hash). `kubectl rollout undo` works because old ReplicaSets are kept (up to `revisionHistoryLimit`) at 0 replicas.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q4 · multi-container.** Two containers in the same Pod need to talk to each other. How do they connect?</summary>
+
+- **A.** Through `localhost`, because containers in a Pod share one network namespace (same IP, separate ports)
+- **B.** Through a Service pointing at the Pod
+- **C.** They can't; each Pod should have only one container
+- **D.** Through the node's IP and a NodePort
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: A
+Through `localhost`, because containers in a Pod share one network namespace (same IP, separate ports)
+:::
+
+A Pod is the unit of shared network and (optionally) storage. Containers in a Pod share an IP and port space and can mount the same volumes. That's what sidecars rely on: a proxy, log shipper or config reloader talks to the app over localhost.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q5 · services.** A Deployment's Pods restart and get new IPs. How do clients keep reaching them?</summary>
+
+- **A.** Through a Service: a stable virtual IP and DNS name whose endpoints are updated to the current Ready Pods that match its selector
+- **B.** Clients must be redeployed with the new IPs
+- **C.** The Pods keep their old IPs after restart
+- **D.** Through the Ingress controller only
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: A
+Through a Service: a stable virtual IP and DNS name whose endpoints are updated to the current Ready Pods that match its selector
+:::
+
+Pod IPs are ephemeral. A Service gives a stable ClusterIP and DNS name (`orders.shop.svc.cluster.local`), and the endpoints controller keeps the backing EndpointSlices in sync with Ready Pods matching the selector. kube-proxy (or the CNI) programs the node to load balance to them.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q6 · service types.** An internal service only needs to be called by other Pods in the cluster. Which Service type should you use?</summary>
+
+- **A.** LoadBalancer
+- **B.** NodePort
+- **C.** ClusterIP
+- **D.** ExternalName
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: C
+ClusterIP
+:::
+
+ClusterIP is the default and is only reachable inside the cluster. NodePort opens a port on every node; LoadBalancer provisions a cloud load balancer on top of that (and costs money per Service); ExternalName is just a DNS CNAME to something outside. For HTTP traffic from outside, one Ingress usually fronts many ClusterIP Services.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q7 · probes.** What's the difference between a failing readiness probe and a failing liveness probe?</summary>
+
+- **A.** There's no difference; both restart the container
+- **B.** Liveness failure deletes the Pod and schedules it on a new node
+- **C.** Readiness failure restarts the container; liveness failure removes it from the Service
+- **D.** Readiness failure removes the Pod from Service endpoints (no restart); liveness failure makes the kubelet restart the container
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: D
+Readiness failure removes the Pod from Service endpoints (no restart); liveness failure makes the kubelet restart the container
+:::
+
+Readiness answers "should this Pod get traffic now?" and liveness answers "is this process stuck beyond recovery?". A third probe, `startupProbe`, disables the other two until the app has started, so a slow-starting JVM isn't killed by liveness. A common mistake is pointing liveness at an endpoint that checks the database: when the DB has an outage, every Pod restarts in a loop.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q8 · dns.** A Pod in namespace `payments` calls `http://orders:8080` and gets a DNS error, but the `orders` Service exists in namespace `shop`. Why?</summary>
+
+- **A.** Services can't be called across namespaces
+- **B.** Port 8080 is blocked by default
+- **C.** Short names resolve in the caller's own namespace first; it must use `orders.shop` (or the full `orders.shop.svc.cluster.local`)
+- **D.** CoreDNS only resolves Pods, not Services
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: C
+Short names resolve in the caller's own namespace first; it must use `orders.shop` (or the full `orders.shop.svc.cluster.local`)
+:::
+
+The Pod's `/etc/resolv.conf` search list starts with `payments.svc.cluster.local`, so `orders` becomes `orders.payments.svc.cluster.local`, which doesn't exist. Cross-namespace calls need at least `<service>.<namespace>`. Note that a NetworkPolicy could still block the call even once DNS resolves.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q9 · statefulset.** When would you choose a StatefulSet over a Deployment?</summary>
+
+- **A.** Whenever the app writes logs
+- **B.** When each replica needs a stable identity (`db-0`, `db-1`), its own persistent volume that follows it, and ordered start-up and shutdown, as in databases, Kafka or ZooKeeper
+- **C.** When you need more than 10 replicas
+- **D.** When the app uses a ConfigMap
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: B
+When each replica needs a stable identity (`db-0`, `db-1`), its own persistent volume that follows it, and ordered start-up and shutdown, as in databases, Kafka or ZooKeeper
+:::
+
+Deployment replicas are interchangeable: random names, shared or no storage, started in parallel. A StatefulSet gives each Pod a stable name and DNS entry (through a headless Service) and a PVC from `volumeClaimTemplates` that is reattached when the Pod is rescheduled. Deleting a StatefulSet doesn't delete its PVCs, which protects your data.
+
+</details>
+
+</details>
+
+</TabItem>
+<TabItem value="practical" label="Practical">
+
+Resources, configuration, security, scaling and rollouts. See [Resources & Scheduling](./resources-scheduling), [Configuration & Secrets](./configuration-secrets), [Security](./security), [Autoscaling](./autoscaling) and [Deployment Strategies](./deployment-strategies).
+
+<details>
+<summary>**Q10 · requests vs limits.** A container has `requests.cpu: 250m` and `limits.cpu: 1`. What does each value do?</summary>
+
+- **A.** Requests are what the scheduler reserves on a node (and decide CPU share under contention); limits are the hard cap: CPU over the limit is throttled
+- **B.** Requests are enforced at runtime; limits are only used for scheduling
+- **C.** Both are only hints and are never enforced
+- **D.** Requests set the minimum replicas; limits set the maximum
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: A
+Requests are what the scheduler reserves on a node (and decide CPU share under contention); limits are the hard cap: CPU over the limit is throttled
+:::
+
+Scheduling uses requests only. At runtime the CPU limit is enforced by CFS throttling (the container slows down) and the memory limit by the OOM killer (the container is killed). Many teams leave CPU limits off for latency-sensitive services and keep memory limits on.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q11 · oom.** A Java service runs with `limits.memory: 1Gi` and `-Xmx1g`. It keeps getting restarted with exit code 137. Why?</summary>
+
+- **A.** The process uses heap plus metaspace, thread stacks, direct buffers and code cache, so total memory exceeds 1 GiB and the kernel OOM-kills the container
+- **B.** The JVM heap limit is ignored inside containers
+- **C.** Exit code 137 means the image is corrupt
+- **D.** The CPU limit is too low
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: A
+The process uses heap plus metaspace, thread stacks, direct buffers and code cache, so total memory exceeds 1 GiB and the kernel OOM-kills the container
+:::
+
+137 = 128 + SIGKILL, and `describe` shows `Reason: OOMKilled`. The heap is only part of JVM memory. Size the heap as a share of the container: `-XX:MaxRAMPercentage=75` and remove `-Xmx`, or raise the limit. Set memory request equal to the limit, so the scheduler reserves what the container actually uses.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q12 · qos.** A node runs out of memory. Which Pods does the kubelet evict first?</summary>
+
+- **A.** Guaranteed Pods, because they use the most memory
+- **B.** The oldest Pods first
+- **C.** BestEffort Pods (no requests or limits), then Burstable Pods using more than their requests; Guaranteed Pods (requests = limits for every container) go last
+- **D.** Pods are chosen at random
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: C
+BestEffort Pods (no requests or limits), then Burstable Pods using more than their requests; Guaranteed Pods (requests = limits for every container) go last
+:::
+
+QoS class comes from requests and limits: Guaranteed (requests = limits for CPU and memory in every container), Burstable (some requests set), BestEffort (none). Under node pressure, eviction ranks BestEffort first, then Burstable by how far usage exceeds requests. Pods with no resources set are the first to go.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q13 · secrets.** Is a Kubernetes Secret encrypted?</summary>
+
+- **A.** Yes, always, with AES-256 by default
+- **B.** Secret values are only base64-encoded in the API; encryption at rest in etcd must be configured separately, and anyone with `get secrets` RBAC can read them
+- **C.** Secrets are stored in a separate encrypted database outside etcd
+- **D.** Yes, but only when mounted as files
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: B
+Secret values are only base64-encoded in the API; encryption at rest in etcd must be configured separately, and anyone with `get secrets` RBAC can read them
+:::
+
+base64 is an encoding, not encryption. Protect Secrets with: encryption at rest (KMS provider), tight RBAC (don't grant `get/list secrets` broadly), and ideally an external store (Vault, AWS Secrets Manager) synced in by External Secrets Operator. For GitOps, use Sealed Secrets or SOPS so the Git copy is encrypted.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q14 · configmap.** You update a ConfigMap that a Deployment consumes through `envFrom`. When do running Pods see the new values?</summary>
+
+- **A.** Immediately
+- **B.** Within a minute, through the kubelet sync
+- **C.** Only after the node reboots
+- **D.** Never; environment variables are read at container start, so the Pods must be restarted (e.g. `kubectl rollout restart`)
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: D
+Never; environment variables are read at container start, so the Pods must be restarted (e.g. `kubectl rollout restart`)
+:::
+
+Env vars are fixed when the container starts. ConfigMaps mounted as volumes are refreshed eventually (except `subPath` mounts), but the app must re-read the file. A common pattern is to put a hash of the config in a Pod-template annotation (Kustomize's `configMapGenerator` and Helm checksums do this), so a config change triggers a rollout.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q15 · rbac.** A Pod needs to list ConfigMaps in its own namespace through the Kubernetes API. What's the least-privilege setup?</summary>
+
+- **A.** Bind its ServiceAccount to `cluster-admin`
+- **B.** Use the `default` ServiceAccount; it has read access to everything
+- **C.** Create a ServiceAccount, a namespaced Role allowing `get`/`list` on `configmaps`, and a RoleBinding; set `serviceAccountName` on the Pod
+- **D.** Mount the kubeconfig of a human user into the Pod
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: C
+Create a ServiceAccount, a namespaced Role allowing `get`/`list` on `configmaps`, and a RoleBinding; set `serviceAccountName` on the Pod
+:::
+
+Role/RoleBinding are namespaced; ClusterRole/ClusterRoleBinding are cluster-wide. Give each workload its own ServiceAccount with only the verbs and resources it needs. Pods that never call the API should set `automountServiceAccountToken: false`. Check with `kubectl auth can-i list configmaps --as=system:serviceaccount:shop:orders -n shop`.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q16 · cloud identity.** A Pod on EKS needs to read from an S3 bucket. What's the recommended way to give it AWS credentials?</summary>
+
+- **A.** Bake an access key into the container image
+- **B.** Store a long-lived access key in a Secret
+- **C.** Give the node's IAM role S3 access so every Pod inherits it
+- **D.** Link its Kubernetes ServiceAccount to an IAM role (IRSA or EKS Pod Identity), so the Pod gets short-lived credentials for that role only
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: D
+Link its Kubernetes ServiceAccount to an IAM role (IRSA or EKS Pod Identity), so the Pod gets short-lived credentials for that role only
+:::
+
+Workload identity maps a ServiceAccount to a cloud IAM role (IRSA / Pod Identity on AWS, Workload Identity on GKE and AKS). Credentials are short-lived and rotated automatically, and they are scoped to one workload. Giving the node role access lets every Pod on the node use it, which breaks least privilege.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q17 · hpa.** An HPA targets 70% CPU utilization, but it never scales and shows `<unknown>/70%`. What's the most likely cause?</summary>
+
+- **A.** The HPA needs at least 10 replicas
+- **B.** HPA only works with memory
+- **C.** The container has no CPU **requests** (utilization is measured against requests) or metrics-server isn't running
+- **D.** The Deployment uses a RollingUpdate strategy
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: C
+The container has no CPU **requests** (utilization is measured against requests) or metrics-server isn't running
+:::
+
+CPU utilization % is `usage / request`. Without a request there's no denominator, so the HPA can't compute anything. Check `kubectl top pods` (metrics-server) and `kubectl describe hpa`. For queue-driven work, scale on lag or queue depth with KEDA instead of CPU.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q18 · vpa.** Why shouldn't you run VPA in `Auto` mode and an HPA on CPU for the same Deployment?</summary>
+
+- **A.** VPA and HPA use different APIs and can't be installed together
+- **B.** HPA disables VPA automatically
+- **C.** VPA only works on StatefulSets
+- **D.** They fight: HPA adds replicas when CPU usage rises relative to the request, while VPA changes the request itself, so each keeps changing the signal the other relies on
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: D
+They fight: HPA adds replicas when CPU usage rises relative to the request, while VPA changes the request itself, so each keeps changing the signal the other relies on
+:::
+
+A common split is VPA in `Off`/recommendation mode to right-size requests, with HPA handling scaling. Alternatively, let HPA scale on a custom or external metric (RPS, queue lag) while VPA manages CPU and memory.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q19 · rollout.** A rolling update has `maxUnavailable: 0` and `maxSurge: 1`. What does that guarantee?</summary>
+
+- **A.** Capacity never drops below the desired replica count: one extra new Pod is added, and an old one is removed only after the new one is Ready
+- **B.** The rollout happens all at once
+- **C.** Zero downtime even if the new version fails its readiness probe forever
+- **D.** Old and new versions never run at the same time
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: A
+Capacity never drops below the desired replica count: one extra new Pod is added, and an old one is removed only after the new one is Ready
+:::
+
+It's the safe setting for a small number of replicas. Both versions do run at the same time during the rollout, so API and schema changes must be backward compatible. If new Pods never become Ready, the rollout stalls, old Pods keep serving, and after `progressDeadlineSeconds` the Deployment reports `ProgressDeadlineExceeded`.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q20 · canary.** What's the main difference between blue-green and canary deployment?</summary>
+
+- **A.** Blue-green is for databases; canary is for stateless apps
+- **B.** Blue-green switches all traffic from the old to the new environment at once (with instant switch-back); canary sends a small, growing share of traffic to the new version while you watch metrics
+- **C.** Canary requires two clusters
+- **D.** There's no difference
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: B
+Blue-green switches all traffic from the old to the new environment at once (with instant switch-back); canary sends a small, growing share of traffic to the new version while you watch metrics
+:::
+
+Blue-green costs double capacity during the switch but rolls back instantly. Canary limits the blast radius but needs weighted traffic splitting (Ingress, service mesh or Argo Rollouts / Flagger) and good metrics to decide when to promote. A plain Deployment can only roughly approximate a canary through replica counts.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q21 · kustomize vs helm.** When does Kustomize fit better than Helm?</summary>
+
+- **A.** When you need to distribute a reusable, parameterized package to many teams
+- **B.** When you own the manifests and want plain YAML with per-environment overlays (patches), with no templating language
+- **C.** When you need release history and `helm rollback`
+- **D.** Kustomize can't manage multiple environments
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: B
+When you own the manifests and want plain YAML with per-environment overlays (patches), with no templating language
+:::
+
+Kustomize is template-free: a base plus overlays that patch it, built into `kubectl apply -k`. Helm is a package manager: Go-templated charts, values files, release tracking, and a big ecosystem of third-party charts. Many teams use both: Helm for third-party software, Kustomize for their own services, sometimes Kustomize post-processing a rendered chart.
+
+</details>
+
+</details>
+
+</TabItem>
+<TabItem value="scenarios" label="Scenarios">
+
+Debugging and operations. See [Troubleshooting](./troubleshooting), [Storage](./storage), [Spring Boot on Kubernetes](./spring-boot-on-kubernetes) and [Operators & CRDs](./operators-crds).
+
+<details>
+<summary>**Q22 · pending.** A new Pod has been `Pending` for 10 minutes. `kubectl describe` shows `0/6 nodes are available: 6 Insufficient memory`, yet `kubectl top nodes` shows every node at 40% memory. What's going on?</summary>
+
+- **A.** metrics-server is wrong; restart it
+- **B.** The Pod's image is too large
+- **C.** Scheduling is based on **requests**, not actual usage. The nodes' allocatable memory is already reserved by other Pods' requests, even though they use less
+- **D.** The namespace has been deleted
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: C
+Scheduling is based on **requests**, not actual usage. The nodes' allocatable memory is already reserved by other Pods' requests, even though they use less
+:::
+
+The scheduler adds up requests. Over-sized requests strand capacity: nodes look idle but are "full". Fix it by right-sizing requests (VPA recommendations help), lowering this Pod's request, or letting the cluster autoscaler add a node. Pending Pods with unmet requests are exactly what triggers the cluster autoscaler.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q23 · no endpoints.** Pods are Running and Ready, but calls to the Service time out. `kubectl get endpoints orders` shows `<none>`. What do you check first?</summary>
+
+- **A.** Whether the Service's `selector` matches the Pods' labels exactly (e.g. `app: orders` vs `app: order-service`)
+- **B.** Restart CoreDNS
+- **C.** Whether the node has enough disk
+- **D.** The Ingress TLS certificate
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: A
+Whether the Service's `selector` matches the Pods' labels exactly (e.g. `app: orders` vs `app: order-service`)
+:::
+
+Empty endpoints with Ready Pods almost always means a selector/label mismatch. Compare `kubectl get svc orders -o jsonpath='{.spec.selector}'` with `kubectl get pods --show-labels`. If endpoints exist, check next whether `targetPort` matches the container port, then NetworkPolicies.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q24 · crashloop.** A Pod is in `CrashLoopBackOff`. `kubectl logs` shows only a few startup lines and no errors. What should you run next?</summary>
+
+- **A.** `kubectl delete pod` so it starts fresh
+- **B.** Rebuild the image
+- **C.** `kubectl scale --replicas=0`
+- **D.** `kubectl logs --previous` and `kubectl describe pod`, to see the crashed container's last output, its exit code and reason, and probe failure events
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: D
+`kubectl logs --previous` and `kubectl describe pod`, to see the crashed container's last output, its exit code and reason, and probe failure events
+:::
+
+`logs` shows the **current** container, which has just restarted and hasn't failed yet. `--previous` shows the one that died. In `describe`, `Last State` shows the exit code (1 = app error, 137 + OOMKilled = memory), and Events show whether a liveness probe killed it. Deleting the Pod throws this evidence away.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q25 · slow start.** A Spring Boot app takes 90 seconds to start. Its liveness probe has `initialDelaySeconds: 30` and `failureThreshold: 3`, so it is killed and restarted forever. What's the best fix?</summary>
+
+- **A.** Add a `startupProbe` (e.g. `failureThreshold: 30`, `periodSeconds: 5`) that holds off liveness and readiness until the app has started
+- **B.** Remove the liveness probe
+- **C.** Set `initialDelaySeconds: 600` on liveness
+- **D.** Set `restartPolicy: Never`
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: A
+Add a `startupProbe` (e.g. `failureThreshold: 30`, `periodSeconds: 5`) that holds off liveness and readiness until the app has started
+:::
+
+A startupProbe gives up to `failureThreshold × periodSeconds` for start-up, then hands over to liveness, which can stay tight for detecting a hung process. Raising `initialDelaySeconds` delays detection of real hangs for the Pod's whole lifetime after any restart. With Spring Boot, use `/actuator/health/liveness` and `/actuator/health/readiness`.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q26 · dropped requests.** Clients see a burst of 502s during every rollout, although readiness probes pass. What's the most likely cause?</summary>
+
+- **A.** The new image is broken
+- **B.** maxSurge is too high
+- **C.** Old Pods exit on SIGTERM before load balancers and kube-proxy stop sending them traffic; add a short `preStop` sleep and graceful shutdown (`server.shutdown=graceful`)
+- **D.** The HPA is scaling down
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: C
+Old Pods exit on SIGTERM before load balancers and kube-proxy stop sending them traffic; add a short `preStop` sleep and graceful shutdown (`server.shutdown=graceful`)
+:::
+
+When a Pod is deleted, removing it from endpoints and sending SIGTERM happen **in parallel**. A few seconds of `preStop: sleep 5–10` lets the endpoint removal reach every node and load balancer first. Then the app drains in-flight requests within `terminationGracePeriodSeconds`.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q27 · statefulset storage.** A StatefulSet Pod `db-1` is rescheduled to a node in another availability zone and stays `Pending` with a volume node-affinity conflict. Why?</summary>
+
+- **A.** Its PVC is bound to a zonal disk (e.g. an EBS volume) that can only attach to nodes in the original zone
+- **B.** StatefulSets can't be rescheduled
+- **C.** The headless Service is missing
+- **D.** The Pod's image isn't available in the new zone
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: A
+Its PVC is bound to a zonal disk (e.g. an EBS volume) that can only attach to nodes in the original zone
+:::
+
+Block volumes like EBS and Persistent Disk are zonal. Use a StorageClass with `volumeBindingMode: WaitForFirstConsumer`, so the volume is created in the zone where the Pod is first scheduled, and make sure every zone has nodes (or use topology spread). For cross-zone resilience, rely on the database's own replication, not on moving disks.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q28 · noisy neighbour.** Spikes in a batch job on a shared node keep throttling a latency-sensitive API on the same node. Which combination isolates them best?</summary>
+
+- **A.** Give both the same priority
+- **B.** Use a NodePort Service for the API
+- **C.** Delete the batch job's resource limits
+- **D.** Put the API on dedicated nodes using a taint plus a matching toleration **and** node affinity, and give it Guaranteed QoS
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: D
+Put the API on dedicated nodes using a taint plus a matching toleration **and** node affinity, and give it Guaranteed QoS
+:::
+
+A taint keeps other Pods off the nodes, but a toleration only *allows* scheduling there, so you also need affinity or a nodeSelector to *attract* the API to them. Guaranteed QoS and correct requests protect it under contention. Namespace ResourceQuotas and LimitRanges keep the batch team from claiming everything.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q29 · spread.** All 3 replicas of a Deployment were scheduled onto the same node, and a node failure took the service down. How do you prevent this?</summary>
+
+- **A.** Increase replicas to 30
+- **B.** Add `topologySpreadConstraints` (or a preferred pod anti-affinity) over `kubernetes.io/hostname` and `topology.kubernetes.io/zone`, plus a PodDisruptionBudget
+- **C.** Use a DaemonSet instead
+- **D.** Set `maxUnavailable: 0`
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: B
+Add `topologySpreadConstraints` (or a preferred pod anti-affinity) over `kubernetes.io/hostname` and `topology.kubernetes.io/zone`, plus a PodDisruptionBudget
+:::
+
+The scheduler doesn't guarantee spreading by default. Topology spread constraints cap the skew between nodes or zones, and `whenUnsatisfiable: ScheduleAnyway` makes this a soft preference. A PDB (`minAvailable: 2`) stops voluntary disruptions like node drains from evicting too many replicas at once.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q30 · operators.** Your team runs PostgreSQL on Kubernetes and keeps writing runbooks for failover, backups and version upgrades. What does adopting a Postgres Operator give you?</summary>
+
+- **A.** Nothing; operators are just Helm charts
+- **B.** A managed database outside the cluster
+- **C.** A CRD (e.g. `kind: PostgresCluster`) plus a controller that continuously reconciles it, automating day-2 work such as failover, backups and upgrades with domain knowledge
+- **D.** Automatic horizontal scaling of writes
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: C
+A CRD (e.g. `kind: PostgresCluster`) plus a controller that continuously reconciles it, automating day-2 work such as failover, backups and upgrades with domain knowledge
+:::
+
+An operator is a custom controller that encodes the runbook: it watches its custom resources and reconciles actual state toward desired state, like the built-in controllers do for Deployments. Helm installs things (day 1); operators run them (day 2). The cost: you depend on the operator's maturity and must upgrade it carefully, since it has broad permissions.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q31 · gitops.** Someone fixes a production issue with `kubectl edit`. An hour later, ArgoCD (with self-heal on) reverts it. What's the right lesson?</summary>
+
+- **A.** Turn off ArgoCD
+- **B.** In GitOps, Git is the source of truth: the controller reconciles the cluster back to Git, so emergency fixes must be committed (or the app paused explicitly) or they'll be reverted
+- **C.** ArgoCD has a bug
+- **D.** Use `kubectl replace` instead of `edit`
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: B
+In GitOps, Git is the source of truth: the controller reconciles the cluster back to Git, so emergency fixes must be committed (or the app paused explicitly) or they'll be reverted
+:::
+
+Drift correction is the point of GitOps: every change is reviewed, audited and reproducible, and rolling back is a `git revert`. Make the fix in Git through a fast-tracked PR. If you must hot-fix by hand, disable auto-sync for that app while you do it, then commit and re-enable.
+
+</details>
+
+</details>
+
+</TabItem>
+</Tabs>
