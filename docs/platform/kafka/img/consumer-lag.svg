@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 90" font-family="'IBM Plex Mono',monospace" font-size="11" width="700" height="90">
+<rect x="0" y="0" width="700" height="90" fill="#ffffff"/>
+        <g>
+          <rect x="10" y="30" width="40" height="34" fill="#1e3a8a" rx="4"/><rect x="52" y="30" width="40" height="34" fill="#1e3a8a" rx="4"/><rect x="94" y="30" width="40" height="34" fill="#1e3a8a" rx="4"/>
+          <rect x="136" y="30" width="40" height="34" fill="#12203a" rx="4"/><rect x="178" y="30" width="40" height="34" fill="#12203a" rx="4"/><rect x="220" y="30" width="40" height="34" fill="#12203a" rx="4"/><rect x="262" y="30" width="40" height="34" fill="#12203a" rx="4"/>
+          <rect x="304" y="30" width="40" height="34" fill="#F59E0B" rx="4"/>
+        </g>
+        <path d="M126 20 L 126 70" stroke="#059669" stroke-width="2"/><text x="126" y="14" text-anchor="middle" fill="#059669">committed=3</text>
+        <path d="M324 20 L 324 70" stroke="#F59E0B" stroke-width="2"/><text x="324" y="14" text-anchor="middle" fill="#b45309">LEO=8</text>
+        <path d="M136 80 L 344 80" stroke="#DC2626" stroke-width="1.5" marker-start="url(#lg)" marker-end="url(#lg)"/><text x="240" y="94" text-anchor="middle" fill="#b91c1c">lag = 8 − 3 = 5 records behind</text>
+        <defs><marker id="lg" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0,4 L8,4 M4,1 L8,4 L4,7" stroke="#DC2626" fill="none"/></marker></defs>
+      </svg>

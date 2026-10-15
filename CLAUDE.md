@@ -65,3 +65,16 @@ Concise answer first, then detail, trade-offs, and a code example if relevant.
 ## References
 - Links to sources
 ```
+
+## Page format: summary first, depth on demand
+
+Pages should be quick to skim. Detail goes behind expandable sections or tabs (see `docs/platform/kafka/` for examples).
+
+- Start with a `:::tip Key takeaways` box of 3–5 bullets.
+- Under each H2, give a short visible summary (a paragraph or a table). Put code, diagrams and long explanations in `<details><summary>…</summary>`, with blank lines around the markdown inside.
+- Use `<Tabs>`/`<TabItem>` for parallel alternatives: configs (yml / gradle), options (blocking vs. non-blocking), or pros vs. cons.
+- Use `:::warning` / `:::danger` for traps and incidents.
+- Section index pages (`index.mdx`) end with `<DocCardList />`.
+- Interview questions: one `<details>` per question, with the summary `**Qn · tag.** question`. Put the options in the body, then a nested `<details><summary>Show answer</summary>` containing a `:::tip Answer: X` box and the explanation. Group questions by level with Tabs.
+- Diagrams are SVGs in an `img/` folder next to the page. Give them a white background and explicit width and height, and escape `&` as `&amp;`.
+- This repo is public. Don't include employer-specific names, namespaces or internal tools; keep examples generic.
