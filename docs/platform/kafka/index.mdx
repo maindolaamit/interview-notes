@@ -1,0 +1,19 @@
+---
+title: Kafka
+description: "Apache Kafka Interview Questions"
+sidebar_position: 2
+---
+
+Kafka-specific internals and operations. Tool-agnostic messaging concepts (queues vs. topics, delivery guarantees,
+outbox) live in [Messaging Communication](/docs/architecture/microservices/messaging-brokers).
+
+## Topics to cover
+- Architecture: brokers, topics, partitions, replication, ISR, KRaft vs. ZooKeeper
+- Producers: keys and partitioning, `acks`, idempotence, batching and compression
+- Consumers: consumer groups, offset management, rebalancing, lag
+- Delivery semantics: at-most-once, at-least-once, exactly-once (transactions)
+- Ordering guarantees and retention / log compaction
+- Kafka Streams and Kafka Connect
+- Schema Registry and schema evolution
+- Spring Kafka: listeners, error handling, retries, dead-letter topics
+- Operations: sizing partitions, monitoring, common production issues

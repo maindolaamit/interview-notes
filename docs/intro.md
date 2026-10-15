@@ -11,10 +11,12 @@ I started this project to help myself and others prepare for interviews. The ans
 
 ## Categories
 
-- **[Languages:](/docs/languages/java/)** Questions related to various programming languages and their features.
-- **[Microservices:](/docs/microservices/intro)** Questions related to microservices architecture and design patterns.
-- **[System Design:](/docs/designs)** Questions related to designing scalable and efficient systems.
-- **[Algorithms and Data Structures:](/docs/programming/lld/)** Competitive programming questions and concepts.
+- **[Languages & Frameworks:](/docs/languages/java/)** Language features, runtimes and framework APIs (Java, Spring Boot, Kotlin, Python, Frontend).
+- **[Architecture:](/docs/architecture/microservices)** Microservices and tool-agnostic patterns such as Saga, event-driven architecture and DDD.
+- **[Platform:](/docs/platform/cloud)** Technologies you deploy and operate, such as Cloud, Kafka and Kubernetes.
+- **[GenAI:](/docs/genai)** LLMs, RAG, embeddings, agents and evaluation.
+- **[Programming:](/docs/programming/lld/)** Data structures and algorithms, LLD, SOLID, design patterns and TDD.
+- **[System Design:](/docs/designs)** Building blocks and end-to-end system design interview problems.
 - **[Behavioral Questions:](/docs/behavioural)** Questions related to teamwork, leadership, and problem-solving skills.
 
 ## How to Use

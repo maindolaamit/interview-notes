@@ -4,7 +4,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 
 const config: Config = {
   title: 'InterviewNotes',
-  tagline: 'Interviews are cool',
+  tagline: 'My notes for software engineering interviews',
   favicon: 'img/favicon.ico',
 
   // Set the production url of your site here
@@ -21,7 +21,6 @@ const config: Config = {
   trailingSlash: false,
 
   onBrokenLinks: 'throw',
-  onBrokenMarkdownLinks: 'warn',
 
   // Even if you don't use internationalization, you can use this field to set
   // useful metadata like html lang. For example, if your site is Chinese, you
@@ -30,7 +29,36 @@ const config: Config = {
     defaultLocale: 'en',
     locales: ['en'],
   },
-  plugins: ['@docusaurus/theme-mermaid', 'plugin-image-zoom'],
+  plugins: [
+    '@docusaurus/theme-mermaid',
+    'plugin-image-zoom',
+    [
+      '@docusaurus/plugin-client-redirects',
+      {
+        // Keep links to pages from before the October 2026 restructure working.
+        redirects: [
+          { from: '/docs/behavioural/challanging-project', to: '/docs/behavioural/challenging-project' },
+          { from: '/docs/designs/interviews/url-shortner', to: '/docs/designs/interviews/url-shortener' },
+          { from: '/docs/microservices/intro/deploymnt', to: '/docs/architecture/microservices/deployment' },
+        ],
+        createRedirects(existingPath: string) {
+          const movedSections: Record<string, string> = {
+            '/docs/architecture/microservices': '/docs/microservices/intro',
+            '/docs/architecture/patterns': '/docs/microservices/Patterns',
+            '/docs/architecture/ddd': '/docs/microservices/ddd',
+            '/docs/platform/cloud': '/docs/microservices/Cloud',
+            '/docs/programming/tdd': '/docs/microservices/tdd',
+          };
+          for (const [newPath, oldPath] of Object.entries(movedSections)) {
+            if (existingPath === newPath || existingPath.startsWith(`${newPath}/`)) {
+              return existingPath.replace(newPath, oldPath);
+            }
+          }
+          return undefined;
+        },
+      },
+    ],
+  ],
   presets: [
     [
       'classic',
@@ -57,6 +85,9 @@ const config: Config = {
   ],
   markdown: {
     mermaid: true,
+    hooks: {
+      onBrokenMarkdownLinks: 'warn',
+    },
   },
   themeConfig: {
     // Replace with your project's social card
@@ -85,13 +116,25 @@ const config: Config = {
           type: 'docSidebar',
           sidebarId: 'langSidebar',
           position: 'left',
-          label: 'Languages',
+          label: 'Languages & Frameworks',
         },
         {
           type: 'docSidebar',
-          sidebarId: 'microServicesDesignSidebar',
+          sidebarId: 'architectureSidebar',
           position: 'left',
-          label: 'MicroServices',
+          label: 'Architecture',
+        },
+        {
+          type: 'docSidebar',
+          sidebarId: 'platformSidebar',
+          position: 'left',
+          label: 'Platform',
+        },
+        {
+          type: 'docSidebar',
+          sidebarId: 'genAiSidebar',
+          position: 'left',
+          label: 'GenAI',
         },
         {
           type: 'docSidebar',
@@ -111,7 +154,6 @@ const config: Config = {
           position: 'left',
           label: 'Behavioural',
         },
-        { to: '/blog', label: 'Blog', position: 'left' },
         {
           href: 'https://github.com/maindolaamit?tab=repositories',
           label: 'GitHub',
