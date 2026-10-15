@@ -1,0 +1,40 @@
+name: Delete merged branch
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  delete-branch:
+    name: Delete head branch
+    # Only merged PRs from this repo (not forks), and never long-lived branches
+    if: >-
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      !contains(fromJSON('["main", "gh-pages"]'), github.event.pull_request.head.ref)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write       # delete the branch
+      pull-requests: write  # retarget stacked PRs
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+      BRANCH: ${{ github.event.pull_request.head.ref }}
+      BASE: ${{ github.event.pull_request.base.ref }}
+    steps:
+      # Deleting a branch closes open PRs that target it, so move them to the merged PR's base first
+      - name: Retarget stacked PRs
+        run: |
+          for pr in $(gh pr list --base "$BRANCH" --state open --json number --jq '.[].number'); do
+            echo "Retargeting #$pr from $BRANCH to $BASE"
+            gh pr edit "$pr" --base "$BASE"
+          done
+
+      - name: Delete branch
+        run: |
+          if gh api "repos/$GH_REPO/git/refs/heads/$BRANCH" --silent 2>/dev/null; then
+            gh api -X DELETE "repos/$GH_REPO/git/refs/heads/$BRANCH"
+            echo "Deleted $BRANCH"
+          else
+            echo "$BRANCH already deleted"
+          fi

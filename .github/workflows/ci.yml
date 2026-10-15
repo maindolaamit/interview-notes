@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  # PR checks run against the merge result (refs/pull/N/merge), i.e. "what main would look like after merging"
+  pull_request:
+  # Early feedback on every pushed branch; main and gh-pages are checked by their PRs and deploy.yml
+  push:
+    branches-ignore:
+      - main
+      - gh-pages
+
+# Cancel an in-progress run when a newer commit is pushed to the same branch or PR
+concurrency:
+  group: ci-${{ github.event_name }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Typecheck and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      # Fails on broken links and anchors (onBrokenLinks: 'throw')
+      - name: Build website
+        run: npm run build
