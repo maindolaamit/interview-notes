@@ -40,6 +40,16 @@ const config: Config = {
           { from: '/docs/behavioural/challanging-project', to: '/docs/behavioural/challenging-project' },
           { from: '/docs/designs/interviews/url-shortner', to: '/docs/designs/interviews/url-shortener' },
           { from: '/docs/microservices/intro/deploymnt', to: '/docs/architecture/microservices/deployment' },
+          // Microservices pages merged or replaced in the senior-level rewrite.
+          ...[
+            ['introduction', ''],
+            ['decomposition-patterns', '/decomposition'],
+            ['protocols', '/communication'],
+            ['interview', '/interview-questions'],
+          ].flatMap(([oldPage, newPage]) => [
+            { from: `/docs/architecture/microservices/${oldPage}`, to: `/docs/architecture/microservices${newPage}` },
+            { from: `/docs/microservices/intro/${oldPage}`, to: `/docs/architecture/microservices${newPage}` },
+          ]),
         ],
         createRedirects(existingPath: string) {
           const movedSections: Record<string, string> = {

@@ -1,143 +1,206 @@
 ---
-title: Cross-Cutting concerns
-description : "Patterns for Cross Cutting concerns"
-sidebar_position: 4
+title: Cross-Cutting Concerns
+description: "Service discovery, API gateways, service mesh, observability, security and configuration for microservices"
+sidebar_position: 6
 ---
 
-When we start working with microservice solutions, it is essential to apply best practices to keep the architecture
-as efficient and scalable as possible to avoid performance issues, bottlenecks, or
-operational problems.
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
-Adhering to best practices also makes it easier for new developers to come up to speed with our systems.
+:::tip Key takeaways
+- On Kubernetes, **platform DNS and Services are the service discovery**. Eureka and client-side registries are legacy there.
+- The gateway owns **edge** concerns (authn, rate limits, routing). Keep business logic out of it; use a BFF for client-specific aggregation.
+- A **service mesh** moves mTLS, retries and telemetry out of every codebase, at the cost of an operational layer. Adopt it for a problem, not by default.
+- **OpenTelemetry** is the standard for traces, metrics and logs. Propagate context on every hop, including through message brokers.
+- Each concern needs **one owner**: library, mesh or platform. Two owners means double retries and conflicting timeouts.
+:::
 
-### Service Discovery
-With microservices, we have many services that need to communicate with each other.
-One of the challenges is how to locate the services. This is where service discovery comes in.
-Service discovery is a mechanism that allows services to find and communicate with each other without hardcoding their locations.
-Some of the popular services used are :
-- `Eureka` : Netflix's service discovery service
-- `Consul` : HashiCorp's service discovery service
-- `Zookeeper` : Apache's service discovery service
+## Cheat sheet
+
+| Concern | Options | Current tooling |
+|---|---|---|
+| Service discovery | Platform DNS, client-side registry, server-side load balancer | Kubernetes Services/DNS; Consul (multi-platform); Eureka (legacy) |
+| Edge / API gateway | Gateway, BFF per client, GraphQL federation | Kong, Envoy Gateway, Spring Cloud Gateway, cloud API gateways |
+| Service-to-service traffic | Library (in-process) vs. mesh (sidecar or ambient) | Resilience4j; Istio, Linkerd |
+| Observability | Traces, metrics, logs with shared context | OpenTelemetry SDK + Collector; Prometheus, Grafana, Tempo/Jaeger, Loki/ELK |
+| Identity and authz | Edge authn, token propagation, mTLS, policy engine | OIDC provider, JWT, SPIFFE/SPIRE, OPA |
+| Configuration and secrets | Push (env/files) vs. pull (config server) | ConfigMaps/Secrets, External Secrets, Vault, Spring Cloud Config |
+
+## Service discovery
+
+On Kubernetes, a Service gives each workload a stable DNS name and virtual IP, and the platform tracks healthy Pods.
+Client-side registries (Eureka) duplicate that and add a component to run. They still make sense across platforms
+(VMs plus Kubernetes) where Consul is the common choice.
 
 <details>
-  <summary>**Spring Cloud Service Discovery Code Example**</summary>
+<summary>Client-side vs. server-side discovery</summary>
 
-```xml
-<dependencies>
-    <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-webflux</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>org.springframework.cloud</groupId>
-        <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
-    </dependency>
-</dependencies>
-```
+| | Client-side (Eureka, Consul + library) | Server-side (Kubernetes Service, cloud LB) |
+|---|---|---|
+| Who picks the instance | Client library | Proxy / kube-proxy / LB |
+| Language coupling | Needs a library per language | None |
+| Smarter balancing | Possible (zone-aware, latency-aware) | Basic unless you add a mesh |
+| Moving parts | Registry cluster + library | Part of the platform |
 
-In the below Code example we are using `@EnableDiscoveryClient` annotation to enable service discovery in our application.
-This annotation tells your microservice to register itself with a Eureka service discovery agent because
-you’re going to use service discovery to look up remote REST service endpoints.
+Long-lived connections (gRPC over HTTP/2) defeat connection-level balancing through a ClusterIP: all requests ride one
+connection to one Pod. Use a headless Service with client-side balancing, or a mesh that balances per request.
 
-Note that the configuration happens in a property file, giving the simple service the location and port number of a Eureka server to contact.
+</details>
 
-```java
-@SpringBootApplication
-// Tells the service to look up the location of remote services
-@EnableDiscoveryClient
-public class ServiceDiscoveryApplication {
-    public static void main(String[] args) {
-        SpringApplication.run(ServiceDiscoveryApplication.class, args);
-    }
+## API gateway and BFF
 
-    public String remoteServiceCall(String name){
-      // Use the service discovery client to look up the location of the remote service
-      // and make a call to it
-      webClient.get()
-      // Logical service id will be resolved to the actual location of the service by the service discovery agent
-      .uri("http://logical-service-id/" + name)
-      .retrieve()
-      .bodyToMono(String.class)
-      .block();
-    }
-}
-```
-```java
-@SpringBootApplication
-// Tells the service to register with a Eureka service discovery agent to look up the location
-// of remote services
-@EnableEurekaServer
-public class ServiceDiscoveryApplication {
-  public static void main(String[] args) {
-    SpringApplication.run(ServiceDiscoveryApplication.class, args);
-  }
-}
+The gateway is the single entry point for external traffic: TLS termination, authentication, rate limiting, routing
+and request shaping. A **Backend for Frontend (BFF)** is a client-specific API (web, mobile) that aggregates
+downstream calls for that client.
+
+<details>
+<summary>Gateway vs. BFF vs. mesh: who does what</summary>
+
+| | API gateway | BFF | Service mesh |
+|---|---|---|---|
+| Traffic | North-south (into the system) | North-south, per client type | East-west (between services) |
+| Owns | Authn, rate limits, routing, WAF | Aggregation, client-shaped responses | mTLS, retries, timeouts, telemetry |
+| Owned by | Platform team | The client's team | Platform team |
+
+:::warning The gateway as a new monolith
+Once business rules, orchestration or data transformations creep into the gateway, every team needs the platform
+team to ship a feature. Keep the gateway generic; put client logic in BFFs and business logic in services.
+:::
+
+</details>
+
+## Service mesh vs. libraries
+
+A mesh puts a proxy in the data path of every call (as a sidecar per Pod, or per node in ambient / sidecar-less
+mode). The proxy handles mTLS, retries, timeouts, traffic splitting and telemetry, uniformly across languages.
+
+<details>
+<summary>Diagram: sidecar data plane and control plane</summary>
+
+```mermaid
+flowchart LR
+    subgraph CP[Control plane]
+        C["Config, certificates, policy"]
+    end
+    subgraph PodA[Pod: orders]
+        A[orders app] <--> PA[proxy]
+    end
+    subgraph PodB[Pod: payments]
+        PB[proxy] <--> B[payments app]
+    end
+    PA -->|"mTLS, retries, metrics"| PB
+    C -.->|push config| PA
+    C -.->|push config| PB
 ```
 
 </details>
 
-### Load Balancer
-Spring Load Balancer is a client-side load balancer that allows you to define the load balancing logic in your application.
-It is a part of the Spring Cloud project and is used to distribute the load between multiple instances of a service.
-It integrates with service discovery to locate the instances of a service and distribute the load between them.
+<Tabs>
+<TabItem value="mesh" label="Mesh: when it pays">
 
+- Many services in several languages need the same mTLS, retry and telemetry behaviour.
+- Zero-trust requirements: every call authenticated with a workload identity.
+- Traffic shifting for canaries without changing application code.
 
-### API Gateway
-An API Gateway is a server that acts as an API front-end, receiving API requests,
-enforcing throttling and security policies, passing requests to the back-end service,
-and then passing the response back to the requester.
+</TabItem>
+<TabItem value="library" label="Library: when it's enough">
 
-### Spring Cloud Sleuth
-Spring Cloud Sleuth is a distributed tracing solution for Spring Cloud, designed to work with Spring Cloud and Spring Boot applications.
-It provides a way to trace requests as they flow through a distributed system.
+- One or two languages with a mature library (Resilience4j, OpenTelemetry SDK).
+- Small number of services; the team can't absorb another platform to operate and upgrade.
+- You need application-level semantics (fallbacks with business defaults) that a proxy can't express.
 
-These tracking numbers sometimes refered as `correlation IDs` or `trace IDs` allows you to track a request as it flows through a distributed system.
-Trace Ids are automatically generated and added to logs and HTTP headers.
+</TabItem>
+<TabItem value="costs" label="Mesh costs">
 
-:::tip
-The real beauty of Spring Cloud Sleuth is seen when it’s combined with logging aggregation technology tools like
-the [ELK Stack](https://www.elastic.co/what-is/elk-stack) and tracking tools like [Zipkin](http://zipkin.io).
-ELK Stack is a combination of three open-source projects:
-- **Elasticsearch**: A search and analytics engine.
-- **Logstash**: A server-side data processing pipeline that ingests data from multiple sources simultaneously,
-transforms it, and then sends it to a "stash" like Elasticsearch.
-- **Kibana**: A visualization layer that works on top of Elasticsearch.
+- Latency per hop (usually sub-millisecond to a few ms) and memory per sidecar. Ambient mode reduces this.
+- Upgrades and certificate rotation become platform-critical; a broken control plane affects every service.
+- Debugging gets harder: a 503 may come from a proxy, not the app.
 
-Open Zipkin takes data produced by Spring Cloud Sleuth and allows you to visualize the flow of your service
-calls involved for a single transaction.
+</TabItem>
+</Tabs>
+
+## Observability
+
+Use **OpenTelemetry** for traces, metrics and logs, and propagate W3C `traceparent` on every hop. Put the trace ID
+in every log line so logs and traces join up. Spring Cloud Sleuth is replaced by **Micrometer Tracing** in Spring
+Boot 3.
+
+<details>
+<summary>What to measure: RED and USE</summary>
+
+| Method | For | Signals |
+|---|---|---|
+| RED | Request-driven services | **R**ate, **E**rrors, **D**uration (latency histograms, not averages) |
+| USE | Resources (CPU, pools, queues) | **U**tilisation, **S**aturation, **E**rrors |
+
+- Alert on SLO burn rate (user-facing symptoms), not on every cause.
+- Keep metric label cardinality bounded: never use user IDs or order IDs as labels.
+- Sample traces at the Collector with tail-based sampling so errors and slow traces are always kept.
+
+</details>
+
+:::warning Context is lost at async boundaries
+Traces break at message brokers and thread pools unless you propagate context explicitly: put `traceparent` in
+message headers, and use context-aware executors. Otherwise a request's trace ends at the producer.
 :::
 
-## Observability patterns
-Understanding and diagnosing problem in a microservice architecture is much more complicated.
-A request can bound around multiple services before a response is finally returns to a client.
-In addition, there will not be a single log file to check but multiple files.
-Similarly, problem with latency are more difficult to diagnose due to multiple service calls.
+## Security
 
-You can use the following pattern to design observable services:
-- `Health Check API` : Expose an endpoint that returns the health of the service
-- `Log aggregation`: Log service activity and write logs into a centralized logging
-server, which provides searching and alerting.
-- `Distributed tracing`: Assign each external request a unique ID and trace requests
-as they flow between services.
-- `Exception tracking` : Report exceptions to an exception tracking service, which
-deduplicates exceptions, alerts developers, and tracks the resolution of each
-exception.
-- `Application metrics` : Maintain metrics, such as counters and gauges, and expose
-them to a metrics server.
-- `Audit logging` :Log user actions
+Authenticate users **once at the edge**, then pass identity downstream. Authenticate **services** to each other with
+mTLS-based workload identity. Authorise in each service; never trust a call just because it's on the internal network.
 
-## Security Patterns
-In a microservice architecture, users are typically authenticated by the API gateway.
-It must then pass information about the user, such as identity and roles, to the services it invokes.
-A common solution is to apply the Access token pattern.
-The API gateway passes an access token, such as JWT (JSON Web Token), to the services,
-which can validate the token and collect information about the user.
+<details>
+<summary>Token propagation patterns</summary>
 
-:::tip
-The goal of continuous delivery/deployment (and, more generally, DevOps) is to rapidly yet reliably deliver software.
-Four useful metrics for assessing software development are as follows:
-  - `Deployment frequency`: How often software is deployed into production
-  - `Lead time`: Time from a developer checking in a change to that change being deployed
-  - `Meantime to recover`: Time to recover from a production problem
-  - `Change failure rate`: Percentage of changes that result in a production problem
+| Pattern | How | Trade-off |
+|---|---|---|
+| Pass-through JWT | Gateway forwards the user's access token | Simple; every service sees broad scopes, and a leaked token works everywhere |
+| Token exchange (RFC 8693) | Gateway or service swaps it for a narrower, audience-specific token | Least privilege; needs an authorisation server in the path |
+| Internal signed context | Gateway issues a short-lived internal token with user claims | Decouples internal services from the external IdP |
+
+- Validate tokens locally (signature, `aud`, `exp`) with cached JWKS. Calling the IdP per request adds a dependency.
+- Service identity: mesh-issued certificates or SPIFFE IDs, with policy such as "only `orders` may call `payments`".
+- Centralise policy decisions where they're complex (OPA), but enforce them in each service.
+
+</details>
+
+## Configuration and secrets
+
+Configuration is supplied by the environment, not baked into the artifact, so the **same image** is promoted through
+every environment. Secrets come from a secret manager, never from Git in plain text.
+
+<details>
+<summary>Push vs. pull configuration</summary>
+
+| | Push (env vars, mounted files) | Pull (config server) |
+|---|---|---|
+| Examples | Kubernetes ConfigMaps/Secrets, External Secrets Operator | Spring Cloud Config, Consul KV, AWS AppConfig |
+| Change at runtime | Needs a restart, or a file watcher on mounted files | Refresh endpoints or polling |
+| New dependency | None at runtime | The config server is on the startup path; run it highly available |
+| Audit trail | Git (GitOps) | Server backend (often Git) |
+
+Feature flags are runtime configuration with targeting. Use a flag service rather than overloading config for them.
+See [Deployment](./deployment).
+
+</details>
+
+## Microservice chassis vs. platform
+
+A **chassis** is a shared library or service template that bakes in logging, metrics, tracing, health checks and
+config loading. A **platform** provides the same concerns outside the code (mesh, sidecars, operators). Most mature
+organisations use both: a thin chassis (or golden-path template) for in-process concerns, and the platform for the rest.
+
+:::warning Fat shared libraries couple services
+A chassis that includes domain models or client SDKs for other services forces lock-step upgrades across teams.
+Keep it to infrastructure concerns, version it, and allow teams to lag a version behind.
 :::
+
+## References
+
+- [OpenTelemetry documentation](https://opentelemetry.io/docs/)
+- [Micrometer Tracing (Spring Boot 3)](https://docs.micrometer.io/tracing/reference/)
+- [Pattern: Backends for Frontends (Sam Newman)](https://samnewman.io/patterns/architectural/bff/)
+- [Istio ambient mode](https://istio.io/latest/docs/ambient/overview/)
+- [OAuth 2.0 Token Exchange (RFC 8693)](https://www.rfc-editor.org/rfc/rfc8693)
+- [SPIFFE](https://spiffe.io/docs/latest/spiffe-about/overview/)
+- [The RED Method (Grafana)](https://grafana.com/blog/2018/08/02/the-red-method-how-to-instrument-your-services/)
