@@ -1,51 +1,59 @@
 import clsx from "clsx";
+import Link from "@docusaurus/Link";
 import Heading from "@theme/Heading";
 import styles from "./styles.module.css";
-import {FeatureItem} from "@site/src/components/common/feature";
 
-const FeatureList: FeatureItem[] = [
+type Section = {
+  title: string;
+  to: string;
+  description: string;
+};
+
+const SectionList: Section[] = [
   {
-    title: "Easy to Revise Notes",
-    Svg: require("@site/static/img/undraw_docusaurus_mountain.svg").default,
-    description: (
-      <>
-        InterViewNotes is built with the purpose of making it easy to revise notes. It is designed to
-        be easy to revise important topics.
-      </>
-    ),
+    title: "Languages & Frameworks",
+    to: "/docs/languages/java",
+    description: "Java, Spring Boot, Kotlin, Python and Frontend: language features, runtimes and framework APIs.",
   },
   {
-    title: "Focus on What Matters",
-    Svg: require("@site/static/img/undraw_docusaurus_tree.svg").default,
-    description: (
-      <>
-        Select the topics you want to revise and focus on what matters. InterViewNotes is designed to
-        helps you revise not to learn & explain in depth.
-      </>
-    ),
+    title: "Architecture",
+    to: "/docs/architecture/microservices",
+    description: "Microservices, Saga, event-driven architecture, DDD and messaging concepts.",
   },
   {
-    title: "Community Driven",
-    Svg: require("@site/static/img/undraw_docusaurus_react.svg").default,
-    description: (
-      <>
-        InterViewNotes is open source and is driven by the community. It is designed to be easy to
-        contribute and help others.
-      </>
-    ),
+    title: "Platform",
+    to: "/docs/platform/cloud",
+    description: "Technologies you deploy and operate: Cloud, Kafka, Kubernetes and more.",
+  },
+  {
+    title: "GenAI",
+    to: "/docs/genai",
+    description: "LLM fundamentals, RAG, embeddings, agents, MCP and evaluation.",
+  },
+  {
+    title: "Programming",
+    to: "/docs/programming/lld",
+    description: "Data structures and algorithms, LLD, SOLID, design patterns and TDD.",
+  },
+  {
+    title: "System Design",
+    to: "/docs/designs",
+    description: "Building blocks and end-to-end \"Design X\" interview problems.",
+  },
+  {
+    title: "Behavioural",
+    to: "/docs/behavioural",
+    description: "How to structure answers to behavioural and leadership questions.",
   },
 ];
 
-function Feature({ title, Svg, description }: FeatureItem) {
+function SectionCard({ title, to, description }: Section) {
   return (
-    <div className={clsx("col col--4")}>
-      <div className="text--center">
-        <Svg className={styles.featureSvg} role="img" />
-      </div>
-      <div className="text--center padding-horiz--md">
+    <div className={clsx("col col--4", styles.section)}>
+      <Link to={to} className={clsx("card padding--lg", styles.card)}>
         <Heading as="h3">{title}</Heading>
         <p>{description}</p>
-      </div>
+      </Link>
     </div>
   );
 }
@@ -55,8 +63,8 @@ export default function HomepageFeatures(): JSX.Element {
     <section className={styles.features}>
       <div className="container">
         <div className="row">
-          {FeatureList.map((props, idx) => (
-            <Feature key={idx} {...props} />
+          {SectionList.map((props) => (
+            <SectionCard key={props.title} {...props} />
           ))}
         </div>
       </div>

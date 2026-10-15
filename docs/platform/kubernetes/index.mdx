@@ -1,0 +1,19 @@
+---
+title: Kubernetes
+description: "Kubernetes Interview Questions"
+sidebar_position: 3
+---
+
+Kubernetes objects and operations. How microservices are deployed in general lives in
+[Deployment in Microservices](/docs/architecture/microservices/deployment).
+
+## Topics to cover
+- Architecture: control plane (API server, etcd, scheduler, controller manager), kubelet, kube-proxy
+- Workloads: Pod, ReplicaSet, Deployment, StatefulSet, DaemonSet, Job / CronJob
+- Networking: Service types, Ingress, DNS, NetworkPolicy
+- Configuration: ConfigMap, Secret, resource requests and limits
+- Health: liveness, readiness and startup probes
+- Scaling: HPA, VPA, cluster autoscaler
+- Deployment strategies: rolling update, blue-green, canary
+- Storage: PersistentVolume, PersistentVolumeClaim, StorageClass
+- Helm, troubleshooting (`CrashLoopBackOff`, `OOMKilled`, pending pods)
