@@ -1,0 +1,534 @@
+---
+title: Interview Questions
+description: "Senior-level microservices interview questions: design, data and messaging, resilience scenarios"
+sidebar_position: 9
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+:::tip How to use this page
+Expand a question, pick an answer, then open **Show answer**. The questions test judgment and common traps, not definitions.
+:::
+
+<Tabs>
+<TabItem value="design" label="Design">
+
+Boundaries, team structure, sync vs. async, gateways and contracts. See [Decomposition](./decomposition), [Communication](./communication) and [Cross-Cutting Concerns](./cross-cutting).
+
+<details>
+<summary>**Q1 · adoption.** A 12-engineer team is building one product and hasn't found product-market fit yet. They ask whether to start with microservices. What's the best advice?</summary>
+
+- **A.** Start with a modular monolith with enforced module boundaries, and extract a service when a seam is stable and has its own scaling, deployment or ownership need
+- **B.** Start with microservices so you never have to migrate later
+- **C.** Create one service per database table so ownership is clear from day one
+- **D.** Use microservices but share one database to keep things simple
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: A
+Start with a modular monolith with enforced module boundaries, and extract a service when a seam is stable and has its own scaling, deployment or ownership need
+:::
+
+Early on, domain boundaries move every few weeks. With microservices, each wrong boundary becomes a cross-team API change and a data migration. A modular monolith gives you the same seams (packages, module rules, separate schemas) for the cost of a refactor. Extract a service when there's a concrete reason: a part that scales differently, a team that needs to deploy alone, or a different reliability requirement. A shared database (D) gives you the coupling of a monolith and the network costs of microservices.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q2 · boundaries.** Which signal best indicates that two services should be merged?</summary>
+
+- **A.** They're written in the same language
+- **B.** They connect to the same database server
+- **C.** Most changes to either one need a coordinated change and release of the other
+- **D.** Their combined codebase is over 50k lines
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: C
+Most changes to either one need a coordinated change and release of the other
+:::
+
+A service boundary is meant to contain change. If two services keep changing and releasing together, the boundary is in the wrong place, and you're paying network and versioning costs for nothing. Commit history is a good way to find these pairs. Language, size and shared infrastructure (as opposed to shared tables) say nothing about coupling.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q3 · conway.** An organisation has a frontend team, a backend team and a database team. Every feature needs work from all three. What architecture does this tend to produce, and what's the fix?</summary>
+
+- **A.** Capability-aligned microservices; no change needed
+- **B.** Layered services (UI, API, data) that always change together. Reorganise into stream-aligned teams that each own a business capability end to end
+- **C.** A monolith; split the code into more repositories
+- **D.** An event-driven system; introduce Kafka
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: B
+Layered services (UI, API, data) that always change together. Reorganise into stream-aligned teams that each own a business capability end to end
+:::
+
+Conway's law: systems copy the communication structure of the organisation that builds them. Teams split by layer produce services split by layer, so every feature crosses every boundary. The "inverse Conway manoeuvre" is to shape teams around the architecture you want: each team owns a business capability across UI, API and data. Changing repositories or adding a broker doesn't change who has to coordinate with whom.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q4 · sync vs async.** At checkout, the Order service needs to notify Email, Loyalty and Analytics. An order must not fail if any of them is down. What fits best?</summary>
+
+- **A.** Call each one synchronously in parallel with a 2 s timeout
+- **B.** Call each one synchronously and retry three times
+- **C.** Let the three services poll the Order database
+- **D.** Publish an OrderPlaced event (via an outbox) that each service subscribes to
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: D
+Publish an OrderPlaced event (via an outbox) that each service subscribes to
+:::
+
+These are side effects, not part of the order's correctness, so Order shouldn't depend on their availability. An event gives you temporal decoupling: subscribers process when they're up, and new subscribers need no change to Order. The outbox ensures the event is published if and only if the order commits. Synchronous calls tie Order's latency and availability to all three; polling another service's database is a shared-database coupling.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q5 · gateway.** Web and mobile clients need different payload shapes and aggregations from the same backend services. What fits best?</summary>
+
+- **A.** One shared API gateway that holds the aggregation logic for every client
+- **B.** A backend-for-frontend (BFF) per client type, owned by that client team, behind a thin edge gateway that handles auth and rate limits
+- **C.** Expose the internal services directly to clients
+- **D.** Use a service mesh to reshape payloads per client
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: B
+A backend-for-frontend (BFF) per client type, owned by that client team, behind a thin edge gateway that handles auth and rate limits
+:::
+
+A single gateway with every client's logic becomes a shared bottleneck that every team has to change. A BFF lets each client team shape its own API and release on its own schedule. The edge gateway stays generic: TLS, auth, rate limiting and routing. A mesh handles service-to-service traffic (mTLS, retries, telemetry) and isn't meant for business-level payload shaping.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q6 · mesh.** You run 40 services in four languages and need mTLS, consistent retries and per-route metrics everywhere. Library or service mesh?</summary>
+
+- **A.** A service mesh: the proxies apply mTLS, telemetry and traffic policy the same way in every language without code changes. Keep business-aware fallbacks in the application
+- **B.** A library per language, because a mesh can't do mTLS
+- **C.** Neither; do all of it in the API gateway
+- **D.** A mesh, and remove all timeouts from application code
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: A
+A service mesh: the proxies apply mTLS, telemetry and traffic policy the same way in every language without code changes. Keep business-aware fallbacks in the application
+:::
+
+With several languages, a library approach means implementing and upgrading the same behaviour four times. A mesh moves transport concerns (mTLS, retries, timeouts, metrics) into infrastructure. Business decisions, such as what to show when recommendations are down, still belong in code. Removing application timeouts entirely is risky: the app should still bound its own work. A gateway only sees traffic entering the system, not calls between services.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q7 · versioning.** A public REST API must rename a field that external partners use. What's the right approach?</summary>
+
+- **A.** Rename it and bump the minor version
+- **B.** Rename it and email the partners
+- **C.** Accept both names in requests, and return only the new name
+- **D.** Add the new field alongside the old one, return both, track use of the old one, and remove it only in a new major version after a deprecation window
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: D
+Add the new field alongside the old one, return both, track use of the old one, and remove it only in a new major version after a deprecation window
+:::
+
+Renaming is a breaking change, so a minor version (A) is misleading. Option C still breaks every partner that reads the old field. Expand and contract keeps both versions working during the migration: add the new field, run both, watch usage, then remove the old one in a major version with a published sunset date. You can't make external consumers upgrade together.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q8 · contract testing.** Teams keep breaking each other's APIs, even though every service has high unit-test coverage and there's a shared staging environment. What's the most effective fix?</summary>
+
+- **A.** More end-to-end tests in staging before each release
+- **B.** Freeze all API changes for a quarter
+- **C.** Consumer-driven contract tests (for example Pact), where consumers' expectations are checked in the provider's pipeline
+- **D.** Generate client SDKs and ask consumers to upgrade every week
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: C
+Consumer-driven contract tests (for example Pact), where consumers' expectations are checked in the provider's pipeline
+:::
+
+Unit tests don't cover what consumers rely on, and end-to-end tests in a shared staging environment are slow, flaky and catch problems late. Contract tests record what each consumer uses, and the provider's build fails if a change would break any of them, before anything is deployed. A freeze just delays the problem. SDK upgrades still need every consumer to upgrade at once.
+
+</details>
+
+</details>
+
+</TabItem>
+<TabItem value="data" label="Data & Messaging">
+
+Data ownership, sagas, outbox, idempotency, ordering and read models. See [Data Consistency](./data-consistency) and [Messaging](./messaging-brokers).
+
+<details>
+<summary>**Q9 · reporting.** A reporting team wants to join Orders and Customers data. Each is owned by a different service with its own database. Which option couples them least?</summary>
+
+- **A.** Give the reporting team read access to both production databases
+- **B.** Merge the two databases
+- **C.** Both services publish change events, and the reporting team builds and owns its own read store (a CQRS read model or a warehouse)
+- **D.** Reporting calls both APIs for every row at query time
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: C
+Both services publish change events, and the reporting team builds and owns its own read store (a CQRS read model or a warehouse)
+:::
+
+Direct database access makes both schemas public APIs that can't change without breaking reports. Merging undoes the service split. API calls per row work for small lookups but not for reports that scan millions of rows. Event-fed read models (or CDC into a warehouse) give reporting a schema it owns, while the source services keep their internals private. The cost is eventual consistency, which reporting can usually live with.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q10 · 2PC.** Placing an order reserves inventory, charges a payment and creates a shipment, across three services. Why not use two-phase commit (2PC)?</summary>
+
+- **A.** 2PC needs every participant available and holds locks while the protocol runs, so services become dependent on each other's availability and throughput. Many brokers and NoSQL stores don't support XA. Use a saga with compensating actions
+- **B.** 2PC doesn't guarantee consistency
+- **C.** 2PC doesn't work over HTTP, so use gRPC
+- **D.** 2PC is fine here; it's the standard approach
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: A
+2PC needs every participant available and holds locks while the protocol runs, so services become dependent on each other's availability and throughput. Many brokers and NoSQL stores don't support XA. Use a saga with compensating actions
+:::
+
+2PC is consistent, but blocking. If the coordinator fails after "prepare", participants hold locks until it recovers. Every participant must be up for any order to complete, so availability is the product of all of them. A saga runs a local transaction in each service and undoes completed steps with compensating actions (release stock, refund) on failure. You trade atomicity for availability, and you have to design for intermediate states. See [Sagas](/docs/architecture/patterns/sagas).
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q11 · outbox.** A service writes an order to its database, then publishes OrderCreated to Kafka. Now and then an event is missing. Why, and what's the fix?</summary>
+
+- **A.** Kafka is losing messages; increase the replication factor
+- **B.** Publish the event before the database commit
+- **C.** Use `acks=0` for speed
+- **D.** It's a dual write: a crash between the commit and the publish loses the event. Write the event to an outbox table in the same transaction, and have a relay (polling or CDC) publish it
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: D
+It's a dual write: a crash between the commit and the publish loses the event. Write the event to an outbox table in the same transaction, and have a relay (polling or CDC) publish it
+:::
+
+Two writes to two systems can't be atomic without a distributed transaction. Publishing first (B) has the opposite problem: an event for an order that was rolled back. The outbox makes the event part of the local transaction. A relay, either polling the table or tailing the database log with CDC (for example Debezium), publishes it at least once, so consumers still have to be idempotent.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q12 · idempotency.** A payment consumer reads from a broker that delivers at least once. What makes processing safe?</summary>
+
+- **A.** Turn on exactly-once in the broker; consumers need no changes
+- **B.** Store the processed message ID (or idempotency key) in the same transaction as the business write, and skip duplicates
+- **C.** Keep an in-memory set of processed IDs
+- **D.** Commit the offset before processing
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: B
+Store the processed message ID (or idempotency key) in the same transaction as the business write, and skip duplicates
+:::
+
+Broker exactly-once (for example Kafka transactions) only covers reads and writes within Kafka. It doesn't cover your database or a call to a payment provider. Recording the key in the same transaction as the effect makes the check and the write atomic. An in-memory set is lost on restart and isn't shared between instances. Committing first turns at-least-once into at-most-once, so you lose payments instead of duplicating them.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q13 · ordering.** OrderCancelled is sometimes processed before OrderCreated for the same order. What's the best fix?</summary>
+
+- **A.** Partition by `orderId` so all events for one order go to the same partition and consumer, and make handlers reject stale events with a version check
+- **B.** Add more consumers
+- **C.** Put the whole topic on a single partition
+- **D.** Add a 5-second delay before processing cancellations
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: A
+Partition by `orderId` so all events for one order go to the same partition and consumer, and make handlers reject stale events with a version check
+:::
+
+Brokers like Kafka only guarantee order within a partition. Keying by the entity ID keeps each order's events in order while different orders still run in parallel. A single partition (C) also preserves order, but gives up all parallelism. More consumers can make reordering worse. Delays only make the race less likely. A version check covers the remaining cases, such as replays and events from other producers.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q14 · read your writes.** After placing an order, the user is sent to "My orders", which reads from a read model updated by events. Sometimes the new order isn't there yet. What's the best fix?</summary>
+
+- **A.** Update the read model synchronously using 2PC
+- **B.** Remove the read model
+- **C.** Poll the read model every 100 ms on the server
+- **D.** Read your own writes: return the created order in the response and show it straight away, or serve that user's next read from the write side until the projection catches up
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: D
+Read your own writes: return the created order in the response and show it straight away, or serve that user's next read from the write side until the projection catches up
+:::
+
+Eventual consistency is the cost of the read model. The user only needs to see *their own* write; other users can wait for the projection. Common techniques: render optimistically from the command response, or carry a version or timestamp and serve from the write side until the projection reaches it. 2PC or removing the read model gives up the reason it exists.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q15 · event design.** The Customer service publishes CustomerUpdated with only `customerId`. Its twelve consumers each call `GET /customers/{id}` when they receive it. What's the problem?</summary>
+
+- **A.** None; thin events are always best
+- **B.** The event is too large
+- **C.** A callback storm: every event triggers twelve synchronous reads, so consumers depend on Customer's availability and add to its load. Include the changed fields in the event (event-carried state transfer) when consumers need the data
+- **D.** Events must never contain IDs
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: C
+A callback storm: every event triggers twelve synchronous reads, so consumers depend on Customer's availability and add to its load. Include the changed fields in the event (event-carried state transfer) when consumers need the data
+:::
+
+Thin events keep the payload small and avoid stale data, but every consumer has to call back, which brings back the runtime coupling events were supposed to remove. Carrying the changed state lets consumers work when Customer is down. The trade-off is a larger, versioned event schema. Choose per event, based on what consumers actually need.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q16 · composition.** An order history page needs data from three services. Each has a p99 of 80 ms, and the page must respond in under 200 ms. What fits?</summary>
+
+- **A.** Call the three services one after another
+- **B.** Call them in parallel with a deadline and show what returns in time, or precompute a read model if the page is hot and the data changes slowly
+- **C.** Join the three databases directly
+- **D.** Cache the whole page for 24 hours
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: B
+Call them in parallel with a deadline and show what returns in time, or precompute a read model if the page is hot and the data changes slowly
+:::
+
+Sequential calls add up (3 × 80 ms at p99 is already close to the budget, before any network overhead). Parallel calls cost roughly the slowest one, and a deadline plus partial results keeps a slow dependency from failing the page. If the page is read often, a read model built from events turns three calls into one query. Joining databases directly breaks ownership. A 24-hour cache shows stale shipment status.
+
+</details>
+
+</details>
+
+</TabItem>
+<TabItem value="scenarios" label="Scenarios">
+
+Retries, deadlines, tail latency, circuit breakers and safe delivery. See [Resilience](./resilience), [Deployment](./deployment) and [Pitfalls](./pitfalls).
+
+<details>
+<summary>**Q17 · retries.** A request passes through four layers. Each layer makes up to three attempts on the next. The bottom service slows down. In the worst case, how many requests reach it per user request?</summary>
+
+- **A.** 4
+- **B.** 12
+- **C.** 3
+- **D.** 81
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: D
+81
+:::
+
+Retries multiply across layers: 3 × 3 × 3 × 3 = 81. A brief slowdown turns into an 81× load spike on the service that's already struggling, and that's how retry storms start. Retry at one layer only (usually the one closest to the user, or the edge), use retry budgets (for example at most 10% extra traffic), and return a "don't retry" signal when the service is overloaded. See [Resilience](./resilience).
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q18 · backoff.** After an outage, thousands of clients retry with the same exponential backoff schedule. Recovery keeps failing because each wave of retries overloads the service again. What's the fix?</summary>
+
+- **A.** A shorter backoff
+- **B.** Add jitter (random backoff) and a retry budget, so retries spread out and are capped
+- **C.** Retry immediately
+- **D.** Raise all timeouts to 60 s
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: B
+Add jitter (random backoff) and a retry budget, so retries spread out and are capped
+:::
+
+Without jitter, clients that failed together retry together, causing synchronised waves. "Full jitter" (wait a random time between 0 and the current backoff) spreads them out. A retry budget caps how much extra load retries can add. Longer timeouts keep connections and threads busy longer, which makes overload worse.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q19 · deadlines.** Service A promises its caller a response within 1 s. A calls B with a 2 s timeout, and B calls C with a 5 s timeout. What's wrong?</summary>
+
+- **A.** Timeouts grow further down the chain, so B and C keep working long after the caller has given up. Pass a deadline along and make each downstream timeout smaller than the time that's left
+- **B.** Nothing
+- **C.** The timeouts should all be equal
+- **D.** Remove the timeouts and rely on circuit breakers
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: A
+Timeouts grow further down the chain, so B and C keep working long after the caller has given up. Pass a deadline along and make each downstream timeout smaller than the time that's left
+:::
+
+Work done after the caller gave up is wasted, and it uses up capacity during exactly the incidents you care about. Pass the remaining time along (gRPC does this with deadlines; over HTTP, use a header) and give up early when it's too short. Circuit breakers decide whether to call at all, not how long to wait, so you need both.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q20 · tail latency.** A request calls 50 backends in parallel. Each has a p50 of 10 ms and a p99 of 100 ms. How often does the whole request wait for at least one slow (p99) response?</summary>
+
+- **A.** Almost never; the overall latency is about 10 ms
+- **B.** About 1% of the time
+- **C.** About 40% of the time (1 − 0.99⁵⁰ ≈ 0.39). Mitigate with hedged requests, partial results or fewer backends per request
+- **D.** Same as a single call
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: C
+About 40% of the time (1 − 0.99⁵⁰ ≈ 0.39). Mitigate with hedged requests, partial results or fewer backends per request
+:::
+
+When you call many backends, one backend's rare slow response becomes the whole request's common case. With 50 calls, roughly 4 in 10 requests hit at least one p99 response. Ways to reduce it: hedged requests (send a second request after the p95 and take whichever returns first), returning partial results, reducing how many backends each request calls, and keeping each backend's tail latency low.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q21 · circuit breaker.** The recommendation service is down. The product page calls it through a circuit breaker. What should happen?</summary>
+
+- **A.** Keep calling with retries until it recovers
+- **B.** Return a 500 for the whole page
+- **C.** The breaker opens, but every request still waits for the full timeout
+- **D.** The breaker opens and calls fail immediately. The page renders with a fallback (cached or popular items), and occasional test calls in the half-open state check for recovery
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: D
+The breaker opens and calls fail immediately. The page renders with a fallback (cached or popular items), and occasional test calls in the half-open state check for recovery
+:::
+
+A breaker exists to stop wasting time and capacity on a dependency that's known to be down. Open means fail immediately, not wait for the timeout. The page is still useful without recommendations, so degrade instead of failing. Half-open lets a few requests through to detect recovery without flooding the service.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q22 · deploy vs release.** Product wants a feature live for 5% of users on Tuesday. The code is ready on Friday. What's the best approach?</summary>
+
+- **A.** Hold the merge until Tuesday
+- **B.** Deploy on Tuesday as a canary
+- **C.** Deploy on Friday with the feature behind a flag that's off, then turn it on for 5% of users on Tuesday
+- **D.** Create a long-lived release branch
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: C
+Deploy on Friday with the feature behind a flag that's off, then turn it on for 5% of users on Tuesday
+:::
+
+Deploying puts code in production; releasing exposes it to users. A feature flag separates the two, so the deploy is low-risk and the launch is a config change that's easy to target (5% of users) and easy to undo. A canary limits the blast radius of a *deployment* by routing traffic to new instances; it isn't a way to choose which users see a feature. Holding merges and long-lived branches build up merge risk.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q23 · schema migration.** With rolling deployments (old and new pods run at the same time), you need to rename the column `name` to `full_name`. What's safe?</summary>
+
+- **A.** Rename the column in one migration that ships with the deploy
+- **B.** Expand and contract: add `full_name`, write to both and backfill, switch reads to the new column, then drop `name` in a later release
+- **C.** Stop all pods, migrate, then start the new version
+- **D.** Add a view named after the old column and leave it there permanently
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: B
+Expand and contract: add `full_name`, write to both and backfill, switch reads to the new column, then drop `name` in a later release
+:::
+
+During a rolling deploy, the old version still reads and writes `name`. A one-step rename breaks it immediately, and rolling back is no longer safe. Expand and contract keeps every in-between state compatible with both versions. Stopping all pods works, but it's downtime. A permanent view is technical debt that hides who still depends on the old name.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q24 · tracing.** The gateway shows a latency spike, and 15 services are involved in the request. What's the fastest way to find the cause?</summary>
+
+- **A.** Look at a distributed trace (OpenTelemetry, with the W3C `traceparent` header passed through every hop) and find the slowest span. Exemplars link the metric spike to example traces
+- **B.** Search each service's logs for errors
+- **C.** Add more CPU to every service
+- **D.** Check each service's average latency dashboard
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: A
+Look at a distributed trace (OpenTelemetry, with the W3C `traceparent` header passed through every hop) and find the slowest span. Exemplars link the metric spike to example traces
+:::
+
+A trace shows the request's actual path and how long each hop took, so the slow service and operation stand out in the timeline. Averages hide spikes in the slowest requests. Searching 15 services' logs without a shared trace ID is slow. Adding CPU without a diagnosis may change nothing. Tracing only works if every service passes the context on, including through async messaging.
+
+</details>
+
+</details>
+
+</TabItem>
+</Tabs>

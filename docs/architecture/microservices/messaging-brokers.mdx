@@ -1,198 +1,294 @@
 ---
-title: Messaging Communication
-description: "Messaging Protocols in Micro-Services"
+title: Messaging
+description: "Microservice messaging: brokers, ordering, duplicates, transactional outbox, choreography vs orchestration"
 sidebar_position: 3
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-A message consists of a header and a payload. The header contains metadata about the message,
-such as the message type, the sender, and the recipient. The payload contains the actual data that is being sent.
-
-There are sevral different kind of messages :
-- `Document Messages` : These messages contain a document or a file.
-- `Command Messages` : These messages contain a command that is to
-- `Event Messages` : These messages contain an event that has occurred.
-
-:::note `correlation id`
-A correlation ID is a unique identifier that is added to a message by the sender.
-The receiver can use the correlation ID to correlate the message with other messages or with a request.
+:::tip Key takeaways
+- Brokers deliver **at-least-once** in practice. Design every consumer to be **idempotent**.
+- Ordering is only guaranteed **per partition key**, never globally. Choose the key that matches your invariants
+  (usually the aggregate ID).
+- Never "write to the DB, then publish". Use a **transactional outbox**; relay it by polling or by tailing the log (CDC).
+- **Choreography** keeps services decoupled but hides the workflow. **Orchestration** makes it explicit but centralizes it.
+- A message that always fails must go to a **dead-letter queue**, or it blocks everything behind it.
 :::
 
----
-### Brokerless vs Broker based messaging
-<Tabs>
-  <TabItem value={"Brokerless"}>
-    **Pros**
-    - Allows lighter network traffic and better latency, because messages go directly
-    from the sender to the receiver, instead of having to go from the sender to the
-    message broker and from there to the receiver
+Kafka specifics (partitions, consumer groups, offsets, exactly-once) are in [Kafka](/docs/platform/kafka). This page
+covers broker-agnostic patterns.
 
-    **Cons**
-    - Eliminates the possibility of the message broker being a performance bottleneck or a single point of failure
-    - Services need to know about each other’s locations and must therefore use one
-    of the discovery mechanisms
-    - Offers reduced availability as both sender and receiver has to be available.
-  </TabItem>
-  <TabItem value={"Broker"}>
-    - A message broker is an intermediary through which all messages flow. A sender writes
-    the message to the message broker, and the message broker delivers it to the receiver.
-    - An important benefit of using a message broker is that the sender doesn’t need to
-    know the network location of the consumer.
-    - Another benefit is that a message broker
-    buffers messages until the consumer is able to process them.
-  </TabItem>
-</Tabs>
----
+## Message types
+
+| Type | Intent | Naming | Coupling |
+|---|---|---|---|
+| **Command** | Ask one receiver to do something; it may refuse | Imperative: `ReserveStock` | Sender knows the receiver |
+| **Event** | State that something happened; can't be refused | Past tense: `OrderPlaced` | Publisher doesn't know who listens |
+| **Document** | Carry a full state snapshot | Noun: `CustomerProfile` | Consumers depend on the shape |
 
 <details>
-  <summary>Factors to consider choosing message broker</summary>
+<summary>Thin events vs. fat events</summary>
 
-  Each broker makes different trade-offs. For example, a very low-latency broker might
-  not preserve ordering, make no guarantees to deliver messages, and only store messages in memory. A messaging broker
-  that guarantees delivery and reliably stores
-  messages on disk will probably have higher latency.
+- **Thin (notification) events** carry IDs only (`OrderPlaced { orderId }`). Consumers call back for details. Small
+  and safe to evolve, but the callback re-creates sync coupling and load on the publisher.
+- **Fat (event-carried state transfer)** events carry the data consumers need. Consumers can keep a local replica and
+  never call back, but the event schema becomes a public contract.
+- Every message should carry a `messageId` (for deduplication), a `correlationId` (to trace a business flow) and a
+  `causationId` (the message that caused this one).
 
-  - Supported Messaging standard : AMQP, MQTT, STOMP, etc.
-  - Message Ordering : FIFO, LIFO, etc.
-  - Delivery guarantees : At-most-once, At-least-once, Exactly-once
-  - Persistence : Disk or Memory
-  - Latency : How fast messages are delivered
 </details>
 
-:::note
-Another fairly unique feature of Kafka is message permanence.
-With a normal message broker, once the last consumer has received a message,
-the broker no longer needs to hold on to that message. With Kafka, messages can be stored for a configurable period.
+## Broker vs. brokerless
 
-[Apache Kafka Intro](https://www.youtube.com/watch?v=hNDjd9I_VGA&list=WL&index=41&ab_channel=GauravSen)
-:::
+| | Broker-based (Kafka, RabbitMQ, SQS) | Brokerless (direct, e.g. ZeroMQ, gRPC streams) |
+|---|---|---|
+| Availability | Producer works while consumers are down; broker buffers | Sender and receiver must both be up |
+| Latency | One extra hop | Lowest; direct |
+| Discovery | Sender only knows the broker | Sender must discover receivers |
+| Bottleneck / SPOF | The broker is a component to scale and keep available | No central component to fail |
+| Operations | A cluster to run (or a managed service) | Nothing extra to run |
 
+Almost every microservice system uses a broker. The buffering and decoupling are the point.
 
-:::warning Downside using Message Brokers
-- **Additional Complexity** - Message brokers introduce additional complexity to the system.
-- **Performance Bottleneck** - They can introduce latency, they can be difficult to scale and can cause
-a performance bottleneck.
-- **Single Point of Failure** - They can be a single point of failure.
-:::
+## Queues vs. topics vs. logs
 
-
-### Message Ordering
-A simple messaging system can deliver multiple messages concurrently,
-but due to network delays or garbage collections, the order in which they are delivered is not guaranteed.
-
-In theory, a service instance might process the
-Order Cancelled message before another service processes the Order Created message!
-
-A common solution is to use Sharding, where messages are partitioned into different queues based on some key.
-Sender specifies the shard key, and the message broker ensures that all messages with the same key are delivered in order.
-
-```json
-{
-  "shard_key": "order_id",
-  "message": "Order Created"
-}
-```
-Message broker assigns a shard to a consumer, and all messages with the same key are delivered to the same shard.
-As a result, all messages with the same key are delivered in order.
-
-
-### Handling Duplicate Messages
-When a message broker delivers a message to a consumer, it doesn't know if the consumer has processed the message successfully.
-If the consumer crashes after processing the message but before acknowledging it, the message broker will redeliver the message.
-This can lead to duplicate processing of the message.
-
-:::note
-A message broker should ideally deliver each message exactly once.
-But guranteeing exactly once delivery in all cases is costly and impossible.
-Instead most message brokers provide at-least-once delivery, where the message is delivered at least once but may be duplicated.
-
-There are a couple of different ways to handle duplicate messages:
-  - **Write idempotent message handlers** : A method is idempotent if it can be called many times without changing
-the result beyond the initial application.
-So it is harmless to process the same message multiple times.
-  - **Track messages and discard duplicates** : Write message handlers that keep track of the messages you have
-processed and discard duplicates.
+| Model | Delivery | After consumption | Example |
+|---|---|---|---|
+| **Queue** (point-to-point) | Each message to **one** of the competing consumers | Deleted on ack | RabbitMQ queue, SQS |
+| **Topic** (pub/sub) | Each message to **every** subscription | Deleted per subscription | SNS → SQS, RabbitMQ fanout exchange |
+| **Log** | Every consumer group reads independently, at its own offset | Kept until retention expires; replayable | Kafka, Pulsar, Kinesis |
 
 <details>
-  <summary>Scenario Example</summary>
+<summary>Diagram: queue vs. log</summary>
 
-Consider for e.g. a message that authorize a payment.
-If the message is processed twice, the payment will be authorized twice.
-A message handler handling this logic must become important.
-A simple solution is to track `message_id` and discard duplicates.
-
-```java
-void authorizePayment(Message message){
-  if (processedMessages.contains(message.id)) return;
-  authorizePayment(message);
-}
+```mermaid
+flowchart LR
+    subgraph Queue
+        P1[Producer] --> Q[(orders queue)]
+        Q --> W1[Worker 1]
+        Q --> W2[Worker 2]
+    end
+    subgraph Log
+        P2[Producer] --> L[(orders log)]
+        L --> G1["Group: fulfilment (offset 120)"]
+        L --> G2["Group: analytics (offset 87)"]
+    end
 ```
-Another option is to record `message_id` in an application table and check if the message has been processed before.
+
+In a queue, workers compete and each message is processed once. In a log, each group gets every message, and a new
+group can replay history from the start.
+
+</details>
+
+## Ordering
+
+Brokers that scale out (partitions, shards, multiple consumers) only preserve order **within a partition**. Send all
+messages for one entity with the same **partition key** (e.g. `orderId`) so `OrderCreated` is always processed before
+`OrderCancelled`.
+
+<details>
+<summary>Traps that break ordering anyway</summary>
+
+- **Wrong key.** Keying by `customerId` orders all of a customer's events, but creates hot partitions for big
+  customers. Keying by `orderId` doesn't order events across a customer's orders. Pick the key that matches the
+  invariant you need.
+- **Consumer-side parallelism.** A consumer that hands messages to a thread pool reorders them. Parallelize by key,
+  not by message.
+- **Retries.** Retrying a failed message later (a retry topic) lets newer messages for the same key pass it. Either
+  block the key, or design handlers to tolerate out-of-order events (version numbers, ignore stale updates).
+- **Producer retries without idempotence** can reorder writes. In Kafka, enable the idempotent producer; see
+  [Producers](/docs/platform/kafka/producers).
+- Changing the partition count moves keys to different partitions.
+
+</details>
+
+## Duplicates and idempotent consumers
+
+A consumer can crash after processing a message but before acknowledging it, so the broker redelivers it.
+Exactly-once *delivery* across a network isn't achievable; exactly-once *effect* is, by making processing idempotent.
+
+| Technique | How | Use when |
+|---|---|---|
+| Naturally idempotent writes | Upsert, `SET status = 'PAID'`, not `balance = balance - 10` | The operation can be expressed as setting state |
+| Dedup table | Record `messageId` in the same transaction as the business change | Side effects aren't naturally idempotent |
+| Version check | Apply only if `event.version > row.version` | Events carry entity versions; also fixes reordering |
+
+<details>
+<summary>Dedup table (code)</summary>
+
+The dedup insert and the business update **must commit together**. Otherwise a crash between them either loses the
+message or processes it twice.
+
 ```sql
 CREATE TABLE processed_messages (
-  message_id VARCHAR(255) PRIMARY KEY
+  consumer   VARCHAR(100),
+  message_id VARCHAR(100),
+  processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (consumer, message_id)
 );
 ```
+
+```java
+@Transactional
+void on(PaymentAuthorized msg) {
+    // Unique-key violation means we've already processed it: skip
+    if (dedupRepo.insertIfAbsent("billing", msg.messageId()) == 0) return;
+    invoiceService.markPaid(msg.orderId());
+}
+```
+
+Prune old rows on a schedule; keep them longer than the broker's maximum redelivery window.
+
 </details>
-:::
 
-### Transactional Messaging
+## Transactional outbox
 
-Services often need to use messaging to update database a part of a transaction.
-Transactional messaging is a way to ensure that messages are processed exactly once.
+"Save to the DB, then publish" fails if the process dies between the two steps, and 2PC across the DB and broker is
+slow and poorly supported. Instead, write the event to an **outbox table in the same local transaction** as the
+business change. A separate relay publishes it.
 
-A traditional solution is to use distributed transactions across databases and the
-message broker.It is not a good choice for mordern applications because it is slow and can lead to
-deadlocks and other issues.
+<details>
+<summary>Diagram: outbox with a CDC relay</summary>
 
-Another solution is to store the message in the same database as the data it is updating.
-This is called `Outbox Pattern`. The service writes the message to the outbox table and the
-transaction commits. A separate process reads the messages from the outbox table and sends them to the message broker.
-
-```sql
-CREATE TABLE outbox_messages (
-  id SERIAL PRIMARY KEY,
-  message TEXT NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+```mermaid
+sequenceDiagram
+    participant S as Order Service
+    participant DB as Orders DB
+    participant R as Relay (poller or CDC)
+    participant B as Broker
+    S->>DB: BEGIN
+    S->>DB: INSERT INTO orders ...
+    S->>DB: INSERT INTO outbox (OrderPlaced)
+    S->>DB: COMMIT
+    R->>DB: Read new outbox rows / tail transaction log
+    R->>B: Publish OrderPlaced
+    R->>DB: Mark sent (polling) / advance log position (CDC)
 ```
 
-**Polling Database** is a simple way to implement the outbox pattern, which works well for low-volume systems.
-A separate process queries the outbox table for new messages and sends them to the message broker.
+</details>
 
-### Log Miner
-A sophisticated solution is for MessageRelay to tail the database transaction log (also
-called the commit log).
-Every committed update made by an application is represented as an entry in the database’s transaction log.
+<Tabs>
+<TabItem value="polling" label="Polling relay">
 
-![Log Miner](./img/log-miner.svg)
+A job queries `SELECT ... FROM outbox WHERE sent = false ORDER BY id` and publishes the rows.
 
-A transaction log miner can read
-the transaction log and publish each change as a message to the message broker.
+- **Pros:** simple; works on any database; no extra infrastructure.
+- **Cons:** polling load and latency; ordering needs care with multiple pollers (`FOR UPDATE SKIP LOCKED`, or one
+  poller per partition).
+- Fine for moderate volumes.
 
-A better approach is to use a higher-level library or framework that hides the low-level
-details and directly supports the higher-level interaction styles.
+</TabItem>
+<TabItem value="cdc" label="Log tailing (CDC)">
 
+A CDC tool such as **Debezium** reads the database's transaction log (Postgres WAL, MySQL binlog) and publishes each
+committed outbox insert.
 
-The client and service communicate asynchronously using a message broker.
-![Async](./img/async-application.png)
+- **Pros:** low latency; no polling load; preserves commit order.
+- **Cons:** another component to run (often Kafka Connect); depends on database-specific log access and retention.
+- The standard choice at scale. See [Kafka Connect](/docs/platform/kafka/streams-connect).
 
+</TabItem>
+</Tabs>
 
-A service maintains a replica of the data that it needs when processing requests.
-It keeps the replica up-to-date by subscribing to events published by the services that
-own the data.
-
-For example, Order Service could maintain a replica of data owned by
-Consumer Service and Restaurant Service. This would enable Order Service to
-handle a request to create an order without having to interact with those services.
-Consumer Service and Restaurant Service publish events whenever their data
-changes. Order Service subscribes to those events and updates its replica.
-
-:::warning
-One drawback of replication is that it can sometimes
-require the replication of large amounts of data, which is inefficient.
+:::warning The relay is at-least-once
+The relay can publish a row and crash before marking it sent, so it publishes it again. The outbox guarantees no lost
+events, not no duplicates. Consumers still need to be idempotent.
 :::
 
-![Order Service](./img/order-service-sequence-flow.svg)
+## Choreography vs. orchestration
+
+Multi-step business flows across services (a saga) are coordinated in one of two ways. Details and compensation
+design are in [Sagas](/docs/architecture/patterns/sagas).
+
+<Tabs>
+<TabItem value="choreography" label="Choreography">
+
+Each service reacts to events and emits its own. No central coordinator.
+
+```mermaid
+sequenceDiagram
+    participant O as Orders
+    participant P as Payments
+    participant I as Inventory
+    O-->>P: OrderPlaced
+    P-->>I: PaymentAuthorized
+    I-->>O: StockReserved
+    Note over O,I: Each service listens and reacts.<br/>The flow exists only in the sum of the subscriptions.
+```
+
+- **Pros:** loose coupling; no single owner or bottleneck; easy to add listeners.
+- **Cons:** the workflow is implicit and hard to see; cyclic dependencies creep in; "where is order 42 stuck?" needs
+  tracing across services.
+- Good for short flows with few steps.
+
+</TabItem>
+<TabItem value="orchestration" label="Orchestration">
+
+A coordinator (orchestrator) sends commands and tracks state.
+
+```mermaid
+sequenceDiagram
+    participant S as Order Saga (orchestrator)
+    participant P as Payments
+    participant I as Inventory
+    S->>P: AuthorizePayment
+    P-->>S: PaymentAuthorized
+    S->>I: ReserveStock
+    I-->>S: StockReservationFailed
+    S->>P: RefundPayment (compensate)
+```
+
+- **Pros:** the flow is explicit, in one place, with its state queryable; compensation logic is easier.
+- **Cons:** the orchestrator can become a "god service" holding business logic that belongs in the participants.
+- Good for long or complex flows. Workflow engines (Temporal, Camunda, AWS Step Functions) provide durable state and
+  retries.
+
+</TabItem>
+</Tabs>
+
+## Poison messages and dead-letter queues
+
+A message that fails every time (bad data, a bug) is retried forever. In ordered or partitioned consumers it blocks
+everything behind it. Retry a bounded number of times with backoff, then move it to a **dead-letter queue (DLQ)**.
+
+<details>
+<summary>Making DLQs operable</summary>
+
+- **Separate transient from permanent failures.** Retry timeouts and `503`s; send validation and deserialization
+  errors straight to the DLQ.
+- **Keep context:** original topic, partition and offset, exception, and attempt count as headers.
+- **Alert on DLQ depth.** An unmonitored DLQ is data loss with extra steps.
+- **Have a redrive path:** a tool to replay DLQ messages after the fix, which works because consumers are idempotent.
+- For Kafka-specific retry topics and the ordering trade-off, see [Consumers](/docs/platform/kafka/consumers).
+
+</details>
+
+## Choosing a broker
+
+| | Kafka | RabbitMQ | SQS / SNS | Pulsar |
+|---|---|---|---|---|
+| Model | Partitioned log | Queues + exchanges (routing) | Queue / pub-sub (managed) | Log + queue semantics |
+| Ordering | Per partition | Per queue, single consumer | FIFO queues, per message group | Per partition / key |
+| Retention and replay | Yes, by time or size; compaction | No (deleted on ack); streams add replay | No (max 14 days in queue) | Yes, with tiered storage |
+| Throughput | Very high | Moderate | High, scales automatically | Very high |
+| Routing | By key only | Rich (topic, headers, fanout) | SNS filter policies | Topic-based |
+| Best for | Event streaming, event sourcing, CDC, many consumers | Task queues, complex routing, RPC-over-messaging | AWS-native decoupling with zero ops | Multi-tenant, geo-replication |
+
+<details>
+<summary>How to decide in an interview</summary>
+
+- Need **replay**, many independent consumers or stream processing? A log: Kafka or Pulsar.
+- Need **per-message routing**, priorities or work queues with acks? RabbitMQ.
+- On AWS and want **no operations**? SQS (with SNS for fan-out); use FIFO only if you need ordering, since it limits
+  throughput.
+- Ask about the delivery guarantee, ordering scope, retention and operational cost before naming a product.
+
+</details>
+
+## References
+- [Chris Richardson: Transactional outbox](https://microservices.io/patterns/data/transactional-outbox.html)
+- [Debezium: Outbox event router](https://debezium.io/documentation/reference/stable/transformations/outbox-event-router.html)
+- [Martin Fowler: What do you mean by "Event-Driven"?](https://martinfowler.com/articles/201701-event-driven.html)
+- [Enterprise Integration Patterns](https://www.enterpriseintegrationpatterns.com/patterns/messaging/)
+- *Microservices Patterns*, Chris Richardson (Manning), chapter 3

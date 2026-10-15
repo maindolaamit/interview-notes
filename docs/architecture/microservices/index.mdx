@@ -1,81 +1,89 @@
 ---
 title: Microservices
-description : "Micro-Services Interview Questions"
+description: "Microservices architecture: trade-offs, decomposition, data, resilience and interview questions"
 sidebar_position: 0
 ---
 
-import TabItem from "@theme/TabItem";
-import Tabs from "@theme/Tabs";
+import DocCardList from '@theme/DocCardList';
 
-### What are Micro-Services?
-Microservices are an architectural style for building applications as a collection of small, independent services.
-Each service focuses on a single business capability and communicates with other services through well-defined APIs (Application Programming Interfaces).
-This approach contrasts with the traditional monolithic architecture, where a single large application encompasses all functionalities.
-
-Here are some key characteristics of microservices:
-- Independent deployment: Each microservice can be independently developed, deployed, and scaled. This allows for faster development cycles and easier maintenance.
-- Loose coupling: Services are loosely coupled, meaning they have minimal dependencies on each other. This improves fault tolerance and makes it easier to evolve individual services without affecting others.
-- Technology agnostic: Services can be implemented using different programming languages and technologies, promoting flexibility and leveraging the strengths of specific tools for each task.
-- Focus on business capabilities: Each service aligns with a specific business capability, making the application easier to understand and manage.
-- Highly maintainable and testable
-- Owned by a small team
-
-:::note
-Microservices are often associated with the DevOps and Agile methodologies, as they promote rapid development, continuous integration, and continuous delivery.
+:::tip Key takeaways
+- Microservices buy **independent deployability**, nothing more. Everything else (scaling, tech choice, team autonomy)
+  follows from it or can be had more cheaply in a monolith.
+- The price is the **distributed-systems tax**: network failures, partial failure, eventual consistency, and
+  observability and platform costs paid on every request.
+- **Boundaries matter more than size.** Services cut along business capabilities with their own data survive. Services
+  cut along entities or layers become a distributed monolith.
+- If services must be **deployed together**, or **share a database**, you have the costs of microservices without the
+  benefit.
+- Default to a **modular monolith**. Extract a service when a module needs a different release cadence, scaling
+  profile, failure isolation or owning team.
 :::
 
-<Tabs>
-  <TabItem value={"Why Micro-Services"}>
+## The trade-off
 
-    - **Scalability**: Micro-Services can be scaled independently
-    - **Technology Heterogeneity**: Micro-Services allows you to use different technologies
-    - **Resilience**: Micro-Services are isolated from each other, so a failure in one service doesn't affect the other
-    - **Ease of Deployment**: Micro-Services can be deployed independently
-    - **Organizational Alignment**: Micro-Services can be developed by small teams
-    - **Composability**: Micro-Services can be composed to create new services
-    - **Optimizing for Replaceability**: Micro-Services can be replaced easily
-  </TabItem>
-  <TabItem value={"Challenge of Micro-Services"}>
-
-    - **Distributed Systems**: Micro-Services are distributed systems, so you need to deal with all the issues of distributed systems
-    - **Data Management**: Micro-Services have their own databases, so you need to deal with data consistency
-    - **Network Latency**: Micro-Services communicate over the network, so you need to deal with network latency
-    - **Security**: Micro-Services need to be secured
-    - **Monitoring**: Micro-Services need to be monitored
-    - **Testing**: Micro-Services need to be tested
-    - **Deployment**: Micro-Services need to be deployed
-    - **DevOps**: Micro-Services need DevOps
-    - **Organizational Complexity**: Micro-Services need to be managed
-  </TabItem>
-  <TabItem value={"Best Practices"}>
-
-    - **Design for failure**: Micro-Services should be designed for failure
-    - **Decentralize all the things**: Micro-Services should be decentralized
-    - **Automate everything**: Micro-Services should be automated
-    - **Monitor everything**: Micro-Services should be monitored
-    - **Secure everything**: Micro-Services should be secured
-    - **Test everything**: Micro-Services should be tested
-    - **Deploy everything**: Micro-Services should be deployed
-    - **Manage everything**: Micro-Services should be managed
-  </TabItem>
-  <TabItem value={"Key characteristics"}>
-
-    - **Componentization via Services**: Micro-Services are organized around business capabilities
-    - **Organized around Business Capabilities**: Micro-Services are organized around business capabilities
-    - **Products not Projects**: Micro-Services are long-lived
-    - **Smart endpoints and dumb pipes**: Micro-Services are designed to be consumed by clients
-    - **Decentralized Governance**: Micro-Services are decentralized
-    - **Decentralized Data Management**: Micro-Services have their own databases
-    - **Infrastructure Automation**: Micro-Services are automated
-    - **Design for failure**: Micro-Services are designed for failure
-    - **Evolutionary Design**: Micro-Services are designed to evolve
-    - **Consumer-first**: Micro-Services are designed to be consumed by clients
-  </TabItem>
-</Tabs>
+Independent deployment is only real if coupling is low. As coupling rises, a microservice system slides into the worst
+quadrant: many deployables that still have to change and ship together.
 
 <details>
-  <summary>devops</summary>
+<summary>Diagram: the coupling spectrum</summary>
 
-  `DevOps` is acronym for .
-  It refers
+```mermaid
+flowchart LR
+    M["Monolith<br/>one deployable<br/>in-process calls"] --> MM["Modular monolith<br/>one deployable<br/>enforced module boundaries"]
+    MM --> MS["Microservices<br/>many deployables<br/>own data, async where possible"]
+    MS -. "shared DB, sync call chains,<br/>lock-step releases" .-> DM["Distributed monolith<br/>many deployables<br/>still coupled"]
+
+    style M fill:#eef2ff,stroke:#4f46e5
+    style MM fill:#ecfdf5,stroke:#059669
+    style MS fill:#ecfdf5,stroke:#059669
+    style DM fill:#fef2f2,stroke:#dc2626
+```
+
+Moving right adds operational cost at each step. Only the green boxes are good places to stop: the modular monolith
+gives most of the design benefits with none of the network costs. The distributed monolith has the costs of both.
+
 </details>
+
+## When microservices are the wrong answer
+
+| Signal | Why it hurts | Better alternative |
+|---|---|---|
+| One team, or a few teams on one product | No coordination cost to remove; you just add network hops | Modular monolith |
+| Domain still unclear (new product, frequent pivots) | Boundaries drawn too early are expensive to move across services | Monolith first, extract later |
+| No CI/CD, tracing or on-call per service | Each service multiplies the operational gaps | Invest in the platform first |
+| Most features touch most modules | Every change becomes a multi-service release | Rethink boundaries, or merge |
+| Strong cross-entity consistency is required | Sagas and eventual consistency replace simple transactions | Keep that data in one service |
+| Latency budget is tight | Each synchronous hop adds latency and failure probability | Fewer, coarser services; in-process calls |
+
+<details>
+<summary>Microservices vs. SOA: the one difference worth knowing</summary>
+
+Both structure a system as services. The difference is where the intelligence sits. SOA put routing, transformation and
+orchestration in a central **smart pipe** (an ESB), often with a shared enterprise data model. Microservices keep the
+**pipes dumb** (HTTP, gRPC, a broker that just moves messages) and put the logic in the **endpoints**, each owning its
+data. That move is what makes independent change and deployment possible.
+
+</details>
+
+## Cheat sheet
+
+| Concern | Senior-level one-liner | Page |
+|---|---|---|
+| Boundaries | Split by business capability or subdomain, never by entity or layer | [Decomposition](/docs/architecture/microservices/decomposition) |
+| Communication | Synchronous calls couple availability; async messaging couples schemas. Choose per interaction. | [Communication](/docs/architecture/microservices/communication) |
+| Messaging | At-least-once delivery + idempotent consumers + outbox is the standard reliable setup | [Messaging](/docs/architecture/microservices/messaging-brokers) |
+| Data | Database per service. Cross-service reads use composition, CQRS views or local replicas. | [Data Consistency](/docs/architecture/microservices/data-consistency) |
+| Resilience | Timeouts on every call; retries with backoff and a budget; circuit breakers to stop cascading failures | [Resilience](/docs/architecture/microservices/resilience) |
+| Platform | Gateway, mesh, tracing and config are bought or shared, not rebuilt per service | [Cross-Cutting](/docs/architecture/microservices/cross-cutting) |
+| Delivery | Each service has its own pipeline; progressive rollout limits the blast radius | [Deployment](/docs/architecture/microservices/deployment) |
+
+## Pages in this section
+
+<DocCardList />
+
+## References
+
+- [Microservices](https://martinfowler.com/articles/microservices.html), James Lewis and Martin Fowler
+- [MonolithFirst](https://martinfowler.com/bliki/MonolithFirst.html), Martin Fowler
+- [Microservices patterns](https://microservices.io/patterns/), Chris Richardson
+- *Building Microservices*, 2nd ed., Sam Newman (O'Reilly, 2021)
