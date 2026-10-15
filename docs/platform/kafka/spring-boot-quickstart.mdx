@@ -1,0 +1,158 @@
+---
+title: Spring Boot Quickstart
+description: "Local Kafka cluster with a Spring Boot producer and consumer"
+sidebar_position: 2
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+:::tip Key takeaways
+- One broker in KRaft mode (no ZooKeeper) is enough to learn on.
+- Declare topics as `NewTopic` beans; Spring's `KafkaAdmin` creates them on startup.
+- `KafkaTemplate.send()` is asynchronous and returns a `CompletableFuture`.
+- `@KafkaListener` hides the poll loop; `concurrency` sets the number of consumer threads.
+:::
+
+## Local cluster and project setup
+
+Save the compose file as `docker-compose.yml` and run `docker compose up -d`.
+
+<Tabs>
+<TabItem value="compose" label="docker-compose.yml">
+
+```yaml title="docker-compose.yml"
+services:
+  kafka:
+    image: apache/kafka:3.8.0
+    container_name: kafka
+    ports: ["9092:9092"]
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092   # host apps connect here
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1   # single broker → RF must be 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0       # faster group startup in dev
+```
+
+</TabItem>
+<TabItem value="gradle" label="build.gradle">
+
+```groovy title="build.gradle"
+dependencies {
+    implementation "org.springframework.boot:spring-boot-starter"
+    implementation "org.springframework.boot:spring-boot-starter-web"
+    implementation "org.springframework.kafka:spring-kafka"
+}
+```
+
+</TabItem>
+<TabItem value="yaml" label="application.yml">
+
+```yaml title="application.yml"
+spring:
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: orders-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "com.example.orders.events"
+```
+
+Don't drop the `trusted.packages` line; without it, deserialization fails at runtime. See
+[Core Concepts](./core-concepts#serialization).
+
+</TabItem>
+</Tabs>
+
+## Producer
+
+Define an event, declare the topic, and send with `KafkaTemplate`. The key is `customerId`, so all of a customer's
+events land on the same partition and stay ordered.
+
+<details>
+<summary>Event, topic and producer code</summary>
+
+```java title="OrderPlaced.java + topic bean"
+package com.example.orders.events;
+
+// a simple immutable event (Java record)
+public record OrderPlaced(String orderId, String customerId, BigDecimal total) {}
+
+// declare the topic as a bean → auto-created on startup
+@Bean
+NewTopic ordersTopic() {
+    return TopicBuilder.name("orders").partitions(3).replicas(1).build();
+}
+```
+
+```java title="OrderController.java"
+@RestController
+public class OrderController {
+
+    private final KafkaTemplate<String, OrderPlaced> kafka;
+
+    OrderController(KafkaTemplate<String, OrderPlaced> kafka) { this.kafka = kafka; }
+
+    @PostMapping("/orders")
+    ResponseEntity<String> place(@RequestBody OrderPlaced order) {
+        // KEY = customerId → all of a customer's events land on the same partition (ordering!)
+        kafka.send("orders", order.customerId(), order)
+             .whenComplete((result, ex) -> {
+                 if (ex == null) {
+                     var md = result.getRecordMetadata();
+                     log.info("sent to {}-{} @ offset {}",
+                              md.topic(), md.partition(), md.offset());
+                 } else log.error("publish failed", ex);
+             });
+        return ResponseEntity.accepted().body("queued");
+    }
+}
+```
+
+</details>
+
+<details>
+<summary>Why `send()` returns a future</summary>
+
+The client batches records in the background for throughput, so sending is asynchronous. The callback fires when
+the broker acknowledges. Underneath, the raw client calls `producer.send(record, callback)`; `KafkaTemplate` wraps
+it in a `CompletableFuture`. Batching and acks are tuned in [Producers](./producers).
+
+</details>
+
+## Consumer
+
+<details>
+<summary>Listener code</summary>
+
+```java title="OrderConsumer.java"
+@Component
+public class OrderConsumer {
+
+    @KafkaListener(topics = "orders", groupId = "fulfilment", concurrency = "3")
+    void onOrder(OrderPlaced order,
+                 @Header(KafkaHeaders.RECEIVED_PARTITION) int partition,
+                 @Header(KafkaHeaders.OFFSET) long offset) {
+        log.info("fulfilling {} from p{}@{}", order.orderId(), partition, offset);
+        // ... your business logic ...
+    }
+}
+```
+
+</details>
+
+`concurrency = "3"` starts 3 consumer threads in the `fulfilment` group. With 3 partitions, each thread owns one.
+See [Core Concepts](./core-concepts#consumer-groups-and-parallelism) for the scaling rules.

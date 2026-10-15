@@ -1,0 +1,70 @@
+---
+title: Schemas
+description: "Avro and Schema Registry compatibility modes"
+sidebar_position: 5
+---
+
+:::tip Key takeaways
+- A Schema Registry **rejects incompatible schemas at registration time**, before a bad record can be produced.
+- Each message carries a 5-byte header (magic byte + 4-byte schema ID), not the schema itself.
+- Under `BACKWARD` (the default), **a new required field with no default is a breaking change**.
+- Can't control which side upgrades first? Use `FULL` (ideally `FULL_TRANSITIVE`).
+:::
+
+## How a Schema Registry works
+
+With plain JSON, a producer can silently break every consumer. With a registry, schemas are registered under a
+**subject** (usually `<topic>-value`), and each version gets an ID. Messages carry only the ID; consumers fetch and
+cache the schema.
+
+## Compatibility modes
+
+| Mode | Guarantee | Who upgrades first | Safe changes |
+|---|---|---|---|
+| `BACKWARD` (default) | New schema can read old data | Consumers | Delete a field · add an optional field (with default) |
+| `FORWARD` | Old schema can read new data | Producers | Add a field · delete an optional field |
+| `FULL` | Both directions | Either | Only add/remove optional fields (with defaults) |
+| `*_TRANSITIVE` | Same, but checked against all prior versions, not just the last | — | Strictest; best for long-lived topics |
+
+:::warning The evolution rule to memorize
+Under `BACKWARD`, add new fields as **optional with a default**. A required field with no default is rejected by the
+registry, and you're blocked at deploy time.
+:::
+
+<details>
+<summary>Avro schema and Spring config</summary>
+
+```json title="src/main/avro/order-placed.avsc"
+// codegen'd into a Java class by the avro plugin
+{
+  "type": "record", "name": "OrderPlaced", "namespace": "com.example.orders",
+  "fields": [
+    { "name": "orderId",    "type": "string" },
+    { "name": "customerId", "type": "string" },
+    { "name": "total",      "type": "double" },
+    // BACKWARD-safe evolution: new optional field WITH a default
+    { "name": "channel",    "type": ["null","string"], "default": null }
+  ]
+}
+```
+
+```yaml title="application.yml"
+spring:
+  kafka:
+    producer:
+      value-serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
+    properties:
+      schema.registry.url: "https://your-registry:8081"
+      auto.register.schemas: false   # governed envs register via CI, not at runtime
+```
+
+</details>
+
+<details>
+<summary>Schema governance in practice</summary>
+
+In larger organizations, schemas are registered through CI with compatibility checks rather than at runtime by the
+application (`auto.register.schemas: false`). The evolution rules above are the day-to-day reality; the governance
+process is the guardrail.
+
+</details>

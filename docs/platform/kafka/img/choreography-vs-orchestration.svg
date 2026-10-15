@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 190" font-family="'IBM Plex Sans',sans-serif" font-size="11" width="720" height="190">
+<rect x="0" y="0" width="720" height="190" fill="#ffffff"/>
+        <text x="180" y="20" text-anchor="middle" font-weight="700" fill="#065f46" font-family="'IBM Plex Mono',monospace">choreography</text>
+        <rect x="20" y="70" width="80" height="40" rx="8" fill="#ECFDF5" stroke="#059669"/><text x="60" y="94" text-anchor="middle" fill="#065f46">Order</text>
+        <rect x="140" y="70" width="80" height="40" rx="8" fill="#ECFDF5" stroke="#059669"/><text x="180" y="94" text-anchor="middle" fill="#065f46">Payment</text>
+        <rect x="260" y="70" width="80" height="40" rx="8" fill="#ECFDF5" stroke="#059669"/><text x="300" y="94" text-anchor="middle" fill="#065f46">Shipping</text>
+        <g stroke="#059669" stroke-width="1.5" fill="none" marker-end="url(#cho1)"><line x1="100" y1="90" x2="138" y2="90"/><line x1="220" y1="90" x2="258" y2="90"/></g>
+        <text x="180" y="140" text-anchor="middle" fill="#047857" font-size="10">each reacts to the previous one's event</text>
+        <text x="180" y="156" text-anchor="middle" fill="#64748b" font-size="10">decoupled, but no single place shows the flow</text>
+
+        <text x="540" y="20" text-anchor="middle" font-weight="700" fill="#3730a3" font-family="'IBM Plex Mono',monospace">orchestration</text>
+        <rect x="500" y="35" width="90" height="36" rx="8" fill="#4338CA"/><text x="545" y="58" text-anchor="middle" fill="#fff">Orchestrator</text>
+        <rect x="430" y="120" width="70" height="34" rx="8" fill="#EEF0FF" stroke="#4338CA"/><text x="465" y="141" text-anchor="middle" fill="#3730a3">Order</text>
+        <rect x="510" y="120" width="70" height="34" rx="8" fill="#EEF0FF" stroke="#4338CA"/><text x="545" y="141" text-anchor="middle" fill="#3730a3">Payment</text>
+        <rect x="590" y="120" width="70" height="34" rx="8" fill="#EEF0FF" stroke="#4338CA"/><text x="625" y="141" text-anchor="middle" fill="#3730a3">Ship</text>
+        <g stroke="#4338CA" stroke-width="1.5" fill="none" marker-end="url(#cho2)"><line x1="545" y1="71" x2="470" y2="118"/><line x1="545" y1="71" x2="545" y2="118"/><line x1="545" y1="71" x2="620" y2="118"/></g>
+        <text x="545" y="176" text-anchor="middle" fill="#64748b" font-size="10">central brain commands each step — visible, coupled</text>
+        <defs>
+          <marker id="cho1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#059669"/></marker>
+          <marker id="cho2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#4338CA"/></marker>
+        </defs>
+      </svg>

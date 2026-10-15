@@ -1,0 +1,490 @@
+---
+title: Interview Questions
+description: "Kafka interview questions: foundations, practical and scenario-based"
+sidebar_position: 9
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+:::tip How to use this page
+Expand a question, pick an answer, then open **Show answer**. The questions target common traps, not trivia.
+:::
+
+<Tabs>
+<TabItem value="foundations" label="Foundations">
+
+Logs, consumer groups, keys, offsets and serialization. See [Core Concepts](./core-concepts).
+
+<details>
+<summary>**Q1 · Retention.** You produce a message, and your one consumer reads and processes it. What happens to that message on the broker?</summary>
+
+- **A.** It's deleted immediately after the consumer acknowledges it
+- **B.** It stays on disk until the retention policy (time/size) evicts it; other groups can still read it
+- **C.** It moves to a dead-letter topic
+- **D.** It's compacted away instantly
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: B
+It stays on disk until the retention policy (time/size) evicts it; other groups can still read it
+:::
+
+Consumption never deletes data in Kafka. The record remains for the topic's `retention.ms`/`retention.bytes` window regardless of who read it — which is exactly what makes replay and multiple independent consumer groups possible.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q2 · Consumer groups.** Two services, each with its own groupId, subscribe to the topic 'orders'. A single OrderPlaced record is produced. Who receives it?</summary>
+
+- **A.** Only the first group to poll — they compete for it
+- **B.** Both groups receive their own copy of the record
+- **C.** Neither, until you enable fan-out mode
+- **D.** It's split in half between the two groups
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: B
+Both groups receive their own copy of the record
+:::
+
+Different groupIds are fully independent readers of the same log. Both groups get every record. Competition for records only happens *within* a single group (partitions divided among that group's members).
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q3 · Keys & partitioning.** You send records with a null key to a 3-partition topic. What can you rely on?</summary>
+
+- **A.** Strict global ordering across all 3 partitions
+- **B.** Records spread across partitions for throughput, with NO cross-partition ordering guarantee
+- **C.** All records go to partition 0
+- **D.** The broker rejects records without a key
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: B
+Records spread across partitions for throughput, with NO cross-partition ordering guarantee
+:::
+
+A null key means the client distributes records across partitions (modern clients batch 'stickily' for efficiency). You get parallelism but lose ordering across partitions. Ordering is a per-partition (per-key) property only.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q4 · Scaling.** A topic has 3 partitions. Your consumer group runs with @KafkaListener(concurrency="5"). What's the outcome?</summary>
+
+- **A.** 5 threads each read a fraction of every partition
+- **B.** 3 threads get one partition each; 2 threads sit idle
+- **C.** It throws an error — concurrency can't exceed partitions
+- **D.** Partitions are automatically increased to 5
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: B
+3 threads get one partition each; 2 threads sit idle
+:::
+
+Concurrency spins up that many consumer threads in the group, but a partition maps to exactly one consumer. With 3 partitions, only 3 threads get work; the other 2 idle. To use all 5 you'd need ≥5 partitions.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q5 · auto-offset-reset.** You produce 100 messages, THEN start a brand-new consumer group with the default settings (auto-offset-reset=latest). The consumer logs nothing. Why?</summary>
+
+- **A.** The messages were lost because no consumer was running
+- **B.** With no committed offset, 'latest' starts at the log head, so the 100 pre-existing records are skipped — they still exist on the broker
+- **C.** The consumer crashed silently
+- **D.** latest means it reads the newest single message only
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: B
+With no committed offset, 'latest' starts at the log head, so the 100 pre-existing records are skipped — they still exist on the broker
+:::
+
+'latest' means a fresh group begins at the end of the log and only sees records produced after it joined. The 100 messages are safely stored — the consumer just started reading past them. Set `earliest` to read history, or keep producing while it runs.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q6 · Serialization (code).** Your consumer uses JsonDeserializer and throws: "The class '...OrderPlaced' is not in the trusted packages." What's the fix?</summary>
+
+```yaml
+spring:
+  kafka:
+    consumer:
+      value-deserializer: ...JsonDeserializer
+      # what's missing here?
+```
+
+- **A.** Switch to StringDeserializer permanently
+- **B.** Add spring.json.trusted.packages with the event's package (or "*" in dev)
+- **C.** Increase max.poll.records
+- **D.** Set acks=all on the consumer
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: B
+Add spring.json.trusted.packages with the event's package (or "*" in dev)
+:::
+
+JsonDeserializer refuses to instantiate classes outside a whitelist as a safety measure. Add `spring.json.trusted.packages: "com.example.orders.events"` (or the parent package, or `"*"` in dev only). acks is a producer concern and unrelated.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q7 · Ordering trap.** Records for customerId 'C1' were keyed to a 4-partition topic. Later you increase the topic to 8 partitions. What's true for C1's records?</summary>
+
+- **A.** Nothing changes; C1 always maps to the same partition forever
+- **B.** New C1 records may hash to a different partition than old ones, so per-key ordering is only guaranteed within each partition — old and new C1 records can now live in two partitions
+- **C.** All old records are automatically rebalanced to new partitions
+- **D.** The topic must be deleted and recreated
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: B
+New C1 records may hash to a different partition than old ones, so per-key ordering is only guaranteed within each partition — old and new C1 records can now live in two partitions
+:::
+
+Default partitioning is `hash(key) % partitionCount`. Change the count and the mapping for a key can change. Existing records stay where they were written; new ones may go elsewhere. So C1's history can span two partitions with no ordering between them — the reason partition count is a decision to get right early (see [Production](./production#how-many-partitions)).
+
+</details>
+
+</details>
+
+</TabItem>
+<TabItem value="practical" label="Practical">
+
+Config and code decisions. See [Producers](./producers), [Consumers](./consumers), [Schemas](./schemas) and
+[Exactly-Once](./exactly-once).
+
+<details>
+<summary>**Q8 · Producer / ordering.** You disable idempotence and set max.in.flight.requests.per.connection=5 with retries=10. A transient error causes one batch to be retried. What can go wrong?</summary>
+
+- **A.** Nothing — retries are always safe
+- **B.** Records within the partition can be reordered, because a retried batch may land after a later in-flight batch
+- **C.** The producer deadlocks
+- **D.** Consumers get duplicate offsets
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: B
+Records within the partition can be reordered, because a retried batch may land after a later in-flight batch
+:::
+
+With multiple in-flight requests and no idempotence, a retried batch can be written after a batch that was sent later → reordering within the partition. Idempotence (on by default) fixes this via sequence numbers while still allowing up to 5 in-flight. This is exactly why you leave idempotence on.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q9 · Delivery semantics (code).** This listener uses MANUAL ack. If the app crashes at the marked line, what happens to the record on restart?</summary>
+
+```java
+@KafkaListener(topics="orders")
+void on(Order o, Acknowledgment ack) {
+    chargeCard(o);        // side effect done
+    // <-- CRASH HERE, before ack
+    ack.acknowledge();
+}
+```
+
+- **A.** Lost — the offset was skipped
+- **B.** Redelivered and reprocessed, so chargeCard runs again unless it's idempotent
+- **C.** Sent to the DLT automatically
+- **D.** Committed anyway by auto-commit
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: B
+Redelivered and reprocessed, so chargeCard runs again unless it's idempotent
+:::
+
+Offset commit happens at ack.acknowledge(), which never ran — so the record is redelivered (at-least-once) and chargeCard runs twice. This is the canonical reason to make side effects idempotent (e.g. an idempotency key on the payment). Auto-commit is off in MANUAL mode.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q10 · Rebalancing.** On Kubernetes, every rolling deploy causes your consumer group to fully rebalance and pause for seconds. Which pair of settings most directly reduces this?</summary>
+
+- **A.** acks=all + min.insync.replicas=2
+- **B.** CooperativeStickyAssignor + a stable group.instance.id (static membership)
+- **C.** Larger batch.size + linger.ms
+- **D.** More partitions
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: B
+CooperativeStickyAssignor + a stable group.instance.id (static membership)
+:::
+
+Cooperative rebalancing only moves the partitions that must move (no stop-the-world), and static membership means a pod that restarts and rejoins within session.timeout.ms keeps its partitions with no rebalance at all. Together they make rolling deploys nearly invisible to the group. The others are durability/throughput knobs, unrelated.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q11 · Schema evolution.** Your topic is BACKWARD compatible. You need to add a mandatory 'region' field to the event. What must you do to avoid the registry rejecting it?</summary>
+
+- **A.** Nothing, BACKWARD allows any new field
+- **B.** Add it as optional with a default (e.g. union ["null","string"], default null); a required no-default field is a breaking change
+- **C.** Switch to NONE compatibility permanently
+- **D.** Delete the topic and recreate it
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: B
+Add it as optional with a default (e.g. union ["null","string"], default null); a required no-default field is a breaking change
+:::
+
+Under BACKWARD, a consumer on the new schema must be able to read old data — but old data has no 'region'. A required field with no default breaks that, so the registry rejects it. Make it optional-with-default. If 'region' is truly mandatory, that's a business/versioning decision (new topic or a coordinated FORWARD migration), not a compatibility override.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q12 · Error handling.** A malformed message can't be deserialized, so your listener never even runs — and the consumer retries the same offset forever, stuck. Best fix?</summary>
+
+- **A.** Increase retries
+- **B.** Wrap the deserializer with ErrorHandlingDeserializer so the failure becomes a handled record the error handler can route to the DLT
+- **C.** Set auto-offset-reset=latest
+- **D.** Add more partitions
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: B
+Wrap the deserializer with ErrorHandlingDeserializer so the failure becomes a handled record the error handler can route to the DLT
+:::
+
+A deserialization failure happens before your code, so listener-level retries/DLT logic can't catch it — classic poison pill, infinite loop on one offset. ErrorHandlingDeserializer catches the deser exception and surfaces it as a failed record, which the DefaultErrorHandler/DLT machinery can then quarantine. Changing offset reset would just skip data unpredictably.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q13 · Transactions.** You use Kafka transactions (@Transactional) for a consume→produce step, but you ALSO write to Postgres in the same method. What's the catch?</summary>
+
+- **A.** It's fully atomic across Kafka and Postgres
+- **B.** Kafka's transaction covers the Kafka output + offset only; the Postgres write is NOT part of it, so a crash can still leave DB and Kafka inconsistent — you need the outbox pattern
+- **C.** Postgres writes are automatically rolled back by Kafka
+- **D.** This is impossible to compile
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: B
+Kafka's transaction covers the Kafka output + offset only; the Postgres write is NOT part of it, so a crash can still leave DB and Kafka inconsistent — you need the outbox pattern
+:::
+
+Kafka EOS is Kafka-only: it atomically commits the produced records and the consumed offsets. It has no visibility into your database, so mixing a DB write in breaks the guarantee. For DB+Kafka consistency you use the transactional outbox (see [Production](./production#the-dual-write-problem-and-the-transactional-outbox)). Recognizing this boundary is one of the most important things in the whole course.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q14 · Throughput.** Your pipeline is network-bound and throughput is poor, though CPU is idle. Which change is most likely to help first?</summary>
+
+- **A.** Set acks=0 to skip acknowledgments
+- **B.** Increase linger.ms and batch.size and enable zstd compression, so fuller batches are compressed before sending
+- **C.** Reduce the number of partitions
+- **D.** Disable idempotence
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: B
+Increase linger.ms and batch.size and enable zstd compression, so fuller batches are compressed before sending
+:::
+
+Network-bound + idle CPU is the textbook case for batching + compression: a little linger fills bigger batches, and compression (zstd/lz4) shrinks what goes over the wire, often a large throughput win. acks=0 trades durability for speed and is rarely the right first move; the others don't address the bottleneck.
+
+</details>
+
+</details>
+
+</TabItem>
+<TabItem value="scenarios" label="Scenarios">
+
+"What would you do" questions. Read for the trade-off, not the keyword. See [Production](./production) and
+[Streams & Connect](./streams-connect).
+
+<details>
+<summary>**Q15 · consistency.** An inventory service must update its DB and emit a 'StockReserved' event. Under load you see cases where stock was decremented but no event was published (or the reverse). The team proposes 'publish to Kafka inside the @Transactional DB method, and if it throws, roll back the DB.' Why is that still wrong?</summary>
+
+- **A.** It's correct — the DB rollback covers the Kafka failure
+- **B.** The Kafka send isn't part of the DB transaction; a crash after DB commit but before/at the send still diverges. Use an outbox row written in the same DB tx, relayed by CDC
+- **C.** You just need to retry the Kafka send 3 times
+- **D.** Switch the DB to eventual consistency
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: B
+The Kafka send isn't part of the DB transaction; a crash after DB commit but before/at the send still diverges. Use an outbox row written in the same DB tx, relayed by CDC
+:::
+
+The DB transaction can't roll back a Kafka send that already partially happened, and the process can die between commit and publish regardless of retries — the dual-write problem. The outbox writes the event to a table in the SAME DB transaction (atomic with the stock change), then Debezium/CDC reliably publishes it. Retries and rollbacks can't close the crash-in-between window.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q16 · rebalancing.** A 24-consumer group processing image analysis (each record ~4s of CPU) rebalances constantly with CommitFailedException, and lag climbs. Heartbeats look fine. What's happening and the best first fix?</summary>
+
+- **A.** session.timeout.ms too low; raise it
+- **B.** Batches exceed max.poll.interval.ms because processing is slow; lower max.poll.records (and/or raise the interval) so a poll cycle finishes in time — and consider offloading the heavy work
+- **C.** Not enough replicas; raise replication.factor
+- **D.** acks=all is stalling the consumers
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: B
+Batches exceed max.poll.interval.ms because processing is slow; lower max.poll.records (and/or raise the interval) so a poll cycle finishes in time — and consider offloading the heavy work
+:::
+
+Heartbeats fine + CommitFailedException = the max.poll.interval.ms liveness check, not session timeout. At 4s/record, even a modest max.poll.records blows past the interval, so the coordinator evicts and reassigns mid-batch → the commit fails and lag grows. Shrink max.poll.records so each poll loop completes in time, raise the interval, and/or move CPU work off the poll thread. Replication/acks are unrelated.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q17 · skew.** A payments topic keyed by merchantId has 24 partitions. One marquee merchant drives 35% of traffic; that partition's consumer is permanently behind while others idle. You need per-merchant ordering for MOST merchants. Best approach?</summary>
+
+- **A.** Add more partitions — the lag will spread out
+- **B.** Add more consumers to the group
+- **C.** Route the hot merchant(s) to a dedicated topic/handling path, keeping merchantId keying for the long tail so their ordering is preserved
+- **D.** Switch every key to random so load is even
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: C
+Route the hot merchant(s) to a dedicated topic/handling path, keeping merchantId keying for the long tail so their ordering is preserved
+:::
+
+You can't scale a single partition (one consumer max per group), so adding partitions or consumers won't help the hot key. Randomizing keys would destroy the per-merchant ordering you need. Isolating the whale onto its own topic/path relieves the hot partition while the long tail keeps merchantId keying and ordering. (A salted composite key is the alternative when you can relax ordering for that key.)
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q18 · schema.** Producers and consumers of a topic are deployed independently and you can't guarantee which upgrades first. You must be able to add fields safely over time. Which compatibility mode fits, and what does it constrain you to?</summary>
+
+- **A.** BACKWARD — consumers must upgrade first
+- **B.** FORWARD — producers must upgrade first
+- **C.** FULL (ideally FULL_TRANSITIVE) — safe in both directions, at the cost of only adding/removing OPTIONAL fields with defaults
+- **D.** NONE — no checks, maximum flexibility
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: C
+FULL (ideally FULL_TRANSITIVE) — safe in both directions, at the cost of only adding/removing OPTIONAL fields with defaults
+:::
+
+If you can't control upgrade order, you need both directions to hold → FULL. FULL_TRANSITIVE checks against all prior versions, best for long-lived topics. The price is discipline: you may only add or remove optional fields with defaults. NONE removes the safety net entirely; BACKWARD/FORWARD each assume a known upgrade order you don't have.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q19 · capacity.** A team requests 200 partitions for a new topic 'to be future-proof,' expecting ~5k msgs/sec. What's the strongest objection?</summary>
+
+- **A.** 200 is too few for 5k msgs/sec
+- **B.** Over-partitioning has real costs — more file handles/memory, slower leader failover, heavier rebalances, and higher latency — while 5k msgs/sec needs only a handful; size to measured need plus headroom
+- **C.** Partitions can never be changed, so 200 is safest
+- **D.** Partition count doesn't affect anything
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: B
+Over-partitioning has real costs — more file handles/memory, slower leader failover, heavier rebalances, and higher latency — while 5k msgs/sec needs only a handful; size to measured need plus headroom
+:::
+
+5k msgs/sec is easily served by single-digit-to-low-double-digit partitions. 200 imposes ongoing costs (open files, memory, longer failover, slower/heavier rebalances, added end-to-end latency) with no benefit. Size to measured throughput and consumer parallelism with ~30% headroom. Note partitions CAN be increased later (with the key-ordering caveat), so there's no need to massively pre-provision.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q20 · design.** An order flow spans Order, Payment, Inventory, and Shipping services. Product wants clear visibility into where any order is and easy changes to the sequence. Duplicates/failures must be recoverable. Which coordination style best fits, and how are failures handled?</summary>
+
+- **A.** Pure choreography; failures are ignored
+- **B.** Orchestration with a saga: a coordinator drives steps (visible, easy to reorder) and each step has a compensating action to undo prior steps on failure
+- **C.** A single distributed XA transaction across all four services
+- **D.** Synchronous REST calls chained together
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: B
+Orchestration with a saga: a coordinator drives steps (visible, easy to reorder) and each step has a compensating action to undo prior steps on failure
+:::
+
+The need for visibility and easy sequence changes points to orchestration over emergent choreography. Cross-service atomicity isn't achievable with XA at scale, so you use a saga: local transactions per service plus compensating actions to roll back logically on failure (eventual consistency). Chained sync REST recreates tight coupling and cascading failure. Idempotent handlers make retries safe.
+
+</details>
+
+</details>
+
+<details>
+<summary>**Q21 · streams.** You must enrich a stream of clickstream events with the user's current profile (a slowly-changing dataset), emitting an enriched event per click with minimal latency. Which Kafka Streams construct fits best?</summary>
+
+- **A.** A windowed stream-stream join
+- **B.** A stream-table (KStream–KTable) join, where the profile topic is materialized as a KTable and each click looks up the latest profile locally
+- **C.** A table-table join
+- **D.** A global aggregation with a 1-hour tumbling window
+
+<details>
+<summary>Show answer</summary>
+
+:::tip Answer: B
+A stream-table (KStream–KTable) join, where the profile topic is materialized as a KTable and each click looks up the latest profile locally
+:::
+
+Enriching an event stream with the latest state of a keyed dataset is the textbook stream-table join: materialize profiles as a KTable (latest-per-key, held in a local state store) and join each click against it — no network hop, no window needed. Stream-stream joins are for correlating two event streams within a time window; table-table joins relate two changelogs; a windowed aggregation answers a different question entirely.
+
+</details>
+
+</details>
+
+</TabItem>
+</Tabs>

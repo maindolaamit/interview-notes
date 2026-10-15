@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 120" font-family="'IBM Plex Mono',monospace" font-size="11" width="720" height="120">
+<rect x="0" y="0" width="720" height="120" fill="#ffffff"/>
+        <rect x="10" y="40" width="120" height="44" rx="8" fill="#1e3a8a"/><text x="70" y="60" text-anchor="middle" fill="#bcd0ff">KStream</text><text x="70" y="74" text-anchor="middle" fill="#7c8bab" font-size="9">orders</text>
+        <rect x="170" y="40" width="120" height="44" rx="8" fill="#EEF0FF" stroke="#4338CA"/><text x="230" y="60" text-anchor="middle" fill="#3730a3">groupByKey</text><text x="230" y="74" text-anchor="middle" fill="#6366f1" font-size="9">by customerId</text>
+        <rect x="330" y="40" width="120" height="44" rx="8" fill="#EEF0FF" stroke="#4338CA"/><text x="390" y="60" text-anchor="middle" fill="#3730a3">aggregate</text><text x="390" y="74" text-anchor="middle" fill="#6366f1" font-size="9">sum(total)</text>
+        <rect x="490" y="40" width="120" height="44" rx="8" fill="#F59E0B"/><text x="550" y="60" text-anchor="middle" fill="#1a1200">KTable</text><text x="550" y="74" text-anchor="middle" fill="#7c4a03" font-size="9">state store</text>
+        <rect x="640" y="40" width="70" height="44" rx="8" fill="#ECFDF5" stroke="#059669"/><text x="675" y="66" text-anchor="middle" fill="#065f46">→ topic</text>
+        <g stroke="#94A3B8" stroke-width="1.5" fill="none" marker-end="url(#strm1)">
+          <line x1="130" y1="62" x2="168" y2="62"/><line x1="290" y1="62" x2="328" y2="62"/><line x1="450" y1="62" x2="488" y2="62"/><line x1="610" y1="62" x2="638" y2="62"/>
+        </g>
+        <defs><marker id="strm1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#94A3B8"/></marker></defs>
+      </svg>

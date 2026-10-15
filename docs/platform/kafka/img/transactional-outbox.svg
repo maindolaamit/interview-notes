@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 160" font-family="'IBM Plex Sans',sans-serif" font-size="11" width="720" height="160">
+<rect x="0" y="0" width="720" height="160" fill="#ffffff"/>
+        <rect x="10" y="55" width="110" height="50" rx="8" fill="#EEF0FF" stroke="#4338CA"/><text x="65" y="78" text-anchor="middle" fill="#3730a3" font-weight="600">Service</text><text x="65" y="93" text-anchor="middle" fill="#6366f1" font-size="9">one DB tx</text>
+        <rect x="165" y="30" width="150" height="100" rx="8" fill="#F8FAFC" stroke="#CBD5E1"/><text x="240" y="24" text-anchor="middle" fill="#475569" font-family="'IBM Plex Mono',monospace" font-size="10">Postgres</text>
+        <rect x="180" y="45" width="120" height="34" rx="6" fill="#DCFCE7" stroke="#16a34a"/><text x="240" y="66" text-anchor="middle" fill="#166534" font-size="10">orders row</text>
+        <rect x="180" y="86" width="120" height="34" rx="6" fill="#FEF9C3" stroke="#ca8a04"/><text x="240" y="107" text-anchor="middle" fill="#854d0e" font-size="10">outbox row</text>
+        <rect x="360" y="55" width="120" height="50" rx="8" fill="#F1F5F9" stroke="#94A3B8"/><text x="420" y="76" text-anchor="middle" fill="#334155" font-weight="600" font-size="10">Debezium CDC</text><text x="420" y="91" text-anchor="middle" fill="#64748b" font-size="9">reads WAL</text>
+        <rect x="525" y="55" width="90" height="50" rx="8" fill="#1e3a8a"/><text x="570" y="83" text-anchor="middle" fill="#bcd0ff" font-weight="600" font-size="10">Kafka</text>
+        <rect x="655" y="55" width="55" height="50" rx="8" fill="#ECFDF5" stroke="#059669"/><text x="682" y="83" text-anchor="middle" fill="#065f46" font-size="10">cons.</text>
+        <g stroke="#94A3B8" stroke-width="1.5" fill="none" marker-end="url(#o1)">
+          <line x1="120" y1="80" x2="163" y2="80"/><line x1="315" y1="97" x2="358" y2="90"/><line x1="480" y1="80" x2="523" y2="80"/><line x1="615" y1="80" x2="653" y2="80"/>
+        </g>
+        <defs><marker id="o1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#94A3B8"/></marker></defs>
+      </svg>

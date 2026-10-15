@@ -1,0 +1,56 @@
+---
+title: Exactly-Once
+description: "Kafka transactions and the read-process-write pattern"
+sidebar_position: 6
+---
+
+:::tip Key takeaways
+- Kafka transactions make **consume → transform → produce** atomic: output records and input offsets commit together.
+- Consumers of the output must use `isolation.level=read_committed`.
+- Exactly-once is **Kafka-only**. It doesn't cover your database; that needs the [transactional outbox](./production#the-dual-write-problem-and-the-transactional-outbox).
+:::
+
+## The read-process-write pattern
+
+Inside a transaction, the produced records and the consumed offsets commit together or not at all. Consumers
+reading with `read_committed` never see records from aborted transactions.
+
+<details>
+<summary>Transactional listener in Spring (code)</summary>
+
+```java
+// application.yml: spring.kafka.producer.transaction-id-prefix: "orders-tx-"
+// consumer isolation: spring.kafka.consumer.isolation-level: read_committed
+
+@KafkaListener(topics = "orders", groupId = "enrich")
+@Transactional                         // KafkaTransactionManager wraps this
+void enrich(OrderPlaced in) {
+    EnrichedOrder out = enrich(in);
+    kafkaTemplate.send("orders.enriched", in.orderId(), out);
+    // on normal return: output record + consumed offset commit atomically
+    // on exception: both roll back, input is re-consumed, no partial output
+}
+```
+
+</details>
+
+## When to use it
+
+| Situation | Use |
+|---|---|
+| Kafka → Kafka pipeline where duplicates are unacceptable | Kafka transactions (EOS) |
+| Anything that touches a database or external API | At-least-once + [idempotent processing](./consumers#delivery-semantics) |
+| Updating a database **and** publishing an event | [Transactional outbox](./production#the-dual-write-problem-and-the-transactional-outbox) |
+
+<details>
+<summary>The cost of exactly-once</summary>
+
+EOS adds latency (transaction markers, `read_committed` buffering) and operational care (`transactional.id` must
+stay stable). Use it only where duplicates are genuinely unacceptable.
+
+</details>
+
+:::warning A database write inside a Kafka transaction isn't covered
+If a `@Transactional` Kafka listener also writes to Postgres, a crash can still leave the database and Kafka
+inconsistent. The Kafka transaction has no visibility into the database.
+:::
