@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 260" width="720" height="260" font-family="Helvetica, Arial, sans-serif" font-size="13">
+  <rect x="0" y="0" width="720" height="260" fill="#ffffff"/>
+  <text x="360" y="26" text-anchor="middle" font-size="15" font-weight="bold" fill="#111827">QoS class decides who is evicted first under node memory pressure</text>
+
+  <rect x="20" y="50" width="210" height="130" rx="8" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="125" y="76" text-anchor="middle" font-size="15" font-weight="bold" fill="#991b1b">BestEffort</text>
+  <text x="125" y="102" text-anchor="middle" fill="#111827">No requests, no limits</text>
+  <text x="125" y="124" text-anchor="middle" fill="#111827">Uses spare capacity only</text>
+  <text x="125" y="160" text-anchor="middle" font-weight="bold" fill="#991b1b">Evicted 1st</text>
+
+  <rect x="255" y="50" width="210" height="130" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+  <text x="360" y="76" text-anchor="middle" font-size="15" font-weight="bold" fill="#92400e">Burstable</text>
+  <text x="360" y="102" text-anchor="middle" fill="#111827">Requests set, limits higher</text>
+  <text x="360" y="124" text-anchor="middle" fill="#111827">(or only some set)</text>
+  <text x="360" y="154" text-anchor="middle" font-weight="bold" fill="#92400e">Evicted 2nd</text>
+  <text x="360" y="172" text-anchor="middle" font-size="12" fill="#92400e">(most over its request first)</text>
+
+  <rect x="490" y="50" width="210" height="130" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="595" y="76" text-anchor="middle" font-size="15" font-weight="bold" fill="#166534">Guaranteed</text>
+  <text x="595" y="102" text-anchor="middle" fill="#111827">requests = limits for CPU</text>
+  <text x="595" y="124" text-anchor="middle" fill="#111827">and memory, every container</text>
+  <text x="595" y="160" text-anchor="middle" font-weight="bold" fill="#166534">Evicted last</text>
+
+  <defs><marker id="qa" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#374151"/></marker></defs>
+  <line x1="40" y1="210" x2="680" y2="210" stroke="#374151" stroke-width="2" marker-end="url(#qa)"/>
+  <text x="40" y="238" fill="#374151">Least protected</text>
+  <text x="680" y="238" text-anchor="end" fill="#374151">Most protected</text>
+</svg>

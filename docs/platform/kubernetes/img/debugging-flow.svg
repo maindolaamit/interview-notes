@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 420" width="860" height="420" font-family="'IBM Plex Sans',Helvetica,Arial,sans-serif" font-size="12">
+<rect x="0" y="0" width="860" height="420" fill="#ffffff"/>
+<defs><marker id="ar" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#475569"/></marker></defs>
+<rect x="330" y="14" width="200" height="40" rx="6" fill="#1e3a8a"/>
+<text x="430" y="32" text-anchor="middle" fill="#ffffff" font-weight="bold">Something is broken</text>
+<text x="430" y="47" text-anchor="middle" fill="#dbeafe" font-family="'IBM Plex Mono',monospace" font-size="11">kubectl get pods -o wide</text>
+<path d="M430 54 L430 80" stroke="#475569" stroke-width="1.5"/>
+<path d="M90 80 L770 80" stroke="#475569" stroke-width="1.5"/>
+<path d="M90 80 L90 104" stroke="#475569" stroke-width="1.5" marker-end="url(#ar)"/>
+<path d="M260 80 L260 104" stroke="#475569" stroke-width="1.5" marker-end="url(#ar)"/>
+<path d="M430 80 L430 104" stroke="#475569" stroke-width="1.5" marker-end="url(#ar)"/>
+<path d="M600 80 L600 104" stroke="#475569" stroke-width="1.5" marker-end="url(#ar)"/>
+<path d="M770 80 L770 104" stroke="#475569" stroke-width="1.5" marker-end="url(#ar)"/>
+<g text-anchor="middle">
+<rect x="15" y="106" width="150" height="36" rx="6" fill="#F59E0B"/><text x="90" y="129" fill="#1f2937" font-weight="bold">Pending</text>
+<rect x="185" y="106" width="150" height="36" rx="6" fill="#F59E0B"/><text x="260" y="122" fill="#1f2937" font-weight="bold">ImagePullBackOff</text><text x="260" y="136" fill="#1f2937" font-size="11">ErrImagePull</text>
+<rect x="355" y="106" width="150" height="36" rx="6" fill="#DC2626"/><text x="430" y="122" fill="#ffffff" font-weight="bold">CrashLoopBackOff</text><text x="430" y="136" fill="#fee2e2" font-size="11">Error / OOMKilled</text>
+<rect x="525" y="106" width="150" height="36" rx="6" fill="#0891b2"/><text x="600" y="122" fill="#ffffff" font-weight="bold">Running, not Ready</text><text x="600" y="136" fill="#cffafe" font-size="11">READY 0/1</text>
+<rect x="695" y="106" width="150" height="36" rx="6" fill="#059669"/><text x="770" y="122" fill="#ffffff" font-weight="bold">Running &amp; Ready</text><text x="770" y="136" fill="#d1fae5" font-size="11">but no traffic</text>
+</g>
+<g font-family="'IBM Plex Mono',monospace" font-size="11" fill="#0f172a">
+<rect x="15" y="160" width="150" height="34" rx="4" fill="#f1f5f9" stroke="#cbd5e1"/><text x="90" y="181" text-anchor="middle">describe pod → Events</text>
+<rect x="185" y="160" width="150" height="34" rx="4" fill="#f1f5f9" stroke="#cbd5e1"/><text x="260" y="181" text-anchor="middle">describe pod → Events</text>
+<rect x="355" y="160" width="150" height="34" rx="4" fill="#f1f5f9" stroke="#cbd5e1"/><text x="430" y="181" text-anchor="middle">logs --previous</text>
+<rect x="525" y="160" width="150" height="34" rx="4" fill="#f1f5f9" stroke="#cbd5e1"/><text x="600" y="181" text-anchor="middle">describe pod → probe</text>
+<rect x="695" y="160" width="150" height="34" rx="4" fill="#f1f5f9" stroke="#cbd5e1"/><text x="770" y="181" text-anchor="middle">get endpoints svc</text>
+</g>
+<g stroke="#475569" stroke-width="1.5">
+<path d="M90 142 L90 158" marker-end="url(#ar)"/><path d="M260 142 L260 158" marker-end="url(#ar)"/><path d="M430 142 L430 158" marker-end="url(#ar)"/><path d="M600 142 L600 158" marker-end="url(#ar)"/><path d="M770 142 L770 158" marker-end="url(#ar)"/>
+<path d="M90 194 L90 210" marker-end="url(#ar)"/><path d="M260 194 L260 210" marker-end="url(#ar)"/><path d="M430 194 L430 210" marker-end="url(#ar)"/><path d="M600 194 L600 210" marker-end="url(#ar)"/><path d="M770 194 L770 210" marker-end="url(#ar)"/>
+</g>
+<g font-size="11" fill="#334155">
+<rect x="15" y="212" width="150" height="120" rx="4" fill="#fffbeb" stroke="#fcd34d"/>
+<text x="24" y="232">• Insufficient cpu/memory</text><text x="24" y="250">   (requests too big)</text><text x="24" y="268">• PVC not bound</text><text x="24" y="286">• nodeSelector/affinity</text><text x="24" y="304">   matches no node</text><text x="24" y="322">• Untolerated taint</text>
+<rect x="185" y="212" width="150" height="120" rx="4" fill="#fffbeb" stroke="#fcd34d"/>
+<text x="194" y="232">• Typo in image or tag</text><text x="194" y="250">• Tag doesn't exist</text><text x="194" y="268">• Missing or wrong</text><text x="194" y="286">   imagePullSecrets</text><text x="194" y="304">• Node can't reach</text><text x="194" y="322">   the registry</text>
+<rect x="355" y="212" width="150" height="120" rx="4" fill="#fef2f2" stroke="#fca5a5"/>
+<text x="364" y="232">Check Last State / Exit Code</text><text x="364" y="250">• 1: app error → logs</text><text x="364" y="268">• 137 + OOMKilled: raise</text><text x="364" y="286">   limit or shrink heap</text><text x="364" y="304">• 137, no OOM: liveness</text><text x="364" y="322">   probe killed it</text>
+<rect x="525" y="212" width="150" height="120" rx="4" fill="#ecfeff" stroke="#67e8f9"/>
+<text x="534" y="232">• Readiness path/port</text><text x="534" y="250">   wrong</text><text x="534" y="268">• Slow start: add a</text><text x="534" y="286">   startupProbe</text><text x="534" y="304">• Dependency down</text><text x="534" y="322">   (DB, config server)</text>
+<rect x="695" y="212" width="150" height="120" rx="4" fill="#ecfdf5" stroke="#6ee7b7"/>
+<text x="704" y="232">• Empty endpoints:</text><text x="704" y="250">   selector ≠ pod labels</text><text x="704" y="268">• targetPort ≠ container</text><text x="704" y="286">   port</text><text x="704" y="304">• NetworkPolicy blocks</text><text x="704" y="322">• Ingress host/path wrong</text>
+</g>
+<rect x="15" y="352" width="830" height="52" rx="6" fill="#f8fafc" stroke="#94a3b8" stroke-dasharray="4 3"/>
+<text x="430" y="373" text-anchor="middle" font-weight="bold" fill="#0f172a">Still stuck? Get inside.</text>
+<text x="430" y="392" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="11" fill="#334155">kubectl exec -it  ·  kubectl port-forward  ·  kubectl debug --image=netshoot --target=app  ·  get events --sort-by</text>
+</svg>

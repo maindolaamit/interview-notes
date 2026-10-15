@@ -1,0 +1,361 @@
+---
+title: Kustomize
+description: "Kustomize bases, overlays, patches and generators for multi-environment Kubernetes config, and Kustomize vs Helm"
+sidebar_position: 13
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+:::tip Key takeaways
+- Kustomize customizes **plain YAML without templates**. A shared **base** plus one **overlay** per environment that patches it.
+- **Strategic merge patches** look like partial manifests and merge lists by key (for example, container `name`). **JSON 6902 patches** are path-based operations for precise replace and remove.
+- `configMapGenerator` and `secretGenerator` add a **content hash** to the name, so changing config triggers a rolling restart automatically.
+- It's built into kubectl: `kubectl apply -k overlays/prod`. Always review `kubectl kustomize` output (or `kubectl diff -k`) before applying.
+- Choose Kustomize for your own apps across environments, and Helm for packaging and distributing apps that others install with values.
+:::
+
+Kustomize renders the manifests that a [deployment strategy](./deployment-strategies) rolls out. Argo CD and Flux both
+understand a Kustomize path natively.
+
+## Base and overlays
+
+The **base** holds the manifests every environment shares. Each **overlay** points at the base and applies only what
+differs: replicas, image tag, resources, config, extra objects. Nothing is copied, so an overlay stays small and its
+diff against the base is easy to review.
+
+<details>
+<summary>Directory layout</summary>
+
+```text
+orders-service/
+├── base/
+│   ├── kustomization.yaml
+│   ├── deployment.yaml
+│   ├── service.yaml
+│   └── hpa.yaml
+├── components/
+│   └── monitoring/           # optional feature, opt-in per overlay
+│       └── kustomization.yaml
+└── overlays/
+    ├── dev/
+    │   ├── kustomization.yaml
+    │   └── patches/
+    ├── staging/
+    │   └── kustomization.yaml
+    └── prod/
+        ├── kustomization.yaml
+        └── patches/
+```
+
+</details>
+
+<details>
+<summary>kustomization.yaml: base and prod overlay</summary>
+
+```yaml
+# base/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - deployment.yaml
+  - service.yaml
+  - hpa.yaml
+labels:
+  - pairs:
+      app.kubernetes.io/name: orders-service
+    includeSelectors: true
+```
+
+```yaml
+# overlays/prod/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: shop
+resources:
+  - ../../base
+components:
+  - ../../components/monitoring
+images:
+  - name: orders-service                       # name used in the base
+    newName: registry.example.com/orders-service
+    newTag: "1.5.0"
+replicas:
+  - name: orders-service
+    count: 4
+configMapGenerator:
+  - name: orders-config
+    literals:
+      - SPRING_PROFILES_ACTIVE=prod
+      - LOG_LEVEL=INFO
+patches:
+  - path: patches/resources.yaml               # strategic merge
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: orders-service
+    path: patches/hpa.json-patch.yaml          # JSON 6902
+```
+
+</details>
+
+## Patches: strategic merge vs. JSON 6902
+
+| | Strategic merge | JSON 6902 |
+|---|---|---|
+| Looks like | A partial manifest with only the changed fields | A list of `op` / `path` / `value` operations |
+| Lists | Merged by key (containers by `name`, env by `name`) | Addressed by index (`/containers/0`) or `-` to append |
+| Remove a field | `$patch: delete` directive | `op: remove` |
+| Best for | Adding env, volumes, mounts, resources | Precise replace of scalars, removing items, CRDs without merge keys |
+
+Both go in the same `patches:` list. Kustomize detects the type from the content. A `target` selector lets one patch
+apply to many resources by kind, name, or label.
+
+<Tabs>
+<TabItem value="smp" label="Strategic merge">
+
+```yaml
+# overlays/prod/patches/resources.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orders-service       # identifies the target
+spec:
+  template:
+    spec:
+      containers:
+        - name: app          # merge key: only this container is changed
+          resources:
+            requests: { cpu: 500m, memory: 1Gi }
+            limits:   { memory: 1Gi }
+          volumeMounts:
+            - name: truststore
+              mountPath: /etc/truststore
+              readOnly: true
+      volumes:
+        - name: truststore
+          secret:
+            secretName: orders-truststore
+```
+
+</TabItem>
+<TabItem value="json" label="JSON 6902">
+
+```yaml
+# overlays/prod/patches/hpa.json-patch.yaml
+- op: replace
+  path: /spec/minReplicas
+  value: 4
+- op: replace
+  path: /spec/maxReplicas
+  value: 10
+- op: remove
+  path: /metadata/annotations/debug
+```
+
+On a Deployment, `path: /spec/template/spec/containers/0/env/-` with `op: add` appends an env var to the first
+container.
+
+Ops: `add`, `remove`, `replace`, `copy`, `move`, `test`. A failed `test` aborts the build, which works as an
+assertion.
+
+</TabItem>
+</Tabs>
+
+:::warning Index-based paths are fragile
+`/containers/0` silently targets the wrong container if a sidecar is added first in the base. Use strategic merge
+(keyed by name) for lists when you can.
+:::
+
+## Generators and transformers
+
+Generators create ConfigMaps and Secrets from files, env files or literals. Transformers change fields across every
+resource.
+
+| Field | Does |
+|---|---|
+| `configMapGenerator` / `secretGenerator` | Build a ConfigMap or Secret, add a **hash suffix**, and rewrite every reference to it |
+| `images` | Change image name and tag without patching (`kustomize edit set image`) |
+| `replicas` | Override the replica count |
+| `namespace` | Set the namespace on every resource |
+| `namePrefix` / `nameSuffix` | Rename every resource (for example, `dev-`), with references updated |
+| `labels` / `commonAnnotations` | Add labels or annotations everywhere (optionally to selectors) |
+| `components` | Reusable, opt-in bundles of resources and patches shared by several overlays |
+
+<details>
+<summary>Why the hash suffix matters</summary>
+
+`orders-config` becomes `orders-config-7b9f2k4m5d`. Pod templates refer to that exact name, so changing a value
+changes the name, which changes the pod template, which triggers a **rolling restart**. With a hand-written
+ConfigMap, pods keep the old values until something restarts them.
+
+```yaml
+configMapGenerator:
+  - name: orders-config
+    files:
+      - application.yaml
+    envs:
+      - app.env
+secretGenerator:
+  - name: orders-db
+    envs:
+      - db.env           # do NOT commit real secrets; see Configuration & Secrets
+generatorOptions:
+  disableNameSuffixHash: false
+```
+
+Old hashed ConfigMaps are left behind. Argo CD's prune or `kubectl apply --prune` cleans them up.
+
+</details>
+
+<details>
+<summary>Components: optional features shared across overlays</summary>
+
+```yaml
+# components/monitoring/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      kind: Deployment
+    patch: |-
+      - op: add
+        path: /spec/template/metadata/annotations
+        value:
+          prometheus.io/scrape: "true"
+          prometheus.io/port: "8080"
+```
+
+An overlay enables the feature with `components: [../../components/monitoring]`. Use this instead of copying the same
+patch into dev, staging and prod.
+
+</details>
+
+## Commands
+
+<details>
+<summary>Build, diff, apply, edit</summary>
+
+```bash
+kubectl kustomize overlays/prod             # render to stdout (built into kubectl)
+kustomize build overlays/prod               # same, standalone binary (often newer)
+kubectl diff -k overlays/prod               # what would change in the cluster
+kubectl apply -k overlays/prod              # render + apply
+kubectl apply -k overlays/prod --dry-run=server
+
+cd overlays/dev
+kustomize edit set image orders-service=registry.example.com/orders-service:abc1234
+kustomize edit add resource ../../base
+```
+
+</details>
+
+## CI/CD integration
+
+The pipeline builds and pushes an immutable image tag (for example, the git SHA), sets it in the overlay with
+`kustomize edit set image`, and then applies the overlay (push) or commits the change for Argo CD to sync (GitOps).
+See [Deployment Strategies & GitOps](./deployment-strategies).
+
+<details>
+<summary>GitHub Actions example (push-based)</summary>
+
+```yaml
+name: deploy-dev
+on:
+  push:
+    branches: [main]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and push image
+        run: |
+          docker build -t registry.example.com/orders-service:${{ github.sha }} .
+          docker push registry.example.com/orders-service:${{ github.sha }}
+      - name: Render and validate
+        run: |
+          cd overlays/dev
+          kustomize edit set image orders-service=registry.example.com/orders-service:${{ github.sha }}
+          kustomize build . | kubeconform -strict -summary
+      - name: Apply
+        run: |
+          kubectl apply -k overlays/dev
+          kubectl rollout status deploy/orders-service -n shop --timeout=5m
+```
+
+</details>
+
+## Multi-environment best practices
+
+- Keep the base **deployable and environment-neutral**: no environment names, hostnames or secrets.
+- Put only **differences** in overlays. If all three overlays carry the same patch, move it to the base or a component.
+- Use **immutable image tags** (SHA or semver), never `latest`. Promote by moving the same tag from overlay to overlay.
+- Never commit plain Secrets. Generate them from an external store (External Secrets, Sealed Secrets). See
+  [Configuration & Secrets](./configuration-secrets).
+- Validate in CI: run `kustomize build` for every overlay, check schemas with `kubeconform`, and post `kubectl diff` on the PR.
+
+## Troubleshooting
+
+| Symptom | Likely cause and fix |
+|---|---|
+| Patch has no effect | The patch's `kind`/`metadata.name` doesn't match the base resource (check after `namePrefix`), or the container `name` differs. Render and grep. |
+| `no matches for Id …` | A patch targets a resource that isn't in `resources`, or it uses the wrong `apiVersion`/`kind` |
+| `security; file … is not in or below …` | You referenced a file outside the kustomization root. Move it in, or use `--load-restrictor LoadRestrictionsNone` locally only. |
+| Service selects no pods | `labels` with `includeSelectors: true` were added to the Deployment but not the Service, or vice versa. Compare the rendered output. |
+| Old ConfigMaps pile up | Expected with hash suffixes. Enable pruning. |
+
+## Kustomize vs. Helm
+
+<Tabs>
+<TabItem value="kustomize" label="Kustomize">
+
+- Plain YAML, so what you read is what gets applied. No template language to learn.
+- Built into kubectl. No release state is stored in the cluster.
+- Overlays make environment diffs explicit and easy to review.
+- Limits: no packaging, versioning or dependency management. No loops or conditionals by design.
+- Best for: **your own services** deployed to several environments.
+
+</TabItem>
+<TabItem value="helm" label="Helm">
+
+- Go templates plus `values.yaml`. Very flexible, but rendered output can be hard to predict.
+- A package manager: versioned charts, repositories and dependencies, plus `helm upgrade` / `helm rollback` with
+  release history.
+- Best for: **distributing** software others install (ingress-nginx, Prometheus, Strimzi), or apps that need real
+  parameterization.
+
+</TabItem>
+<TabItem value="both" label="Both">
+
+The two combine well. Install a third-party chart and patch the parts its values don't expose. Kustomize can inflate a
+chart with `helmCharts:` (`kustomize build --enable-helm`), or you can post-render Helm output through Kustomize.
+Argo CD supports both as Application sources.
+
+</TabItem>
+</Tabs>
+
+## Interview questions
+
+<details>
+<summary>**How do you manage the same app across dev, staging and prod without copying YAML?**</summary>
+
+Use one Kustomize base and an overlay per environment that holds only the differences: replicas, image tag,
+resources, config and secrets references. Or use one Helm chart with a values file per environment. Either way,
+promotion means moving the same immutable image tag to the next environment, ideally through a Git PR that Argo CD syncs.
+
+</details>
+
+<details>
+<summary>**You change a ConfigMap but the pods still use old values. Why, and how does Kustomize help?**</summary>
+
+Env vars from a ConfigMap are read only when the container starts, and mounted files update with a delay (never with
+`subPath`). Nothing restarts the pods. `configMapGenerator` adds a content hash to the name, so a change produces a new
+name and a new pod template, and that triggers a rolling restart.
+
+</details>
+
+## References
+- [Kubernetes: Declarative management with Kustomize](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/)
+- [Kustomize reference](https://kubectl.docs.kubernetes.io/references/kustomize/)
+- [RFC 6902: JSON Patch](https://datatracker.ietf.org/doc/html/rfc6902)
+- [Helm documentation](https://helm.sh/docs/)

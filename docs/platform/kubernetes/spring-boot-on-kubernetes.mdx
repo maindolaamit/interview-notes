@@ -1,0 +1,348 @@
+---
+title: Spring Boot on Kubernetes
+description: "Running Spring Boot on Kubernetes: probes, JVM memory, graceful shutdown, config and CI/CD"
+sidebar_position: 11
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+:::tip Key takeaways
+- Turn on Actuator's **liveness and readiness groups** and point the Kubernetes probes at them.
+- Size the heap **relative to the container limit** (`-XX:MaxRAMPercentage`), not with a fixed `-Xmx` that ignores the limit.
+- Memory over the limit means **OOMKilled** (exit code 137). The heap is only part of what the JVM uses.
+- For zero-downtime rollouts, use **graceful shutdown** plus a short `preStop` sleep, both within `terminationGracePeriodSeconds`.
+- Config comes from **ConfigMaps**, secrets from **Secrets**, the profile from an env var. The image is the same in every environment.
+:::
+
+Spring itself is covered in [Spring Boot](/docs/languages/spring-boot). Probe concepts and monitoring are in
+[Observability & Probes](./observability).
+
+## How a Spring Boot app runs in a pod
+
+The fat JAR is baked into an image, and the image runs as one container in a pod. A Deployment keeps N replicas,
+a Service gives them a stable DNS name, and an Ingress exposes them outside the cluster.
+
+| Kubernetes | Spring / Docker equivalent |
+|---|---|
+| Pod | One running instance of the JAR (one container) |
+| Deployment | "Run N copies and replace them one at a time on release" |
+| Service | Client-side discovery (Eureka) or a load balancer, built in. Call `http://inventory-service` |
+| Ingress | Reverse proxy (nginx) with TLS termination |
+| ConfigMap | `application.yml` / environment-specific properties |
+| Secret | Passwords, API keys, keystores |
+| Namespace | An isolated area per team or environment |
+
+<details>
+<summary>Deployment and Service for a Spring Boot app (YAML)</summary>
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orders-service
+  namespace: shop
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: orders-service
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1          # one extra pod during the rollout
+      maxUnavailable: 0    # never drop below the desired count
+  template:
+    metadata:
+      labels:
+        app: orders-service
+    spec:
+      terminationGracePeriodSeconds: 45
+      containers:
+        - name: app
+          image: registry.example.com/orders-service:1.4.2
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: prod
+            - name: JAVA_TOOL_OPTIONS
+              value: "-XX:MaxRAMPercentage=75.0"
+          resources:
+            requests: { cpu: 500m, memory: 1Gi }
+            limits:   { memory: 1Gi }
+          startupProbe:
+            httpGet: { path: /actuator/health/liveness, port: http }
+            periodSeconds: 5
+            failureThreshold: 36        # up to 3 minutes to start
+          livenessProbe:
+            httpGet: { path: /actuator/health/liveness, port: http }
+            periodSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet: { path: /actuator/health/readiness, port: http }
+            periodSeconds: 5
+            failureThreshold: 3
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "sleep 10"]
+          volumeMounts:
+            - name: config
+              mountPath: /config        # Spring reads ./config/ and /config/ automatically
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: orders-service-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: orders-service
+  namespace: shop
+spec:
+  selector:
+    app: orders-service
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+```
+
+</details>
+
+## Actuator health groups → Kubernetes probes
+
+Spring Boot has **liveness** and **readiness** availability states, exposed at `/actuator/health/liveness` and
+`/actuator/health/readiness`. They're turned on automatically when Boot detects it's running on Kubernetes. Enable
+them explicitly so they also work locally and in tests.
+
+| Endpoint | Reports | Use for |
+|---|---|---|
+| `/actuator/health/liveness` | `LivenessState`: is the app internally broken? | `livenessProbe` and `startupProbe` |
+| `/actuator/health/readiness` | `ReadinessState`: is it accepting traffic? Goes `OUT_OF_SERVICE` during startup and shutdown | `readinessProbe` |
+| `/actuator/health` | Everything, including DB, Kafka, disk | Humans and dashboards, **not** liveness |
+
+<Tabs>
+<TabItem value="yml" label="application.yml">
+
+```yaml
+management:
+  endpoint:
+    health:
+      probes:
+        enabled: true            # expose /health/liveness and /health/readiness
+      group:
+        readiness:
+          include: readinessState,db   # optional: also gate traffic on the DB
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+```
+
+</TabItem>
+<TabItem value="properties" label="application.properties">
+
+```properties
+management.endpoint.health.probes.enabled=true
+management.endpoint.health.group.readiness.include=readinessState,db
+management.endpoints.web.exposure.include=health,info,prometheus
+```
+
+</TabItem>
+</Tabs>
+
+:::warning Don't add dependencies to the liveness group
+Adding `db` to **liveness** turns a database outage into a restart storm across all replicas. If you add
+dependency checks at all, add them to **readiness**. See
+[Observability: health probes](./observability#health-probes).
+:::
+
+## JVM memory vs. container limits
+
+The container's memory limit applies to the **whole process**: heap, metaspace, thread stacks, code cache, direct
+buffers and GC overhead. Go over it and the kernel kills the container (**OOMKilled**, exit code 137) without a Java
+`OutOfMemoryError` or heap dump.
+
+| Setting | Effect |
+|---|---|
+| `-XX:MaxRAMPercentage=75.0` | Heap max = 75% of the container limit. Scales automatically when you change the limit |
+| Fixed `-Xmx` | Works, but must be updated by hand with every limit change. Easy to set too close to the limit |
+| Memory request = limit | Predictable: the pod can't be squeezed, and lands in a better QoS class |
+| No CPU limit (or a generous one) | Avoids CPU throttling during JVM startup and GC. Set CPU requests for scheduling |
+
+<details>
+<summary>Why 75%, and how to tell OOMKilled from OutOfMemoryError</summary>
+
+Non-heap memory is typically 200–400 MB for a Spring Boot service: metaspace for Spring's classes, about 1 MB per
+thread stack (Tomcat defaults to 200 threads), code cache, Netty or NIO direct buffers. Leaving about 25% of the
+limit covers that on a 1–2 GiB container. Measure with Native Memory Tracking (`-XX:NativeMemoryTracking=summary`)
+if you're unsure.
+
+| Symptom | Cause | Where you see it |
+|---|---|---|
+| `OOMKilled`, exit code 137 | Process went over the **container** limit | `kubectl describe pod` → Last State |
+| `java.lang.OutOfMemoryError: Java heap space` | Heap full, below the container limit | App logs. Add `-XX:+HeapDumpOnOutOfMemoryError` |
+
+Modern JVMs (Java 10+, and 8u191+) read the cgroup limit by default, so `MaxRAMPercentage` uses the container limit,
+not the node's RAM. Use `JAVA_TOOL_OPTIONS` to pass flags: the JVM reads it even if the image's entrypoint
+ignores `JAVA_OPTS`.
+
+</details>
+
+## Graceful shutdown
+
+On a rollout or scale-down, Kubernetes sends **SIGTERM**. At the same time, but asynchronously, it removes the pod
+from Service endpoints. Without care, the app stops before every load balancer and kube-proxy has stopped sending it
+traffic, and in-flight requests fail.
+
+| Step | Setting | Purpose |
+|---|---|---|
+| 1 | `preStop: sleep 10` | Keep serving while endpoint removal propagates |
+| 2 | `server.shutdown=graceful` | Stop accepting, finish in-flight requests |
+| 3 | `spring.lifecycle.timeout-per-shutdown-phase=30s` | Upper bound for step 2 |
+| 4 | `terminationGracePeriodSeconds: 45` | Must exceed preStop + shutdown timeout, or SIGKILL cuts it short |
+
+<Tabs>
+<TabItem value="yml" label="application.yml">
+
+```yaml
+server:
+  shutdown: graceful
+spring:
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+```
+
+</TabItem>
+<TabItem value="properties" label="application.properties">
+
+```properties
+server.shutdown=graceful
+spring.lifecycle.timeout-per-shutdown-phase=30s
+```
+
+</TabItem>
+</Tabs>
+
+:::warning The JVM must be PID 1, or receive the signal
+If the entrypoint is `sh -c "java ..."`, the shell gets SIGTERM and the JVM may never see it. Use the exec form,
+`ENTRYPOINT ["java", "-jar", "app.jar"]`, or `exec java ...` in a script.
+:::
+
+## Configuration and secrets
+
+Build one image and inject environment-specific configuration at runtime. Details on ConfigMaps, Secrets and
+external secret stores are in [Configuration & Secrets](./configuration-secrets).
+
+| Need | Kubernetes source | Spring picks it up via |
+|---|---|---|
+| Active profile | env var `SPRING_PROFILES_ACTIVE` | Relaxed binding |
+| Individual properties | env vars from a ConfigMap (`envFrom`) | `SPRING_DATASOURCE_URL` → `spring.datasource.url` |
+| Whole `application.yml` | ConfigMap mounted as a file at `/config` | Default config locations, or `spring.config.import` |
+| Passwords, tokens | Secret as env var or file | `${DB_PASSWORD}`, or `spring.config.import=configtree:/etc/secrets/` |
+
+<details>
+<summary>Keystore and truststore for mTLS from a Secret (YAML)</summary>
+
+Store the binary JKS/PKCS12 files in a Secret, mount it read-only, and point Spring at the files. The passwords come
+from a separate Secret through env vars.
+
+```bash
+kubectl create secret generic orders-tls -n shop \
+  --from-file=keystore.p12 --from-file=truststore.p12
+```
+
+```yaml
+# Deployment (pod spec excerpt)
+containers:
+  - name: app
+    env:
+      - name: KEYSTORE_PASSWORD
+        valueFrom: { secretKeyRef: { name: orders-tls-passwords, key: keystore } }
+      - name: TRUSTSTORE_PASSWORD
+        valueFrom: { secretKeyRef: { name: orders-tls-passwords, key: truststore } }
+    volumeMounts:
+      - name: tls
+        mountPath: /etc/tls
+        readOnly: true
+volumes:
+  - name: tls
+    secret:
+      secretName: orders-tls
+```
+
+```yaml
+# application.yml
+server:
+  ssl:
+    key-store: file:/etc/tls/keystore.p12
+    key-store-password: ${KEYSTORE_PASSWORD}
+    trust-store: file:/etc/tls/truststore.p12
+    trust-store-password: ${TRUSTSTORE_PASSWORD}
+    client-auth: need          # require client certificates (mTLS)
+```
+
+Spring Boot 3.1+ can also use **SSL bundles** (`spring.ssl.bundle.*`) to load PEM files directly, e.g. from a
+cert-manager Secret, with no JKS conversion.
+
+</details>
+
+:::danger Mounted ConfigMaps don't restart the app
+Kubernetes updates mounted ConfigMap files eventually (not for `subPath` mounts or env vars), but Spring reads config
+at startup. Roll the Deployment after a config change. Tools like Kustomize's `configMapGenerator` add a content hash
+to the name, so a change triggers a rollout automatically.
+:::
+
+## CI/CD flow
+
+A typical pipeline builds the image once, tags it immutably (Git SHA or version, never `latest`), and promotes the
+same tag through environments.
+
+| Stage | Command (simplified) |
+|---|---|
+| Build and test | `./mvnw verify` |
+| Build image | `docker build -t registry.example.com/orders-service:$GIT_SHA .` (or `./mvnw spring-boot:build-image`) |
+| Push | `docker push registry.example.com/orders-service:$GIT_SHA` |
+| Deploy | `kubectl set image deployment/orders-service app=registry.example.com/orders-service:$GIT_SHA -n shop` |
+| Verify | `kubectl rollout status deployment/orders-service -n shop --timeout=5m` |
+| Roll back on failure | `kubectl rollout undo deployment/orders-service -n shop` |
+
+In GitOps setups, the deploy step instead commits the new tag to a config repo and Argo CD or Flux applies it. See
+[Deployment Strategies](./deployment-strategies) and [Kustomize](./kustomize).
+
+<details>
+<summary>Multi-stage Dockerfile for a Spring Boot app</summary>
+
+```dockerfile
+FROM eclipse-temurin:21-jdk AS build
+WORKDIR /src
+COPY . .
+RUN ./mvnw -q package -DskipTests
+
+FROM eclipse-temurin:21-jre
+WORKDIR /app
+RUN useradd --uid 1000 --no-create-home app
+# Non-root, so it passes Pod Security "restricted"
+USER 1000
+COPY --from=build /src/target/*.jar app.jar
+EXPOSE 8080
+# Exec form: the JVM is PID 1 and receives SIGTERM
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+```
+
+Skip the Docker `HEALTHCHECK` instruction: Kubernetes ignores it and uses its own probes.
+
+</details>
+
+## References
+
+- [Spring Boot: Kubernetes probes](https://docs.spring.io/spring-boot/reference/actuator/endpoints.html#actuator.endpoints.kubernetes-probes)
+- [Spring Boot: Graceful shutdown](https://docs.spring.io/spring-boot/reference/web/graceful-shutdown.html)
+- [Spring Boot: Deploying to Kubernetes](https://docs.spring.io/spring-boot/how-to/deployment/cloud.html#howto.deployment.cloud.kubernetes)
+- [Spring Boot: SSL bundles](https://docs.spring.io/spring-boot/reference/features/ssl.html)
+- [Kubernetes: Pod termination](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-termination)
+- [Spring guide: Spring Boot Kubernetes](https://spring.io/guides/gs/spring-boot-kubernetes/)

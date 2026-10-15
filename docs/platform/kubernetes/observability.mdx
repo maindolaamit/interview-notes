@@ -1,0 +1,247 @@
+---
+title: Observability & Probes
+description: "Kubernetes metrics, logging, tracing and health probe interview questions"
+sidebar_position: 10
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+:::tip Key takeaways
+- The three pillars: **metrics** tell you something is wrong, **logs** say what happened, **traces** say where in the call chain.
+- Prometheus **pulls** metrics. With the Prometheus Operator, a **ServiceMonitor** declares what to scrape.
+- Apps log to **stdout/stderr**. A node agent (a DaemonSet such as Fluent Bit) ships the logs; the app never writes log files.
+- **Readiness** controls traffic, **liveness** restarts the container, **startup** protects slow starters from liveness.
+- Never make liveness depend on downstream systems. A database outage would then restart every pod.
+:::
+
+Cross-cutting concerns like correlation IDs and centralised logging in general are covered in
+[Cross-Cutting Concerns](/docs/architecture/microservices/cross-cutting).
+
+## The three pillars
+
+| Pillar | Answers | Typical stack |
+|---|---|---|
+| **Metrics** | Is it healthy? How fast, how many errors, how full? | Prometheus + Grafana, Alertmanager |
+| **Logs** | What exactly happened in this request or job? | Fluent Bit / Fluentd / Vector → Elasticsearch, Loki, a cloud log service |
+| **Traces** | Which service in the chain was slow or failed? | OpenTelemetry → Jaeger, Tempo, an APM vendor |
+
+Link them with a shared **trace ID**: put it in every log line, and attach trace exemplars to metrics, so you can
+jump from a latency spike to the trace and then to its logs.
+
+## Metrics with Prometheus
+
+Prometheus scrapes an HTTP endpoint (e.g. `/metrics`, or `/actuator/prometheus` in Spring Boot) on every target at a
+fixed interval. With the **Prometheus Operator**, targets are declared with CRDs: a **ServiceMonitor** selects
+Services by label, a **PodMonitor** selects pods directly, and a **PrometheusRule** holds alerts.
+
+| Source | Metrics | Examples |
+|---|---|---|
+| **cAdvisor** (in the kubelet) | Container resource usage | `container_memory_working_set_bytes`, `container_cpu_usage_seconds_total` |
+| **kube-state-metrics** | Object state from the API | `kube_pod_container_status_restarts_total`, `kube_deployment_status_replicas_available`, `kube_job_status_failed` |
+| **Your app** | Business and RED metrics | request rate, error rate, duration (histograms) |
+| **metrics-server** | Live CPU/memory only, not history | Feeds `kubectl top` and the HPA; not a monitoring system |
+
+<details>
+<summary>ServiceMonitor and alert rules (YAML)</summary>
+
+```yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: orders-service
+  namespace: shop
+spec:
+  selector:
+    matchLabels:
+      app: orders-service       # matches the Service's labels
+  endpoints:
+    - port: http                # the Service port *name*, not a number
+      path: /actuator/prometheus
+      interval: 30s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: orders-service-alerts
+  namespace: shop
+spec:
+  groups:
+    - name: orders-service
+      rules:
+        - alert: PodNearMemoryLimit
+          expr: |
+            container_memory_working_set_bytes{namespace="shop", container="app"}
+              / container_spec_memory_limit_bytes{namespace="shop", container="app"} > 0.9
+          for: 10m
+          labels:
+            severity: warning
+        - alert: JobFailed
+          expr: kube_job_status_failed{namespace="shop"} > 0
+          for: 5m
+          labels:
+            severity: critical
+```
+
+Without the Operator, some setups use pod annotations such as `prometheus.io/scrape: "true"`. These are a convention
+in the Prometheus scrape config, not a Kubernetes feature.
+
+</details>
+
+:::warning Label cardinality
+Every unique combination of label values is a new time series. Labels like `userId`, `orderId` or full URLs explode
+Prometheus memory. Keep labels bounded: method, status code, route template.
+:::
+
+## Logging architecture
+
+Containers write to **stdout/stderr**. The container runtime writes those streams to files on the node, and
+`kubectl logs` reads them. A **DaemonSet** log agent on every node tails those files, adds pod metadata
+(namespace, pod, labels) and ships them to a backend.
+
+| Approach | When |
+|---|---|
+| **Node agent (DaemonSet)** | Default. One agent per node, no app changes |
+| **Sidecar** | App can only write to files, or one pod needs special routing |
+| **Direct from app** | Rare. Couples the app to the backend and loses logs if it crashes |
+
+<details>
+<summary>Structured (JSON) logging</summary>
+
+Log JSON so the backend can filter on fields instead of parsing text.
+
+```json
+{
+  "timestamp": "2026-03-11T10:30:00Z",
+  "level": "INFO",
+  "service": "orders-service",
+  "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
+  "span_id": "00f067aa0ba902b7",
+  "message": "Order placed",
+  "order_total": 129.90,
+  "duration_ms": 42
+}
+```
+
+</details>
+
+:::danger Container logs are ephemeral
+`kubectl logs` only shows what is still on the node. When a pod is deleted, rescheduled or its node dies, the logs go
+with it (`--previous` only shows the last restart of the same container). Ship them off the node.
+:::
+
+## Distributed tracing
+
+A **trace** is one request's journey; each hop is a **span** with a parent. Services pass the context in headers
+(W3C `traceparent`). **OpenTelemetry** is the standard for instrumentation: an SDK or auto-instrumentation agent in
+the app exports spans over OTLP to an **OpenTelemetry Collector**, which forwards them to a backend.
+
+<details>
+<summary>Pointing an app at the collector (env vars)</summary>
+
+```yaml
+env:
+  - name: OTEL_SERVICE_NAME
+    value: orders-service
+  - name: OTEL_EXPORTER_OTLP_ENDPOINT
+    value: http://otel-collector.observability:4317
+  - name: OTEL_RESOURCE_ATTRIBUTES
+    value: deployment.environment=prod,service.version=1.4.2
+```
+
+The OpenTelemetry Operator can also inject auto-instrumentation (Java, Python, Node.js, .NET) with a pod annotation
+such as `instrumentation.opentelemetry.io/inject-java: "true"`.
+
+</details>
+
+## Health probes
+
+The kubelet runs probes against each container. They decide whether the container is restarted and whether the pod
+receives traffic.
+
+| Probe | Question | On failure |
+|---|---|---|
+| **Startup** | Has the app finished starting? | Keeps liveness and readiness disabled until it passes; restarts the container if it never does |
+| **Liveness** | Is the process stuck beyond recovery? | Container is **restarted** |
+| **Readiness** | Can it serve traffic right now? | Pod is **removed from Service endpoints**; no restart |
+
+Each probe can be `httpGet`, `tcpSocket`, `grpc` or `exec`, tuned with `periodSeconds`, `timeoutSeconds`,
+`failureThreshold` and `initialDelaySeconds`.
+
+<Tabs>
+<TabItem value="startup" label="Startup">
+
+Use it for apps that start slowly (JVM warm-up, cache loading, migrations). It allows up to
+`failureThreshold × periodSeconds` to start, here 5 minutes, without delaying liveness checks for the rest of
+the pod's life.
+
+```yaml
+startupProbe:
+  httpGet:
+    path: /actuator/health/liveness
+    port: 8080
+  periodSeconds: 10
+  failureThreshold: 30     # 30 × 10s = up to 5 minutes to start
+```
+
+</TabItem>
+<TabItem value="liveness" label="Liveness">
+
+Check only the process itself: is it deadlocked or out of threads? Keep it cheap. Failing it restarts the container.
+
+```yaml
+livenessProbe:
+  httpGet:
+    path: /actuator/health/liveness
+    port: 8080
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 3      # restart after ~30s of failures
+```
+
+</TabItem>
+<TabItem value="readiness" label="Readiness">
+
+Is this pod ready to take requests? It can check things the pod needs to serve (warm cache, own dependencies),
+and runs for the pod's whole life, so a pod can go unready under load and come back.
+
+```yaml
+readinessProbe:
+  httpGet:
+    path: /actuator/health/readiness
+    port: 8080
+  periodSeconds: 5
+  failureThreshold: 3      # out of rotation after ~15s
+```
+
+</TabItem>
+</Tabs>
+
+:::danger Liveness that checks the database
+If liveness fails when a shared dependency is down, every replica restarts at once, often repeatedly
+(`CrashLoopBackOff`). Restarts can't fix a database outage; they only add load and a cold start. Put dependency checks
+in readiness, if anywhere, and keep liveness about the process.
+:::
+
+<details>
+<summary>More probe traps</summary>
+
+- **No startup probe on a slow app.** Liveness kills it before it finishes starting, so it never becomes ready. Add a
+  startup probe instead of a huge `initialDelaySeconds`.
+- **Same endpoint for liveness and readiness.** A brief overload fails both and restarts the pod, when you only wanted
+  to stop sending it traffic.
+- **Timeouts too short.** The default `timeoutSeconds` is 1. A GC pause or a busy thread pool can fail a probe that
+  needed 1.5s.
+- **Readiness on a CronJob or worker.** Readiness only affects Services. A queue consumer with no Service gets nothing
+  from it.
+
+</details>
+
+## References
+
+- [Kubernetes: Configure Liveness, Readiness and Startup Probes](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/)
+- [Kubernetes: Logging Architecture](https://kubernetes.io/docs/concepts/cluster-administration/logging/)
+- [Kubernetes: Resource metrics pipeline](https://kubernetes.io/docs/tasks/debug/debug-cluster/resource-metrics-pipeline/)
+- [Prometheus Operator: API reference (ServiceMonitor, PrometheusRule)](https://prometheus-operator.dev/docs/api-reference/api/)
+- [kube-state-metrics](https://github.com/kubernetes/kube-state-metrics)
+- [OpenTelemetry: Kubernetes](https://opentelemetry.io/docs/kubernetes/)
