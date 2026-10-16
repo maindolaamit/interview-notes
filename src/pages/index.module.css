@@ -4,20 +4,82 @@
  */
 
 .heroBanner {
-  padding: 4rem 0;
-  text-align: center;
-  position: relative;
+  padding: 4rem 0 3rem;
+  background: var(--site-hero-bg);
   overflow: hidden;
 }
 
-@media screen and (max-width: 996px) {
-  .heroBanner {
-    padding: 2rem;
-  }
+.heroInner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 3rem;
+}
+
+.heroAccent {
+  display: block;
+  width: 4rem;
+  height: 0.4rem;
+  margin-bottom: 1.25rem;
+  border-radius: 999px;
+  background: var(--site-accent);
+}
+
+.heroTitle {
+  font-size: 3.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 1rem;
+}
+
+.heroSubtitle {
+  font-size: 1.35rem;
+  color: var(--ifm-color-emphasis-700);
+  margin-bottom: 2rem;
 }
 
 .buttons {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+/* The illustration has a white background, so frame it as a card in both themes. */
+.heroImage {
+  width: 100%;
+  max-width: 480px;
+  height: auto;
+  justify-self: end;
+  border-radius: 1.5rem;
+  box-shadow: 0 20px 50px -20px rgba(49, 46, 129, 0.35);
+}
+
+@media screen and (max-width: 996px) {
+  .heroBanner {
+    padding: 2.5rem 0 2rem;
+  }
+
+  .heroInner {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    text-align: center;
+  }
+
+  .heroAccent {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .heroTitle {
+    font-size: 2.5rem;
+  }
+
+  .buttons {
+    justify-content: center;
+  }
+
+  .heroImage {
+    max-width: 320px;
+    justify-self: center;
+  }
 }
