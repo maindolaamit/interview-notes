@@ -100,8 +100,7 @@ const config: Config = {
     },
   },
   themeConfig: {
-    // Replace with your project's social card
-    image: 'img/docusaurus-social-card.jpg',
+    image: 'img/social-card.jpg',
     imageZoom: {
       // CSS selector to apply the plugin to, defaults to '.markdown img'
       selector: '.markdown img',
@@ -109,7 +108,7 @@ const config: Config = {
       // see: https://www.npmjs.com/package/medium-zoom#options
       options: {
         margin: 24,
-        background: '#BADA55',
+        background: 'rgba(15, 23, 42, 0.85)',
         scrollOffset: 0,
         container: '#zoom-container',
         template: '#zoom-template',
@@ -118,8 +117,8 @@ const config: Config = {
     navbar: {
       title: 'InterviewNotes',
       logo: {
-        alt: 'Site Logo',
-        src: 'img/home-logo.jpg',
+        alt: 'InterviewNotes logo',
+        src: 'img/logo.svg',
       },
       items: [
         {
